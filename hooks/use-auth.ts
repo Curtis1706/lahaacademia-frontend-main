@@ -1,0 +1,136 @@
+"use client"
+
+import React, { useState, useEffect, createContext, useContext } from 'react'
+import { useRouter } from 'next/navigation'
+
+interface User {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  role: 'student' | 'teacher' | 'parent' | 'author' | 'admin'
+  phone?: string
+  is_verified: boolean
+  is_active: boolean
+  created_at: string
+  reputation_score: number
+  badges: string[]
+}
+
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  register: (userData: any) => Promise<{ success: boolean; error?: string }>
+  logout: () => Promise<void>
+  updateUser: (userData: Partial<User>) => void
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (response.ok) {
+          const userData = await response.json()
+          setUser(userData)
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de l\'authentification:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [])
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Erreur de connexion' }
+      }
+
+      setUser(data.user)
+      return { success: true, user: data.user as User }
+    } catch (error) {
+      console.error('Erreur lors de la connexion:', error)
+      return { success: false, error: 'Erreur interne du serveur' }
+    }
+  }
+
+  const register = async (userData: any) => {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Erreur lors de l\'inscription' }
+      }
+
+      setUser(data.user)
+      return { success: true }
+    } catch (error) {
+      console.error('Erreur lors de l\'inscription:', error)
+      return { success: false, error: 'Erreur interne du serveur' }
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      setUser(null)
+      router.push('/login')
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error)
+    }
+  }
+
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...userData })
+    }
+  }
+
+  const value: AuthContextType = {
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    updateUser,
+  }
+
+  return React.createElement(AuthContext.Provider, { value }, children)
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth doit être utilisé dans un AuthProvider')
+  }
+  return context
+}
