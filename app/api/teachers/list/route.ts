@@ -22,21 +22,28 @@ export async function GET() {
       const enrichedTeachers = await Promise.all(
         data.map(async (teacher: any) => {
           try {
+            const coursesUrl = `${apiBase}/teachers/${teacher.id}/courses/`
+            console.log(`🔍 Récupération courses pour teacher ${teacher.id}:`, coursesUrl)
+            
             // Récupérer les cours de ce professeur
-            const coursesResponse = await fetch(`${apiBase}/teachers/${teacher.id}/courses/`, {
+            const coursesResponse = await fetch(coursesUrl, {
               headers: {
                 'Content-Type': 'application/json'
               }
             })
             
+            console.log(`📊 Response status pour teacher ${teacher.id}:`, coursesResponse.status, coursesResponse.statusText)
+            
             if (coursesResponse.ok) {
               const courses = await coursesResponse.json()
+              console.log(`✅ Courses trouvés pour teacher ${teacher.id}:`, courses.length, courses)
               return { ...teacher, courses }
+            } else {
+              console.log(`❌ Erreur response pour teacher ${teacher.id}:`, coursesResponse.status)
+              return { ...teacher, courses: [] }
             }
-            
-            return { ...teacher, courses: [] }
           } catch (error) {
-            console.log('Erreur récupération courses pour teacher', teacher.id, error)
+            console.log('💥 Erreur récupération courses pour teacher', teacher.id, error)
             return { ...teacher, courses: [] }
           }
         })
