@@ -1,0 +1,16 @@
+# Normalize text files to LF in repo; Windows working dir can use CRLF if needed
+* text=auto eol=lf
+
+# Keep these as binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg binary
+*.ico binary
+*.glb binary
+*.pdf binary
+
+# Scripts that should keep CRLF on Windows
+*.bat eol=crlf
+*.cmd eol=crlf
