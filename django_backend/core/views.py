@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate
 from django.utils import timezone as dj_timezone
 from datetime import timedelta
@@ -395,6 +396,55 @@ class CourseViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(difficulty_level=difficulty)
             
         return queryset
+
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    def availabilities(self, request, pk=None):
+        """Récupérer les disponibilités d'un cours"""
+        course = self.get_object()
+        availabilities = CourseAvailability.objects.filter(course=course, is_active=True)
+        return Response(CourseAvailabilitySerializer(availabilities, many=True).data)
+
+
+class CourseAvailabilityViewSet(viewsets.ModelViewSet):
+    queryset = CourseAvailability.objects.all()
+    serializer_class = CourseAvailabilitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        """Automatiquement assigner le professeur connecté"""
+        # Récupérer le professeur connecté
+        try:
+            teacher = Teacher.objects.get(user=self.request.user)
+            serializer.save(teacher=teacher)
+        except Teacher.DoesNotExist:
+            raise PermissionDenied("Seuls les professeurs peuvent créer des disponibilités")
+
+    def perform_update(self, serializer):
+        """Vérifier que seul le créateur peut modifier la disponibilité"""
+        availability = self.get_object()
+        if availability.teacher.user != self.request.user:
+            raise PermissionDenied("Vous ne pouvez modifier que vos propres disponibilités")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """Vérifier que seul le créateur peut supprimer la disponibilité"""
+        if instance.teacher.user != self.request.user:
+            raise PermissionDenied("Vous ne pouvez supprimer que vos propres disponibilités")
+        instance.delete()
+
+    def get_queryset(self):
+        """Filtrer les disponibilités selon les paramètres"""
+        queryset = CourseAvailability.objects.filter(is_active=True)
+        course_id = self.request.query_params.get('course', None)
+        if course_id:
+            queryset = queryset.filter(course_id=course_id)
+        return queryset
+
+
+class SessionViewSet(viewsets.ModelViewSet):
+    queryset = Session.objects.all()
+    serializer_class = SessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=True, methods=['get'])
     def enrollments(self, request, pk=None):
