@@ -1,32 +1,14 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
-import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from '@/components/ui/sidebar'
-import { IconBrandTabler, IconUsers, IconBell, IconMessage, IconCalendar, IconHeart, IconChartBar, IconUserBolt, IconSettings, IconArrowLeft, IconPlus } from '@tabler/icons-react'
-import { useAuth } from '@/hooks/use-auth'
 import { AuthGuard } from '@/components/auth-guard'
+import { ParentSidebar } from '@/components/parent-sidebar'
 
 export default function ParentInvitationsPage() {
-  const { user } = useAuth()
-  const [open, setOpen] = useState(true)
   const [childEmail, setChildEmail] = useState('')
   const [invitations, setInvitations] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<string>('')
-
-  const links = [
-    { label: 'Tableau de bord', href: '/dashboard/parent', icon: <IconBrandTabler className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Invitations', href: '/dashboard/parent/invitations', icon: <IconPlus className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Réserver un cours', href: '/dashboard/parent/reserver', icon: <IconCalendar className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Enfants', href: '#', icon: <IconUsers className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Notifications', href: '#', icon: <IconBell className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Messages', href: '#', icon: <IconMessage className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Statistiques', href: '#', icon: <IconChartBar className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Profil', href: '#', icon: <IconUserBolt className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Paramètres', href: '#', icon: <IconSettings className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Déconnexion', href: '/', icon: <IconArrowLeft className="h-5 w-5 shrink-0 text-white" /> },
-  ]
 
   const fetchMe = async () => {
     const res = await fetch('/api/parents/me', { cache: 'no-store' })
@@ -56,33 +38,7 @@ export default function ParentInvitationsPage() {
 
   return (
     <AuthGuard requiredRole="parent">
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full bg-laha-black">
-          <Sidebar open={open} setOpen={setOpen}>
-            <SidebarBody className="justify-between gap-10">
-              <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
-                {open ? <Logo /> : <LogoIcon />}
-                <div className="mt-8 flex flex-col gap-2">
-                  {links.map((link, idx) => (
-                    <SidebarLink key={idx} link={link} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <SidebarLink
-                  link={{
-                    label: `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() || 'Mon profil',
-                    href: '#',
-                    icon: (
-                      <img src="/placeholder.svg?height=50&width=50&text=P" className="h-7 w-7 shrink-0 rounded-full" width={50} height={50} alt="Avatar" />
-                    ),
-                  }}
-                />
-              </div>
-            </SidebarBody>
-          </Sidebar>
-
-          <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl border border-laha-gold-dark/20 bg-gradient-to-br from-laha-black/50 to-laha-gold-dark/30 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
+      <ParentSidebar>
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Invitations Parent → Enfant</h1>
               <p className="text-laha-gold-light/70">Invitez votre enfant à lier son compte à votre profil.</p>
@@ -135,24 +91,9 @@ export default function ParentInvitationsPage() {
               </div>
               {toast && <p className="mt-3 text-laha-gold-light/80">{toast}</p>}
             </div>
-          </div>
-        </div>
-      </SidebarProvider>
+      </ParentSidebar>
     </AuthGuard>
   )
 }
-
-const Logo = () => (
-  <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-    <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-    <span className="font-medium whitespace-pre text-white font-heading">Lahacademia</span>
-  </a>
-)
-
-const LogoIcon = () => (
-  <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-    <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-  </a>
-)
 
 

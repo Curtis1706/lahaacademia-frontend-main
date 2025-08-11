@@ -1,11 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
 import { AuthGuard } from '@/components/auth-guard'
-import { useAuth } from '@/hooks/use-auth'
-import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from '@/components/ui/sidebar'
-import { IconArrowLeft, IconBell, IconCalendar, IconChartBar, IconHeart, IconSettings, IconUserBolt, IconUsers, IconBrandTabler, IconMessage, IconPlus } from '@tabler/icons-react'
+import { ParentSidebar } from '@/components/parent-sidebar'
 
 type TeacherItem = {
   id: number
@@ -21,9 +18,6 @@ type ChildItem = {
 }
 
 export default function ParentReservePage() {
-  const { user } = useAuth()
-  const [open, setOpen] = useState(true)
-  
   // Récupérer l'ID de l'enfant depuis l'URL si présent
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
