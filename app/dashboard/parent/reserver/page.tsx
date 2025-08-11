@@ -8,10 +8,12 @@ type TeacherItem = {
   id: number
   user: { first_name: string; last_name: string; email: string }
   subjects?: string[]
+  bio?: string
+  hourly_rate?: number
 }
 
 type ChildItem = {
-  id: number
+  id: string
   user: { first_name: string; last_name: string; email: string }
   school_level?: string
   school_name?: string
@@ -31,104 +33,80 @@ export default function ParentReservePage() {
   const [teacherId, setTeacherId] = useState<string>('')
   const [children, setChildren] = useState<ChildItem[]>([])
   const [studentId, setStudentId] = useState<string>('')
+  const [subject, setSubject] = useState<string>('')
   const [date, setDate] = useState<string>('')
-  const [start, setStart] = useState<string>('')
-  const [end, setEnd] = useState<string>('')
-  const [isSubmitting, setSubmitting] = useState(false)
+  const [timeSlots, setTimeSlots] = useState<any[]>([])
+  const [selectedSlot, setSelectedSlot] = useState<string>('')
+  const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string>('')
-  const [availability, setAvailability] = useState<Record<string, Array<{ start: string; end: string }>> | null>(null)
 
   useEffect(() => {
-    const fetchTeachers = async () => {
+    const loadData = async () => {
       try {
-        const res = await fetch('/api/teachers/list', { cache: 'no-store' })
-        
-        if (!res.ok) {
-          console.error('Failed to fetch teachers:', res.status)
-          setTeachers([])
-          return
+        // Charger les enseignants
+        const teachersRes = await fetch('/api/teachers')
+        if (teachersRes.ok) {
+          const teachersData = await teachersRes.json()
+          setTeachers(Array.isArray(teachersData) ? teachersData : [])
         }
-        
-        const contentType = res.headers.get('content-type')
-        if (!contentType || !contentType.includes('application/json')) {
-          console.error('Response is not JSON')
-          setTeachers([])
-          return
+
+        // Charger les enfants
+        const childrenRes = await fetch('/api/parents/children')
+        if (childrenRes.ok) {
+          const childrenData = await childrenRes.json()
+          setChildren(Array.isArray(childrenData) ? childrenData : [])
         }
-        
-        const text = await res.text()
-        if (!text.trim()) {
-          console.error('Empty response')
-          setTeachers([])
-          return
-        }
-        
-        const data = JSON.parse(text)
-        setTeachers(Array.isArray(data) ? data : [])
-        
-      } catch (error) {
-        console.error('Error fetching teachers:', error)
-        setTeachers([])
+      } catch (err) {
+        console.error('Erreur lors du chargement des données:', err)
       }
     }
-    
-    fetchTeachers()
+    loadData()
   }, [])
 
   useEffect(() => {
-    // Récupérer l'ID de l'enfant depuis l'URL si présent
-    const urlParams = new URLSearchParams(window.location.search)
-    const preSelectedStudent = urlParams.get('student')
-    
-    ;(async () => {
-      try {
-        const res = await fetch('/api/parents/me', { cache: 'no-store' })
-        const data = await res.json()
-        const kids = Array.isArray(data?.children) ? data.children : []
-        setChildren(kids)
-        
-        if (preSelectedStudent && kids.find((k: any) => k.id === parseInt(preSelectedStudent))) {
-          setStudentId(preSelectedStudent)
-        } else if (kids.length > 0) {
-          setStudentId(String(kids[0].id))
+    if (teacherId && date) {
+      const fetchSlots = async () => {
+        try {
+          const res = await fetch(`/api/teachers/${teacherId}/availability?date=${date}`)
+          const data = await res.json()
+          setTimeSlots(Array.isArray(data) ? data : [])
+        } catch {
+          setTimeSlots([])
         }
-      } catch (_) {
-        setChildren([])
       }
-    })()
-  }, [])
-
-  const selectedTeacher = useMemo(() => teachers.find(t => String(t.id) === teacherId), [teachers, teacherId])
-
-  useEffect(() => {
-    if (!teacherId) {
-      setAvailability(null)
-      return
+      fetchSlots()
+    } else {
+      setTimeSlots([])
     }
-    ;(async () => {
-      try {
-        const res = await fetch(`/api/teachers/${teacherId}/availability`, { cache: 'no-store' })
-        const data = await res.json()
-        setAvailability(data?.availability || null)
-      } catch (_) {
-        setAvailability(null)
-      }
-    })()
-  }, [teacherId])
+  }, [teacherId, date])
+
+  const selectedTeacher = useMemo(() => {
+    return teachers.find(t => t.id.toString() === teacherId)
+  }, [teachers, teacherId])
+
+  const subjects = useMemo(() => {
+    if (!selectedTeacher?.subjects) return []
+    return selectedTeacher.subjects
+  }, [selectedTeacher])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!selectedSlot || !teacherId || !studentId) return
+
     setSubmitting(true)
     setMessage('')
+
     try {
+      const [start, end] = selectedSlot.split('-')
       const startIso = new Date(`${date}T${start}:00`).toISOString()
       const endIso = new Date(`${date}T${end}:00`).toISOString()
       const body: any = {
         teacher_id: teacherId,
         start_time: startIso,
         end_time: endIso,
+        student_id: studentId,
       }
-      if (user?.role === 'parent') body.student_id = studentId || undefined
+      
       const res = await fetch('/api/bookings/reserve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -144,301 +122,190 @@ export default function ParentReservePage() {
     }
   }
 
-  const links = [
-    { label: 'Tableau de bord', href: '/dashboard/parent', icon: <IconBrandTabler className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Invitations', href: '/dashboard/parent/invitations', icon: <IconPlus className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Enfants', href: '/dashboard/parent/enfants', icon: <IconUsers className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Notifications', href: '#', icon: <IconBell className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Messages', href: '#', icon: <IconMessage className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Planning', href: '#', icon: <IconCalendar className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Réserver un cours', href: '/dashboard/parent/reserver', icon: <IconCalendar className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Favoris', href: '#', icon: <IconHeart className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Alertes', href: '#', icon: <IconBell className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Statistiques', href: '#', icon: <IconChartBar className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Profil', href: '#', icon: <IconUserBolt className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Paramètres', href: '#', icon: <IconSettings className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Déconnexion', href: '/', icon: <IconArrowLeft className="h-5 w-5 shrink-0 text-white" /> },
-  ]
-
   return (
     <AuthGuard requiredRole="parent">
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full bg-laha-black dark:bg-laha-black">
-          <Sidebar open={open} setOpen={setOpen}>
-            <SidebarBody className="justify-between gap-10">
-              <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
-                {open ? <Logo /> : <LogoIcon />}
-                <div className="mt-8 flex flex-col gap-2">
-                  {links.map((link, idx) => (
-                    <SidebarLink key={idx} link={link} />
+      <ParentSidebar>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Réserver un cours</h1>
+          <p className="text-laha-gold-light/70">Choisissez un professeur, une date et un créneau.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Colonne gauche: formulaire */}
+          <form onSubmit={submit} className="lg:col-span-2 bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20 space-y-5">
+            
+            {/* Sélection de l'enfant */}
+            <div>
+              <label className="block text-sm font-medium text-laha-gold-light/80 mb-2">
+                Sélectionner un enfant
+              </label>
+              {children.length === 0 ? (
+                <div className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 p-4 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-laha-gold/20 flex items-center justify-center">
+                      <span className="text-laha-gold text-sm">👥</span>
+                    </div>
+                    <p className="text-laha-gold-light/60 text-sm">Aucun enfant associé</p>
+                    <a
+                      href="/dashboard/parent/invitations"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-laha-gold/20 text-laha-gold rounded-lg hover:bg-laha-gold/30 transition-colors text-sm"
+                    >
+                      <span className="text-sm">+</span>
+                      Inviter un enfant
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <select
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 px-4 py-3 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50"
+                  required
+                >
+                  <option value="">-- Choisir un enfant --</option>
+                  {children.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.user.first_name} {child.user.last_name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Sélection du professeur */}
+            <div>
+              <label className="block text-sm font-medium text-laha-gold-light/80 mb-2">
+                Choisir un professeur
+              </label>
+              <select
+                value={teacherId}
+                onChange={(e) => setTeacherId(e.target.value)}
+                className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 px-4 py-3 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50"
+                required
+              >
+                <option value="">-- Sélectionner --</option>
+                {teachers.map((teacher) => (
+                  <option key={teacher.id} value={teacher.id.toString()}>
+                    {teacher.user.first_name} {teacher.user.last_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sélection de la matière */}
+            {subjects.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-laha-gold-light/80 mb-2">
+                  Matière
+                </label>
+                <select
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 px-4 py-3 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50"
+                >
+                  <option value="">-- Choisir une matière --</option>
+                  {subjects.map((subj) => (
+                    <option key={subj} value={subj}>{subj}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Sélection de la date */}
+            <div>
+              <label className="block text-sm font-medium text-laha-gold-light/80 mb-2">
+                Date
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 px-4 py-3 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50"
+                required
+              />
+            </div>
+
+            {/* Sélection du créneau */}
+            {timeSlots.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-laha-gold-light/80 mb-2">
+                  Créneaux disponibles
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {timeSlots.map((slot) => (
+                    <button
+                      key={slot.slot}
+                      type="button"
+                      onClick={() => setSelectedSlot(slot.slot)}
+                      className={`p-3 rounded-lg border text-sm transition-all ${
+                        selectedSlot === slot.slot
+                          ? 'bg-laha-gold/20 border-laha-gold text-laha-gold'
+                          : 'bg-laha-black-light/30 border-laha-gold-dark/30 text-laha-gold-light hover:bg-laha-gold/10'
+                      }`}
+                    >
+                      {slot.slot.replace('-', ' - ')}
+                    </button>
                   ))}
                 </div>
               </div>
-              <div>
-                <SidebarLink
-                  link={{
-                    label: `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() || 'Mon profil',
-                    href: '#',
-                    icon: (
-                      <img
-                        src="/placeholder.svg?height=50&width=50&text=P"
-                        className="h-7 w-7 shrink-0 rounded-full"
-                        width={50}
-                        height={50}
-                        alt="Avatar"
-                      />
-                    ),
-                  }}
-                />
-              </div>
-            </SidebarBody>
-          </Sidebar>
+            )}
 
-          <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl border border-laha-gold-dark/20 bg-gradient-to-br from-laha-black/50 to-laha-gold-dark/30 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Réserver un cours</h1>
-              <p className="text-laha-gold-light/70">Choisissez un professeur, une date et un créneau.</p>
-            </div>
+            {/* Bouton de soumission */}
+            <button
+              type="submit"
+              disabled={submitting || !selectedSlot || !teacherId || !studentId}
+              className="w-full bg-laha-gold hover:bg-laha-gold-dark text-laha-black font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Réservation...' : 'Confirmer la réservation'}
+            </button>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Colonne gauche: formulaire */}
-              <form onSubmit={submit} className="lg:col-span-2 bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20 space-y-5">
-                {user?.role === 'parent' && (
+            {message && <div className="text-center p-4 text-laha-gold-light">{message}</div>}
+          </form>
+
+          {/* Colonne droite: détails du professeur */}
+          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20">
+            {selectedTeacher ? (
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-laha-gold">
+                  {selectedTeacher.user.first_name} {selectedTeacher.user.last_name}
+                </h3>
+                
+                {selectedTeacher.bio && (
                   <div>
-                    <label className="block text-sm font-medium text-laha-gold-light/80 mb-2">
-                      Sélectionner un enfant
-                    </label>
-                    {children.length === 0 ? (
-                      <div className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 p-4 text-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <IconUsers className="h-8 w-8 text-laha-gold/50" />
-                          <p className="text-laha-gold-light/60 text-sm">Aucun enfant associé</p>
-                          <a
-                            href="/dashboard/parent/invitations"
-                            className="inline-flex items-center gap-1 text-xs text-laha-gold hover:text-laha-gold-light transition-colors"
-                          >
-                            <IconPlus className="h-3 w-3" />
-                            Inviter un enfant
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <select
-                          value={studentId}
-                          onChange={e => setStudentId(e.target.value)}
-                          className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 focus:border-laha-gold/60 focus:ring-2 focus:ring-laha-gold/20 p-4 text-laha-gold-light outline-none appearance-none cursor-pointer transition-all hover:border-laha-gold/40"
-                          style={{
-                            colorScheme: 'dark',
-                            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                          }}
-                        >
-                          <option value="" className="bg-laha-black text-laha-gold" disabled>
-                            Choisir un enfant...
-                          </option>
-                          {children.map(c => (
-                            <option 
-                              key={c.id} 
-                              value={c.id}
-                              className="bg-laha-black text-laha-gold-light py-2"
-                            >
-                              {c.user.first_name} {c.user.last_name}{c.school_level ? ` • ${c.school_level}` : ''}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                          <svg className="h-5 w-5 text-laha-gold/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Affichage des détails de l'enfant sélectionné */}
-                    {studentId && children.find(c => c.id.toString() === studentId) && (
-                      <div className="mt-3 p-4 bg-laha-gold/10 border border-laha-gold/20 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-laha-gold/20 rounded-full flex items-center justify-center">
-                            <span className="text-laha-gold font-semibold text-sm">
-                              {children.find(c => c.id.toString() === studentId)?.user.first_name.charAt(0)}
-                              {children.find(c => c.id.toString() === studentId)?.user.last_name.charAt(0)}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-laha-gold font-medium">
-                              {children.find(c => c.id.toString() === studentId)?.user.first_name} {children.find(c => c.id.toString() === studentId)?.user.last_name}
-                            </p>
-                            <p className="text-laha-gold-light/70 text-sm">
-                              {children.find(c => c.id.toString() === studentId)?.school_level || 'Niveau non spécifié'}
-                              {children.find(c => c.id.toString() === studentId)?.school_name && 
-                                ` • ${children.find(c => c.id.toString() === studentId)?.school_name}`
-                              }
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <h4 className="text-sm font-medium text-laha-gold-light/80 mb-2">Biographie</h4>
+                    <p className="text-laha-gold-light/70 text-sm">{selectedTeacher.bio}</p>
                   </div>
                 )}
-                <div>
-                  <label className="block text-sm text-laha-gold-light/80 mb-1">Professeur</label>
-                  <select
-                    value={teacherId}
-                    onChange={e => setTeacherId(e.target.value)}
-                    className="w-full rounded bg-white/10 border border-white/10 focus:border-laha-gold/60 p-3 text-white outline-none"
-                  >
-                    <option value="">Choisir…</option>
-                    {teachers.map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.user.first_name} {t.user.last_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {selectedTeacher.subjects && selectedTeacher.subjects.length > 0 && (
                   <div>
-                    <label className="block text-sm text-laha-gold-light/80 mb-1">Date</label>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={e => setDate(e.target.value)}
-                      className="w-full rounded bg-white/10 border border-white/10 focus:border-laha-gold/60 p-3 text-white outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-laha-gold-light/80 mb-1">Début</label>
-                    <input
-                      type="time"
-                      value={start}
-                      onChange={e => setStart(e.target.value)}
-                      className="w-full rounded bg-white/10 border border-white/10 focus:border-laha-gold/60 p-3 text-white outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-laha-gold-light/80 mb-1">Fin</label>
-                    <input
-                      type="time"
-                      value={end}
-                      onChange={e => setEnd(e.target.value)}
-                      className="w-full rounded bg-white/10 border border-white/10 focus:border-laha-gold/60 p-3 text-white outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    disabled={isSubmitting || !teacherId || !date || !start || !end}
-                    className="px-5 py-3 rounded bg-laha-gold text-laha-black font-medium hover:bg-laha-gold/90 disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Réservation…' : 'Confirmer la réservation'}
-                  </button>
-                </div>
-
-                {message && (
-                  <div className="mt-2 text-sm text-laha-gold-light/80">
-                    {message}
-                  </div>
-                )}
-              </form>
-
-              {/* Colonne droite: résumé + disponibilités */}
-              <div className="space-y-6">
-                <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20">
-                  <h2 className="text-lg font-semibold text-laha-gold-light mb-4">Résumé</h2>
-                  <div className="space-y-3 text-sm text-laha-gold-light/80">
-                    <div>
-                      <span className="text-laha-gold-light/60">Professeur: </span>
-                      <span>{selectedTeacher ? `${selectedTeacher.user.first_name} ${selectedTeacher.user.last_name}` : '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-laha-gold-light/60">Date: </span>
-                      <span>{date || '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-laha-gold-light/60">Début: </span>
-                      <span>{start || '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-laha-gold-light/60">Fin: </span>
-                      <span>{end || '—'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20">
-                  <h2 className="text-lg font-semibold text-laha-gold-light mb-2">Disponibilités</h2>
-                  {!teacherId && (
-                    <p className="text-sm text-laha-gold-light/60">Choisissez d’abord un professeur pour voir ses créneaux.</p>
-                  )}
-                  {teacherId && !availability && (
-                    <p className="text-sm text-laha-gold-light/60">Chargement des disponibilités…</p>
-                  )}
-                  {availability && (
-                    <div className="space-y-3 text-sm">
-                      {Object.entries(availability).map(([day, slots]) => (
-                        <div key={day}>
-                          <p className="text-laha-gold-light/70 mb-1 capitalize">{day}</p>
-                          {slots.length === 0 ? (
-                            <p className="text-laha-gold-light/50">—</p>
-                          ) : (
-                            <div className="flex flex-wrap gap-2">
-                              {slots.map((s, i) => (
-                                <button
-                                  key={`${day}-${i}`}
-                                  type="button"
-                                  onClick={() => {
-                                    // si on clique un slot, préremplir la date du jour sélectionné si elle correspond au prochain jour de ce nom, sinon laisser l’heure
-                                    setStart(s.start)
-                                    setEnd(s.end)
-                                  }}
-                                  className="px-2 py-1 rounded bg-laha-gold/20 text-laha-gold hover:bg-laha-gold/30"
-                                >
-                                  {s.start} - {s.end}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                    <h4 className="text-sm font-medium text-laha-gold-light/80 mb-2">Matières enseignées</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTeacher.subjects.map((subj) => (
+                        <span key={subj} className="px-2 py-1 bg-laha-gold/20 text-laha-gold text-xs rounded">
+                          {subj}
+                        </span>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+                
+                {selectedTeacher.hourly_rate && (
+                  <div>
+                    <h4 className="text-sm font-medium text-laha-gold-light/80 mb-2">Tarif</h4>
+                    <p className="text-laha-gold font-medium">{selectedTeacher.hourly_rate}€/heure</p>
+                  </div>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="text-center text-laha-gold-light/60">
+                <p>Sélectionnez un professeur pour voir ses détails</p>
+              </div>
+            )}
           </div>
         </div>
-      </SidebarProvider>
+      </ParentSidebar>
     </AuthGuard>
   )
 }
-
-const Logo = () => {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-      <span className="font-medium whitespace-pre text-white font-heading">Lahacademia</span>
-    </a>
-  )
-}
-
-const LogoIcon = () => {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-    </a>
-  )
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
