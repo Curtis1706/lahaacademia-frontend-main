@@ -11,6 +11,19 @@ type TeacherItem = {
   subjects?: string[]
   bio?: string
   hourly_rate?: number
+  courses?: CourseItem[]
+}
+
+type CourseItem = {
+  id: number
+  title: string
+  description: string
+  subject: string
+  level: string
+  duration: number
+  price: number
+  course_type: string
+  max_students?: number
 }
 
 type ChildItem = {
@@ -34,7 +47,7 @@ export default function ParentReservePage() {
   const [teacherId, setTeacherId] = useState<string>('')
   const [children, setChildren] = useState<ChildItem[]>([])
   const [studentId, setStudentId] = useState<string>('')
-  const [subject, setSubject] = useState<string>('')
+  const [courseId, setCourseId] = useState<string>('')
   const [date, setDate] = useState<string>('')
   const [timeSlots, setTimeSlots] = useState<any[]>([])
   const [selectedSlot, setSelectedSlot] = useState<string>('')
@@ -91,6 +104,22 @@ export default function ParentReservePage() {
     loadData()
   }, [])
 
+  // Cours disponibles pour le professeur sélectionné
+  const availableCourses = useMemo(() => {
+    const selectedTeacher = teachers.find(t => t.id.toString() === teacherId)
+    return selectedTeacher?.courses || []
+  }, [teachers, teacherId])
+
+  // Informations du cours sélectionné
+  const selectedCourse = useMemo(() => {
+    return availableCourses.find(c => c.id.toString() === courseId)
+  }, [availableCourses, courseId])
+
+  // Réinitialiser la sélection de cours quand on change de professeur
+  useEffect(() => {
+    setCourseId('')
+  }, [teacherId])
+
   useEffect(() => {
     if (teacherId && date) {
       const fetchSlots = async () => {
@@ -119,7 +148,7 @@ export default function ParentReservePage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedSlot || !teacherId || !studentId) return
+    if (!selectedSlot || !teacherId || !studentId || !courseId) return
 
     setSubmitting(true)
     setMessage('')
@@ -130,6 +159,7 @@ export default function ParentReservePage() {
       const endIso = new Date(`${date}T${end}:00`).toISOString()
       const body: any = {
         teacher_id: teacherId,
+        course_id: courseId,
         start_time: startIso,
         end_time: endIso,
         student_id: studentId,
@@ -236,28 +266,55 @@ export default function ParentReservePage() {
                           </div>
                         </div>
 
-            {/* Sélection de la matière */}
-            {subjects.length > 0 && (
+            {/* Sélection du cours */}
+            {availableCourses.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5 text-laha-gold" />
                   <label className="text-sm font-medium text-laha-gold-light">
-                    Matière
+                    Cours disponibles
                   </label>
-                      </div>
+                </div>
                 <div className="relative">
                   <select
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
+                    value={courseId}
+                    onChange={(e) => setCourseId(e.target.value)}
                     className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
+                    required
                   >
-                    <option value="" className="bg-laha-black text-laha-gold-light">-- Choisir une matière --</option>
-                    {subjects.map((subj) => (
-                      <option key={subj} value={subj} className="bg-laha-black text-laha-gold-light">{subj}</option>
+                    <option value="" className="bg-laha-black text-laha-gold-light">-- Choisir un cours --</option>
+                    {availableCourses.map((course) => (
+                      <option key={course.id} value={course.id.toString()} className="bg-laha-black text-laha-gold-light">
+                        {course.title} - {course.duration}min - {course.price} FCFA
+                      </option>
                     ))}
                   </select>
                   <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
                 </div>
+                
+                {/* Affichage des détails du cours sélectionné */}
+                {selectedCourse && (
+                  <div className="bg-laha-black/40 rounded-lg p-4 border border-laha-gold-dark/20">
+                    <h4 className="text-laha-gold-light font-medium mb-2">{selectedCourse.title}</h4>
+                    <p className="text-laha-gold-light/70 text-sm mb-3">{selectedCourse.description}</p>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div className="flex items-center gap-1">
+                        <GraduationCap className="h-3 w-3 text-laha-gold" />
+                        <span className="text-laha-gold-light/70">{selectedCourse.level}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-laha-gold-warm" />
+                        <span className="text-laha-gold-light/70">{selectedCourse.duration} minutes</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-laha-gold text-sm font-medium">{selectedCourse.price} FCFA</span>
+                      </div>
+                      <div className="text-laha-gold-light/70">
+                        {selectedCourse.course_type === 'individual' ? 'Cours individuel' : `Groupe (max ${selectedCourse.max_students})`}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

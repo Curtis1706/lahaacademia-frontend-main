@@ -54,7 +54,7 @@ export default function TeacherDashboard() {
     },
     {
       label: "Mes Cours",
-      href: "#",
+      href: "/dashboard/teacher/courses",
       icon: <IconBook className="h-5 w-5 shrink-0 text-white" />,
     },
     {
