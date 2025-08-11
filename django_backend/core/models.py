@@ -180,6 +180,41 @@ class Course(models.Model):
         return self.title
 
 
+class CourseAvailability(models.Model):
+    """Créneaux de disponibilité définis par le professeur pour un cours spécifique"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='availabilities')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    
+    # Jour de la semaine (0=Lundi, 6=Dimanche)
+    day_of_week = models.IntegerField(choices=[
+        (0, 'Lundi'), (1, 'Mardi'), (2, 'Mercredi'), (3, 'Jeudi'),
+        (4, 'Vendredi'), (5, 'Samedi'), (6, 'Dimanche')
+    ])
+    
+    # Heures de début et fin
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    
+    # Statut
+    is_active = models.BooleanField(default=True)
+    
+    # Dates limites (optionnel)
+    valid_from = models.DateField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'course_availabilities'
+        unique_together = ['course', 'day_of_week', 'start_time']
+
+    def __str__(self) -> str:
+        days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+        return f"{self.course.title} - {days[self.day_of_week]} {self.start_time}-{self.end_time}"
+
+
 class Session(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)

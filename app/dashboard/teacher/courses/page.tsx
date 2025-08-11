@@ -221,42 +221,128 @@ const TeacherCoursesContent = ({
     course_type: 'individual'
   })
   const [submitting, setSubmitting] = useState(false)
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
+  const [selectedCourseForAvailability, setSelectedCourseForAvailability] = useState<any>(null)
+  const [editingCourse, setEditingCourse] = useState<any>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [courseToDelete, setCourseToDelete] = useState<any>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
 
     try {
-      const response = await fetch('/api/teachers/courses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      })
-
-      if (response.ok) {
-        const newCourse = await response.json()
-        setCourses([...courses, newCourse])
-        setShowAddForm(false)
-        setFormData({
-          title: '',
-          description: '',
-          subject: '',
-          level: '',
-          duration: 60,
-          price: '',
-          max_students: 1,
-          course_type: 'individual'
+      if (editingCourse) {
+        // Mode édition
+        const response = await fetch(`/api/teachers/courses/${editingCourse.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
         })
+
+        if (response.ok) {
+          const updatedCourse = await response.json()
+          setCourses(courses.map(c => c.id === editingCourse.id ? updatedCourse : c))
+          setShowAddForm(false)
+          setEditingCourse(null)
+          setFormData({
+            title: '',
+            description: '',
+            subject: '',
+            level: '',
+            duration: 60,
+            price: '',
+            max_students: 1,
+            course_type: 'individual'
+          })
+        } else {
+          console.error('Erreur lors de la modification du cours')
+        }
       } else {
-        console.error('Erreur lors de la création du cours')
+        // Mode création
+        const response = await fetch('/api/teachers/courses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        })
+
+        if (response.ok) {
+          const newCourse = await response.json()
+          setCourses([...courses, newCourse])
+          setShowAddForm(false)
+          setFormData({
+            title: '',
+            description: '',
+            subject: '',
+            level: '',
+            duration: 60,
+            price: '',
+            max_students: 1,
+            course_type: 'individual'
+          })
+        } else {
+          console.error('Erreur lors de la création du cours')
+        }
       }
     } catch (error) {
       console.error('Erreur:', error)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleEditCourse = (course: any) => {
+    setEditingCourse(course)
+    setFormData({
+      title: course.title,
+      description: course.description,
+      subject: course.subject,
+      level: course.level,
+      duration: course.duration,
+      price: course.price.toString(),
+      max_students: course.max_students || 1,
+      course_type: course.course_type || 'individual'
+    })
+    setShowAddForm(true)
+  }
+
+  const handleDeleteCourse = async () => {
+    if (!courseToDelete) return
+
+    try {
+      const response = await fetch(`/api/teachers/courses/${courseToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setCourses(courses.filter(c => c.id !== courseToDelete.id))
+        setShowDeleteConfirm(false)
+        setCourseToDelete(null)
+      } else {
+        console.error('Erreur lors de la suppression du cours')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingCourse(null)
+    setShowAddForm(false)
+    setFormData({
+      title: '',
+      description: '',
+      subject: '',
+      level: '',
+      duration: 60,
+      price: '',
+      max_students: 1,
+      course_type: 'individual'
+    })
   }
 
   return (
@@ -276,7 +362,20 @@ const TeacherCoursesContent = ({
               </p>
             </div>
             <button
-              onClick={() => setShowAddForm(true)}
+              onClick={() => {
+                setEditingCourse(null)
+                setFormData({
+                  title: '',
+                  description: '',
+                  subject: '',
+                  level: '',
+                  duration: 60,
+                  price: '',
+                  max_students: 1,
+                  course_type: 'individual'
+                })
+                setShowAddForm(true)
+              }}
               className="flex items-center gap-2 bg-gradient-to-r from-laha-gold to-laha-gold-dark hover:from-laha-gold-dark hover:to-laha-gold text-laha-black font-semibold px-6 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               <Plus className="h-5 w-5" />
@@ -288,7 +387,20 @@ const TeacherCoursesContent = ({
         {/* Add Course Form */}
         {showAddForm && (
           <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20 mb-6">
-            <h2 className="text-xl font-semibold text-laha-gold-light mb-4">Créer un nouveau cours</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-laha-gold-light">
+                {editingCourse ? 'Modifier le cours' : 'Créer un nouveau cours'}
+              </h2>
+              {editingCourse && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="text-laha-gold-light hover:text-laha-gold text-sm"
+                >
+                  Annuler la modification
+                </button>
+              )}
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -414,12 +526,12 @@ const TeacherCoursesContent = ({
                   {submitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-laha-black"></div>
-                      Création...
+                      {editingCourse ? 'Modification...' : 'Création...'}
                     </>
                   ) : (
                     <>
                       <BookOpen className="h-4 w-4" />
-                      Créer le cours
+                      {editingCourse ? 'Modifier le cours' : 'Créer le cours'}
                     </>
                   )}
                 </button>
@@ -468,10 +580,21 @@ const TeacherCoursesContent = ({
                       <p className="text-laha-gold-light/70 text-sm mt-1">{course.description}</p>
                     </div>
                     <div className="flex gap-2 ml-4">
-                      <button className="p-2 text-laha-gold hover:bg-laha-gold/10 rounded-lg transition-colors">
+                      <button 
+                        onClick={() => handleEditCourse(course)}
+                        className="p-2 text-laha-gold hover:bg-laha-gold/10 rounded-lg transition-colors"
+                        title="Modifier ce cours"
+                      >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors">
+                      <button 
+                        onClick={() => {
+                          setCourseToDelete(course)
+                          setShowDeleteConfirm(true)
+                        }}
+                        className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                        title="Supprimer ce cours"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -497,7 +620,13 @@ const TeacherCoursesContent = ({
                   </div>
                   
                   <div className="flex gap-2 mt-4">
-                    <button className="bg-laha-gold/20 hover:bg-laha-gold/30 text-laha-gold px-4 py-2 rounded-lg text-sm transition-colors">
+                    <button 
+                      onClick={() => {
+                        setSelectedCourseForAvailability(course)
+                        setShowAvailabilityModal(true)
+                      }}
+                      className="bg-laha-gold/20 hover:bg-laha-gold/30 text-laha-gold px-4 py-2 rounded-lg text-sm transition-colors"
+                    >
                       Gérer les disponibilités
                     </button>
                     <button className="bg-laha-gold-warm/20 hover:bg-laha-gold-warm/30 text-laha-gold-warm px-4 py-2 rounded-lg text-sm transition-colors">
@@ -507,6 +636,248 @@ const TeacherCoursesContent = ({
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modal pour gérer les disponibilités */}
+      {showAvailabilityModal && selectedCourseForAvailability && (
+        <AvailabilityModal
+          course={selectedCourseForAvailability}
+          onClose={() => {
+            setShowAvailabilityModal(false)
+            setSelectedCourseForAvailability(null)
+          }}
+        />
+      )}
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteConfirm && courseToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-laha-black rounded-xl max-w-md w-full border border-laha-gold-dark/30">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-laha-gold mb-4">
+                Confirmer la suppression
+              </h2>
+              <p className="text-laha-gold-light mb-6">
+                Êtes-vous sûr de vouloir supprimer le cours <strong>"{courseToDelete.title}"</strong> ? 
+                Cette action est irréversible et supprimera également toutes les disponibilités associées.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDeleteCourse}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+                >
+                  Supprimer définitivement
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setCourseToDelete(null)
+                  }}
+                  className="flex-1 bg-laha-black-light hover:bg-laha-black-light/80 text-laha-gold-light px-4 py-3 rounded-lg transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Composant Modal pour gérer les disponibilités d'un cours
+const AvailabilityModal = ({ course, onClose }: { course: any, onClose: () => void }) => {
+  const [availabilities, setAvailabilities] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newAvailability, setNewAvailability] = useState({
+    day_of_week: 0,
+    start_time: '09:00',
+    end_time: '10:00'
+  })
+
+  const days = [
+    { value: 0, label: 'Lundi' },
+    { value: 1, label: 'Mardi' },
+    { value: 2, label: 'Mercredi' },
+    { value: 3, label: 'Jeudi' },
+    { value: 4, label: 'Vendredi' },
+    { value: 5, label: 'Samedi' },
+    { value: 6, label: 'Dimanche' }
+  ]
+
+  // Charger les disponibilités existantes
+  useEffect(() => {
+    const loadAvailabilities = async () => {
+      try {
+        const response = await fetch(`/api/courses/${course.id}/availabilities`)
+        if (response.ok) {
+          const data = await response.json()
+          setAvailabilities(data)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des disponibilités:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAvailabilities()
+  }, [course.id])
+
+  const handleAddAvailability = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const response = await fetch(`/api/courses/${course.id}/availabilities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAvailability)
+      })
+
+      if (response.ok) {
+        const savedAvailability = await response.json()
+        setAvailabilities([...availabilities, savedAvailability])
+        setShowAddForm(false)
+        setNewAvailability({ day_of_week: 0, start_time: '09:00', end_time: '10:00' })
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la disponibilité:', error)
+    }
+  }
+
+  const handleDeleteAvailability = async (availabilityId: string) => {
+    try {
+      const response = await fetch(`/api/availabilities/${availabilityId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setAvailabilities(availabilities.filter(a => a.id !== availabilityId))
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-laha-black rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-laha-gold-dark/30">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-laha-gold">
+              Disponibilités - {course.title}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-laha-gold-light hover:text-laha-gold transition-colors"
+            >
+              <span className="text-xl">×</span>
+            </button>
+          </div>
+
+          {/* Liste des disponibilités */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg text-laha-gold-light">Créneaux disponibles</h3>
+              <button
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="bg-laha-gold hover:bg-laha-gold-dark text-laha-black px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                + Ajouter un créneau
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-8 text-laha-gold-light">Chargement...</div>
+            ) : availabilities.length === 0 ? (
+              <div className="text-center py-8 text-laha-gold-light">
+                Aucun créneau défini. Ajoutez des créneaux pour que les parents puissent réserver ce cours.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {availabilities.map((availability) => (
+                  <div key={availability.id} className="bg-laha-black-light/40 rounded-lg p-4 border border-laha-gold-dark/20">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="text-laha-gold font-medium">
+                          {days.find(d => d.value === availability.day_of_week)?.label}
+                        </span>
+                        <span className="text-laha-gold-light ml-2">
+                          {availability.start_time} - {availability.end_time}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteAvailability(availability.id)}
+                        className="text-red-400 hover:text-red-300 text-sm"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Formulaire d'ajout */}
+          {showAddForm && (
+            <form onSubmit={handleAddAvailability} className="bg-laha-black-light/20 rounded-lg p-4 border border-laha-gold-dark/20">
+              <h4 className="text-laha-gold-light mb-4">Nouveau créneau</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm text-laha-gold-light mb-2">Jour</label>
+                  <select
+                    value={newAvailability.day_of_week}
+                    onChange={(e) => setNewAvailability({...newAvailability, day_of_week: parseInt(e.target.value)})}
+                    className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-3 py-2 text-laha-gold-light"
+                  >
+                    {days.map(day => (
+                      <option key={day.value} value={day.value}>{day.label}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-laha-gold-light mb-2">Heure début</label>
+                  <input
+                    type="time"
+                    value={newAvailability.start_time}
+                    onChange={(e) => setNewAvailability({...newAvailability, start_time: e.target.value})}
+                    className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-3 py-2 text-laha-gold-light"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-laha-gold-light mb-2">Heure fin</label>
+                  <input
+                    type="time"
+                    value={newAvailability.end_time}
+                    onChange={(e) => setNewAvailability({...newAvailability, end_time: e.target.value})}
+                    className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-3 py-2 text-laha-gold-light"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="submit"
+                  className="bg-laha-gold hover:bg-laha-gold-dark text-laha-black px-4 py-2 rounded-lg text-sm font-medium"
+                >
+                  Ajouter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="bg-laha-black-light hover:bg-laha-black-light/80 text-laha-gold-light px-4 py-2 rounded-lg text-sm"
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
           )}
         </div>
       </div>

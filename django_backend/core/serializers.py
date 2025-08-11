@@ -59,6 +59,20 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class CourseAvailabilitySerializer(serializers.ModelSerializer):
+    course = CourseSerializer(read_only=True)
+    teacher = TeacherSerializer(read_only=True)
+    day_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = m.CourseAvailability
+        fields = '__all__'
+
+    def get_day_name(self, obj):
+        days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+        return days[obj.day_of_week]
+
+
 class SessionSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
     teacher = TeacherSerializer(read_only=True)

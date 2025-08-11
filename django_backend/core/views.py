@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import authenticate
 from django.utils import timezone as dj_timezone
 from datetime import timedelta
@@ -363,6 +364,19 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Automatiquement assigner l'utilisateur connecté comme créateur du cours"""
         serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        """Vérifier que seul le créateur peut modifier le cours"""
+        course = self.get_object()
+        if course.created_by != self.request.user:
+            raise PermissionDenied("Vous ne pouvez modifier que vos propres cours")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """Vérifier que seul le créateur peut supprimer le cours"""
+        if instance.created_by != self.request.user:
+            raise PermissionDenied("Vous ne pouvez supprimer que vos propres cours")
+        instance.delete()
 
     def get_queryset(self):
         queryset = Course.objects.filter(is_active=True)
