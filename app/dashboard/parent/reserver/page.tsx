@@ -61,11 +61,7 @@ export default function ParentReservePage() {
         const teachersRes = await fetch('/api/teachers/list')
         if (teachersRes.ok) {
           const teachersData = await teachersRes.json()
-          console.log('Teachers data loaded:', teachersData)
-          console.log('First teacher courses:', teachersData[0]?.courses)
           setTeachers(Array.isArray(teachersData) ? teachersData : [])
-        } else {
-          console.error('Failed to load teachers:', teachersRes.status, teachersRes.statusText)
         }
 
         // Charger les enfants (avec cache-busting)
@@ -110,17 +106,7 @@ export default function ParentReservePage() {
 
   // Cours disponibles pour le professeur sélectionné
   const availableCourses = useMemo(() => {
-    console.log('Computing available courses...')
-    console.log('Teachers:', teachers.length, 'items')
-    console.log('Selected teacherId:', teacherId, 'type:', typeof teacherId)
-    
-    const selectedTeacher = teachers.find(t => {
-      console.log('Comparing teacher id:', t.id, 'type:', typeof t.id, 'with teacherId:', teacherId)
-      return t.id.toString() === teacherId
-    })
-    
-    console.log('Professor selected:', selectedTeacher)
-    console.log('Available courses:', selectedTeacher?.courses)
+    const selectedTeacher = teachers.find(t => t.id.toString() === teacherId)
     return selectedTeacher?.courses || []
   }, [teachers, teacherId])
 
@@ -280,14 +266,7 @@ export default function ParentReservePage() {
                           </div>
                         </div>
 
-            {/* Debug: Show course count */}
-            {teacherId && (
-              <div className="p-3 bg-blue-500/20 rounded-lg border border-blue-500/30">
-                <p className="text-blue-300 text-sm">
-                  Debug: Professeur {teacherId} sélectionné - {availableCourses.length} cours disponibles
-                </p>
-              </div>
-            )}
+
 
             {/* Sélection du cours */}
             {teacherId && (

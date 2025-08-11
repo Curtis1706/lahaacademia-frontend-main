@@ -6,7 +6,7 @@ export async function GET() {
     
     console.log('Récupération de la liste des professeurs')
     
-    const response = await fetch(`${apiBase}/teachers/`, {
+    const response = await fetch(`${apiBase}/teachers/public_list/`, {
       headers: {
         'Content-Type': 'application/json'
       }

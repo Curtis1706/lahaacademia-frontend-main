@@ -85,6 +85,30 @@ class TeacherViewSet(viewsets.ModelViewSet):
             return Response(TeacherSerializer(teacher).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def public_list(self, request):
+        """Liste publique des professeurs pour réservation"""
+        # Pour le développement, incluons tous les professeurs
+        # En production, on filtrera par is_validated=True
+        teachers = Teacher.objects.all()
+        return Response(TeacherSerializer(teachers, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        """Récupérer les informations du professeur connecté"""
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+            return Response(TeacherSerializer(teacher).data)
+        except Teacher.DoesNotExist:
+            return Response({'error': 'Professeur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    def courses(self, request, pk=None):
+        """Récupérer les cours d'un professeur"""
+        teacher = self.get_object()
+        courses = Course.objects.filter(created_by=teacher.user, is_active=True)
+        return Response(CourseSerializer(courses, many=True).data)
+
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def availability(self, request, pk=None):
         """Renvoie les créneaux de disponibilité normalisés"""

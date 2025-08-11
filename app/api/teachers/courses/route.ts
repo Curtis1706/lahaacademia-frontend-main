@@ -17,19 +17,47 @@ export async function GET() {
     
     console.log('Récupération des cours du professeur:', user.email)
     
-    const response = await fetch(`${apiBase}/teachers/courses/`, {
+    // D'abord, récupérer les infos du professeur pour avoir son ID
+    const teacherResponse = await fetch(`${apiBase}/teachers/me/`, {
       headers: {
         'Authorization': `Token ${user.token}`,
         'Content-Type': 'application/json'
       }
     })
 
-    console.log('Réponse API courses status:', response.status, response.statusText)
+    if (teacherResponse.ok) {
+      const teacherData = await teacherResponse.json()
+      console.log('Données professeur:', teacherData)
+      
+      // Récupérer les cours de ce professeur
+      const coursesResponse = await fetch(`${apiBase}/teachers/${teacherData.id}/courses/`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
 
-    if (response.ok) {
-      const data = await response.json()
-      console.log('Cours récupérés:', data)
-      return NextResponse.json(data)
+      console.log('Réponse API courses status:', coursesResponse.status, coursesResponse.statusText)
+
+      if (coursesResponse.ok) {
+        const coursesData = await coursesResponse.json()
+        console.log('Cours récupérés depuis Django:', coursesData)
+        
+        // Adapter les données pour le frontend
+        const adaptedCourses = coursesData.map((course: any) => ({
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          subject: course.subject,
+          level: course.level,
+          duration: course.duration,
+          price: course.price,
+          course_type: 'individual', // Par défaut, pourrait être dans les métadonnées
+          max_students: 1,
+          created_at: course.created_at
+        }))
+        
+        return NextResponse.json(adaptedCourses)
+      }
     }
 
     // Fallback avec données de test si l'API Django n'est pas accessible
@@ -87,21 +115,53 @@ export async function POST(request: NextRequest) {
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
     
-    const response = await fetch(`${apiBase}/teachers/courses/`, {
+    // Adapter les données pour l'API Django
+    const djangoPayload = {
+      title: body.title,
+      description: body.description,
+      subject: body.subject,
+      level: body.level,
+      duration: body.duration,
+      price: body.price,
+      // Ajouter des champs obligatoires pour Django
+      country: 'Bénin', // Par défaut
+      difficulty_level: 'beginner'
+    }
+
+    const response = await fetch(`${apiBase}/courses/`, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${user.token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(djangoPayload)
     })
 
     console.log('Réponse API create course status:', response.status, response.statusText)
 
     if (response.ok) {
       const data = await response.json()
-      console.log('Cours créé:', data)
-      return NextResponse.json(data)
+      console.log('Cours créé dans Django:', data)
+      
+      // Adapter la réponse pour le frontend
+      const adaptedCourse = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        subject: data.subject,
+        level: data.level,
+        duration: data.duration,
+        price: data.price,
+        course_type: body.course_type,
+        max_students: body.max_students,
+        created_at: data.created_at,
+        teacher: {
+          id: user.id,
+          name: `${user.first_name} ${user.last_name}`
+        }
+      }
+      
+      return NextResponse.json(adaptedCourse, { status: 201 })
     }
 
     // Fallback - retourner les données envoyées avec un ID généré
