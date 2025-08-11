@@ -19,35 +19,38 @@ export async function GET() {
       console.log('Professeurs récupérés:', data)
       
       // Enrichir les données avec les cours de chaque professeur
-      const enrichedTeachers = await Promise.all(
-        data.map(async (teacher: any) => {
-          try {
-            const coursesUrl = `${apiBase}/teachers/${teacher.id}/courses/`
-            console.log(`🔍 Récupération courses pour teacher ${teacher.id}:`, coursesUrl)
-            
-            // Récupérer les cours de ce professeur
-            const coursesResponse = await fetch(coursesUrl, {
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            })
-            
-            console.log(`📊 Response status pour teacher ${teacher.id}:`, coursesResponse.status, coursesResponse.statusText)
-            
-            if (coursesResponse.ok) {
-              const courses = await coursesResponse.json()
-              console.log(`✅ Courses trouvés pour teacher ${teacher.id}:`, courses.length, courses)
-              return { ...teacher, courses }
-            } else {
-              console.log(`❌ Erreur response pour teacher ${teacher.id}:`, coursesResponse.status)
-              return { ...teacher, courses: [] }
-            }
-          } catch (error) {
-            console.log('💥 Erreur récupération courses pour teacher', teacher.id, error)
-            return { ...teacher, courses: [] }
+      const enrichedTeachers = []
+      
+      for (const teacher of data) {
+        try {
+          const coursesUrl = `${apiBase}/teachers/${teacher.id}/courses/`
+          console.log(`🔍 Récupération courses pour teacher ${teacher.id}:`, coursesUrl)
+          
+          // Récupérer les cours de ce professeur avec timeout
+          const coursesResponse = await fetch(coursesUrl, {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            // Ajouter un timeout plus long
+            signal: AbortSignal.timeout(10000) // 10 secondes
+          })
+          
+          console.log(`📊 Response status pour teacher ${teacher.id}:`, coursesResponse.status, coursesResponse.statusText)
+          
+          if (coursesResponse.ok) {
+            const courses = await coursesResponse.json()
+            console.log(`✅ Courses trouvés pour teacher ${teacher.id}:`, courses.length)
+            console.log(`📚 Détails courses:`, courses.map(c => ({ id: c.id, title: c.title })))
+            enrichedTeachers.push({ ...teacher, courses })
+          } else {
+            console.log(`❌ Erreur response pour teacher ${teacher.id}:`, coursesResponse.status)
+            enrichedTeachers.push({ ...teacher, courses: [] })
           }
-        })
-      )
+        } catch (error) {
+          console.log('💥 Erreur récupération courses pour teacher', teacher.id, error.message)
+          enrichedTeachers.push({ ...teacher, courses: [] })
+        }
+      }
       
       return NextResponse.json(enrichedTeachers)
     }
