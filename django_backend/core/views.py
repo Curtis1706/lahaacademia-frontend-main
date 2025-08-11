@@ -148,24 +148,38 @@ class ParentViewSet(viewsets.ModelViewSet):
     serializer_class = ParentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def _get_parent_or_none(self, user):
+        try:
+            return user.parent
+        except Parent.DoesNotExist:
+            return None
+
+    def _get_student_or_none(self, user):
+        try:
+            return user.student
+        except Student.DoesNotExist:
+            return None
+
     @action(detail=False, methods=['get'], url_path='me', permission_classes=[IsAuthenticated])
     def me(self, request):
         """Retourne le parent courant avec ses enfants."""
-        if not hasattr(request.user, 'parent') or request.user.parent is None:
+        parent = self._get_parent_or_none(request.user)
+        if parent is None:
             return Response({'error': 'Aucun profil parent pour cet utilisateur'}, status=status.HTTP_404_NOT_FOUND)
-        return Response(ParentSerializer(request.user.parent).data)
+        return Response(ParentSerializer(parent).data)
 
     @action(detail=False, methods=['post'])
     def invite(self, request):
         """Parent -> créer une invitation de liaison pour un enfant (email)."""
-        if not hasattr(request.user, 'parent') or request.user.parent is None:
+        parent = self._get_parent_or_none(request.user)
+        if parent is None:
             return Response({'error': 'Profil parent requis'}, status=status.HTTP_403_FORBIDDEN)
         child_email = request.data.get('child_email')
         if not child_email:
             return Response({'error': 'child_email est requis'}, status=status.HTTP_400_BAD_REQUEST)
         code = secrets.token_hex(4).upper()  # 8 chars
         expires_at = dj_timezone.now() + timedelta(days=7)
-        req = ParentChildLinkRequest.objects.create(parent=request.user.parent, child_email=child_email, code=code, expires_at=expires_at)
+        req = ParentChildLinkRequest.objects.create(parent=parent, child_email=child_email, code=code, expires_at=expires_at)
         return Response(ParentChildLinkRequestSerializer(req).data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'])
@@ -174,7 +188,8 @@ class ParentViewSet(viewsets.ModelViewSet):
         code = request.data.get('code')
         if not code:
             return Response({'error': 'code requis'}, status=status.HTTP_400_BAD_REQUEST)
-        if not hasattr(request.user, 'student') or request.user.student is None:
+        student = self._get_student_or_none(request.user)
+        if student is None:
             return Response({'error': 'Profil élève requis'}, status=status.HTTP_403_FORBIDDEN)
         try:
             req = ParentChildLinkRequest.objects.get(code=code)
@@ -186,7 +201,7 @@ class ParentViewSet(viewsets.ModelViewSet):
             req.status = 'expired'
             req.save()
             return Response({'error': 'Invitation expirée'}, status=status.HTTP_400_BAD_REQUEST)
-        req.student = request.user.student
+        req.student = student
         req.status = 'student_accepted'
         req.save()
         return Response(ParentChildLinkRequestSerializer(req).data)
@@ -194,25 +209,27 @@ class ParentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         """Parent -> approuver une invitation après acceptation par l'élève."""
-        if not hasattr(request.user, 'parent') or request.user.parent is None:
+        parent = self._get_parent_or_none(request.user)
+        if parent is None:
             return Response({'error': 'Profil parent requis'}, status=status.HTTP_403_FORBIDDEN)
         try:
-            req = ParentChildLinkRequest.objects.get(id=pk, parent=request.user.parent)
+            req = ParentChildLinkRequest.objects.get(id=pk, parent=parent)
         except ParentChildLinkRequest.DoesNotExist:
             return Response({'error': 'Invitation introuvable'}, status=status.HTTP_404_NOT_FOUND)
         if req.status != 'student_accepted' or req.student is None:
             return Response({'error': "L'élève n'a pas encore accepté"}, status=status.HTTP_400_BAD_REQUEST)
-        request.user.parent.children.add(req.student)
+        parent.children.add(req.student)
         req.status = 'accepted'
         req.save()
         return Response({'message': "Il est maintenant considéré comme votre enfant sur Lahacadémia"})
 
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
-        if not hasattr(request.user, 'parent') or request.user.parent is None:
+        parent = self._get_parent_or_none(request.user)
+        if parent is None:
             return Response({'error': 'Profil parent requis'}, status=status.HTTP_403_FORBIDDEN)
         try:
-            req = ParentChildLinkRequest.objects.get(id=pk, parent=request.user.parent)
+            req = ParentChildLinkRequest.objects.get(id=pk, parent=parent)
         except ParentChildLinkRequest.DoesNotExist:
             return Response({'error': 'Invitation introuvable'}, status=status.HTTP_404_NOT_FOUND)
         req.status = 'rejected'
@@ -223,12 +240,12 @@ class ParentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path=r'invitations/(?P<inv_id>[^/.]+)/approve')
     def invitation_approve(self, request, inv_id=None):
         try:
-            if not hasattr(request.user, 'parent') or request.user.parent is None:
+            parent = self._get_parent_or_none(request.user)
+            if parent is None:
                 return Response({'error': 'Profil parent requis'}, status=status.HTTP_403_FORBIDDEN)
-            req = ParentChildLinkRequest.objects.get(id=inv_id, parent=request.user.parent)
+            req = ParentChildLinkRequest.objects.get(id=inv_id, parent=parent)
             if req.status != 'student_accepted' or req.student is None:
                 return Response({'error': "L'élève n'a pas encore accepté"}, status=status.HTTP_400_BAD_REQUEST)
-            parent = request.user.parent
             parent.children.add(req.student)
             req.status = 'accepted'
             req.save()
@@ -241,9 +258,10 @@ class ParentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path=r'invitations/(?P<inv_id>[^/.]+)/reject')
     def invitation_reject(self, request, inv_id=None):
         try:
-            if not hasattr(request.user, 'parent') or request.user.parent is None:
+            parent = self._get_parent_or_none(request.user)
+            if parent is None:
                 return Response({'error': 'Profil parent requis'}, status=status.HTTP_403_FORBIDDEN)
-            req = ParentChildLinkRequest.objects.get(id=inv_id, parent=request.user.parent)
+            req = ParentChildLinkRequest.objects.get(id=inv_id, parent=parent)
             req.status = 'rejected'
             req.save()
             return Response({'message': 'Invitation rejetée'})
