@@ -111,7 +111,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    console.log('Création de cours:', body)
+    console.log('=== CRÉATION DE COURS ===')
+    console.log('User token:', user.token?.substring(0, 20) + '...')
+    console.log('Course data:', body)
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
     
@@ -127,6 +129,8 @@ export async function POST(request: NextRequest) {
       country: 'Bénin', // Par défaut
       difficulty_level: 'beginner'
     }
+
+    console.log('Django payload:', djangoPayload)
 
     const response = await fetch(`${apiBase}/courses/`, {
       method: 'POST',
