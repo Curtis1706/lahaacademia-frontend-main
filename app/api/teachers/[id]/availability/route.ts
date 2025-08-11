@@ -1,25 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-  const res = await fetch(`${apiBase}/teachers/${params.id}/availability/`, { cache: 'no-store' })
-  const raw = await res.json().catch(() => ({}))
-  // Normaliser côté proxy pour un format stable { monday: [{start,end}], ... }
-  let normalized: Record<string, Array<{ start: string; end: string }>> = {}
-  const avail = raw?.availability
-  if (Array.isArray(avail)) {
-    for (const item of avail) {
-      const day = String(item?.day || '').toLowerCase()
-      const slots = Array.isArray(item?.slots) ? item.slots : []
-      if (!normalized[day]) normalized[day] = []
-      for (const s of slots) {
-        if (s?.start && s?.end) normalized[day].push({ start: s.start, end: s.end })
-      }
-    }
-  } else if (avail && typeof avail === 'object') {
-    normalized = avail
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const date = searchParams.get('date')
+    const teacherId = params.id
+
+    console.log(`Récupération disponibilités pour teacher ${teacherId} date ${date}`)
+
+    // Pour l'instant, retournons des créneaux par défaut
+    // Plus tard, cela interrogera Django pour les vraies disponibilités
+    const defaultSlots = [
+      { id: 1, time: '08:00', available: true },
+      { id: 2, time: '09:00', available: true },
+      { id: 3, time: '10:00', available: false },
+      { id: 4, time: '11:00', available: true },
+      { id: 5, time: '14:00', available: true },
+      { id: 6, time: '15:00', available: true },
+      { id: 7, time: '16:00', available: false },
+      { id: 8, time: '17:00', available: true }
+    ]
+
+    return NextResponse.json(defaultSlots)
+    
+  } catch (error) {
+    console.error('Error fetching teacher availability:', error)
+    return NextResponse.json(
+      { error: 'Erreur lors de la récupération des disponibilités' },
+      { status: 500 }
+    )
   }
-  return NextResponse.json({ availability: normalized }, { status: res.status })
 }
-
-
