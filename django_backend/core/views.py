@@ -2,7 +2,9 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
-from django.utils import timezone
+from django.utils import timezone as dj_timezone
+from datetime import timedelta
+import secrets
 from .models import *
 from .serializers import *
 import uuid
@@ -150,13 +152,14 @@ class ParentViewSet(viewsets.ModelViewSet):
 
     def _get_parent_or_none(self, user):
         try:
-            return user.parent
+            # Utiliser le bon nom de relation selon votre modèle
+            return Parent.objects.get(user=user)
         except Parent.DoesNotExist:
             return None
 
     def _get_student_or_none(self, user):
         try:
-            return user.student
+            return Student.objects.get(user=user)
         except Student.DoesNotExist:
             return None
 
@@ -171,16 +174,29 @@ class ParentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def invite(self, request):
         """Parent -> créer une invitation de liaison pour un enfant (email)."""
-        parent = self._get_parent_or_none(request.user)
-        if parent is None:
-            return Response({'error': 'Profil parent requis'}, status=status.HTTP_403_FORBIDDEN)
-        child_email = request.data.get('child_email')
-        if not child_email:
-            return Response({'error': 'child_email est requis'}, status=status.HTTP_400_BAD_REQUEST)
-        code = secrets.token_hex(4).upper()  # 8 chars
-        expires_at = dj_timezone.now() + timedelta(days=7)
-        req = ParentChildLinkRequest.objects.create(parent=parent, child_email=child_email, code=code, expires_at=expires_at)
-        return Response(ParentChildLinkRequestSerializer(req).data, status=status.HTTP_201_CREATED)
+        try:
+            parent = self._get_parent_or_none(request.user)
+            if parent is None:
+                return Response({'error': 'Profil parent requis'}, status=status.HTTP_403_FORBIDDEN)
+            
+            child_email = request.data.get('child_email')
+            if not child_email:
+                return Response({'error': 'child_email est requis'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            code = secrets.token_hex(4).upper()  # 8 chars
+            expires_at = dj_timezone.now() + timedelta(days=7)
+            
+            req = ParentChildLinkRequest.objects.create(
+                parent=parent, 
+                child_email=child_email, 
+                code=code, 
+                expires_at=expires_at
+            )
+            
+            return Response(ParentChildLinkRequestSerializer(req).data, status=status.HTTP_201_CREATED)
+        
+        except Exception as e:
+            return Response({'error': f'Erreur interne: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'])
     def student_accept(self, request):
@@ -525,3 +541,6 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Obtenir le nombre de notifications non lues"""
         count = Notification.objects.filter(user=request.user, is_read=False).count()
         return Response({'unread_count': count})
+
+
+

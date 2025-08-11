@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     
     // Appeler le backend Django
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-    const response = await fetch(`${apiUrl}/students/link_parent/`, {
+    const response = await fetch(`${apiUrl}/parents/student_accept/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
