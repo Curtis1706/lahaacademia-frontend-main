@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { AlertCircle, MessageSquare, Calendar } from "lucide-react"
+import { AlertTriangle, MessageSquare, Calendar } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
 import { ParentSidebar } from "@/components/parent-sidebar"
 
@@ -82,7 +82,7 @@ const ParentDashboardContent = () => {
           className="xl:col-span-2 bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20"
         >
           <div className="flex items-center gap-2 mb-4">
-            <AlertCircle className="h-5 w-5 text-yellow-500" />
+            <AlertTriangle className="h-5 w-5 text-yellow-500" />
             <h3 className="text-lg font-semibold text-laha-gold-light">Alertes & Notifications</h3>
           </div>
           <div className="space-y-4">

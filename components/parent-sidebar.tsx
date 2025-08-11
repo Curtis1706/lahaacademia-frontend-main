@@ -5,7 +5,18 @@ import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from '@/components/ui/sidebar'
-import { IconBrandTabler, IconUsers, IconBell, IconMessage, IconCalendar, IconChartBar, IconUserBolt, IconSettings, IconArrowLeft, IconPlus } from '@tabler/icons-react'
+import { 
+  LayoutDashboard, 
+  Users, 
+  Bell, 
+  MessageSquare, 
+  Calendar, 
+  BarChart3, 
+  User, 
+  Settings, 
+  LogOut, 
+  Plus 
+} from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
 interface ParentSidebarProps {
@@ -21,61 +32,61 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
     { 
       label: 'Tableau de bord', 
       href: '/dashboard/parent', 
-      icon: <IconBrandTabler className="h-5 w-5 shrink-0 text-white" />,
+      icon: <LayoutDashboard className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent'
     },
     { 
       label: 'Invitations', 
       href: '/dashboard/parent/invitations', 
-      icon: <IconPlus className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Plus className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/invitations'
     },
     { 
       label: 'Mes Enfants', 
       href: '/dashboard/parent/enfants', 
-      icon: <IconUsers className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Users className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/enfants'
     },
     { 
       label: 'Réserver un cours', 
       href: '/dashboard/parent/reserver', 
-      icon: <IconCalendar className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Calendar className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/reserver'
     },
     { 
       label: 'Notifications', 
       href: '/dashboard/parent/notifications', 
-      icon: <IconBell className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Bell className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/notifications'
     },
     { 
       label: 'Messages', 
       href: '/dashboard/parent/messages', 
-      icon: <IconMessage className="h-5 w-5 shrink-0 text-white" />,
+      icon: <MessageSquare className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/messages'
     },
     { 
       label: 'Statistiques', 
       href: '/dashboard/parent/statistiques', 
-      icon: <IconChartBar className="h-5 w-5 shrink-0 text-white" />,
+      icon: <BarChart3 className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/statistiques'
     },
     { 
       label: 'Profil', 
       href: '/dashboard/parent/profil', 
-      icon: <IconUserBolt className="h-5 w-5 shrink-0 text-white" />,
+      icon: <User className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/profil'
     },
     { 
       label: 'Paramètres', 
       href: '/dashboard/parent/parametres', 
-      icon: <IconSettings className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Settings className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/parametres'
     },
     { 
       label: 'Déconnexion', 
       href: '/api/auth/logout', 
-      icon: <IconArrowLeft className="h-5 w-5 shrink-0 text-white" />,
+      icon: <LogOut className="h-5 w-5 shrink-0 text-white" />,
       active: false
     },
   ]

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { IconUsers, IconPlus, IconUser, IconSettings } from '@tabler/icons-react'
+import { Users, Plus, User, Settings, Clock, TrendingUp } from 'lucide-react'
 import { AuthGuard } from '@/components/auth-guard'
 import { ParentSidebar } from '@/components/parent-sidebar'
 
@@ -76,11 +76,11 @@ export default function ParentChildrenPage() {
               </div>
             ) : children.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <IconUsers className="h-16 w-16 text-laha-gold/50 mb-4" />
+                <Users className="h-16 w-16 text-laha-gold/50 mb-4" />
                 <h2 className="text-xl font-semibold text-laha-gold-light mb-2">Aucun enfant lié</h2>
                 <p className="text-laha-gold-light/60 mb-6">Vous n'avez pas encore d'enfants associés à votre compte.</p>
                 <a href="/dashboard/parent/invitations" className="inline-flex items-center gap-2 px-4 py-2 bg-laha-gold text-laha-black rounded-lg hover:bg-laha-gold/90 font-medium">
-                  <IconPlus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Inviter un enfant
                 </a>
               </div>
@@ -91,7 +91,7 @@ export default function ParentChildrenPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-laha-gold/20 rounded-full flex items-center justify-center">
-                          <IconUser className="h-6 w-6 text-laha-gold" />
+                          <User className="h-6 w-6 text-laha-gold" />
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-laha-gold-light">
@@ -156,7 +156,7 @@ export default function ParentChildrenPage() {
                         href={`/dashboard/parent/enfants/${child.id}/settings`}
                         className="px-3 py-2 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20 transition-colors"
                       >
-                        <IconSettings className="h-4 w-4" />
+                        <Settings className="h-4 w-4" />
                       </a>
                     </div>
                   </div>
