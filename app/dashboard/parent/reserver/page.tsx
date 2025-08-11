@@ -290,7 +290,7 @@ export default function ParentReservePage() {
             )}
 
             {/* Sélection du cours */}
-            {availableCourses.length > 0 && (
+            {teacherId && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5 text-laha-gold" />
@@ -298,44 +298,55 @@ export default function ParentReservePage() {
                     Cours disponibles
                   </label>
                 </div>
-                <div className="relative">
-                  <select
-                    value={courseId}
-                    onChange={(e) => setCourseId(e.target.value)}
-                    className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
-                    required
-                  >
-                    <option value="" className="bg-laha-black text-laha-gold-light">-- Choisir un cours --</option>
-                    {availableCourses.map((course) => (
-                      <option key={course.id} value={course.id.toString()} className="bg-laha-black text-laha-gold-light">
-                        {course.title} - {course.duration}min - {course.price} FCFA
-                      </option>
-                    ))}
-                  </select>
-                  <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
-                </div>
                 
-                {/* Affichage des détails du cours sélectionné */}
-                {selectedCourse && (
-                  <div className="bg-laha-black/40 rounded-lg p-4 border border-laha-gold-dark/20">
-                    <h4 className="text-laha-gold-light font-medium mb-2">{selectedCourse.title}</h4>
-                    <p className="text-laha-gold-light/70 text-sm mb-3">{selectedCourse.description}</p>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div className="flex items-center gap-1">
-                        <GraduationCap className="h-3 w-3 text-laha-gold" />
-                        <span className="text-laha-gold-light/70">{selectedCourse.level}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-laha-gold-warm" />
-                        <span className="text-laha-gold-light/70">{selectedCourse.duration} minutes</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-laha-gold text-sm font-medium">{selectedCourse.price} FCFA</span>
-                      </div>
-                      <div className="text-laha-gold-light/70">
-                        {selectedCourse.course_type === 'individual' ? 'Cours individuel' : `Groupe (max ${selectedCourse.max_students})`}
-                      </div>
+                {availableCourses.length === 0 ? (
+                  <div className="p-4 bg-orange-500/20 rounded-lg border border-orange-500/30">
+                    <p className="text-orange-300 text-sm">
+                      Aucun cours disponible pour ce professeur. Veuillez contacter le professeur pour qu'il ajoute ses cours.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <select
+                        value={courseId}
+                        onChange={(e) => setCourseId(e.target.value)}
+                        className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
+                        required
+                      >
+                        <option value="" className="bg-laha-black text-laha-gold-light">-- Choisir un cours --</option>
+                        {availableCourses.map((course) => (
+                          <option key={course.id} value={course.id.toString()} className="bg-laha-black text-laha-gold-light">
+                            {course.title} - {course.duration}min - {course.price} FCFA
+                          </option>
+                        ))}
+                      </select>
+                      <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
                     </div>
+                    
+                    {/* Affichage des détails du cours sélectionné */}
+                    {selectedCourse && (
+                      <div className="bg-laha-black/40 rounded-lg p-4 border border-laha-gold-dark/20">
+                        <h4 className="text-laha-gold-light font-medium mb-2">{selectedCourse.title}</h4>
+                        <p className="text-laha-gold-light/70 text-sm mb-3">{selectedCourse.description}</p>
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div className="flex items-center gap-1">
+                            <GraduationCap className="h-3 w-3 text-laha-gold" />
+                            <span className="text-laha-gold-light/70">{selectedCourse.level}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-laha-gold-warm" />
+                            <span className="text-laha-gold-light/70">{selectedCourse.duration} minutes</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-laha-gold text-sm font-medium">{selectedCourse.price} FCFA</span>
+                          </div>
+                          <div className="text-laha-gold-light/70">
+                            {selectedCourse.course_type === 'individual' ? 'Cours individuel' : `Groupe (max ${selectedCourse.max_students})`}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
