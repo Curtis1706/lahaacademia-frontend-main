@@ -44,7 +44,7 @@ export default function ParentReservePage() {
     const loadData = async () => {
       try {
         // Charger les enseignants
-        const teachersRes = await fetch('/api/teachers')
+        const teachersRes = await fetch('/api/teachers/list')
         if (teachersRes.ok) {
           const teachersData = await teachersRes.json()
           setTeachers(Array.isArray(teachersData) ? teachersData : [])
