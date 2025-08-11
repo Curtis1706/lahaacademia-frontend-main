@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     if (response.ok) {
       const data = await response.json()
-      console.log('Cours créé dans Django:', data)
+      console.log('✅ SUCCÈS: Cours créé dans Django:', data)
       
       // Adapter la réponse pour le frontend
       const adaptedCourse = {
@@ -166,10 +166,13 @@ export async function POST(request: NextRequest) {
       }
       
       return NextResponse.json(adaptedCourse, { status: 201 })
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      console.log('❌ ERREUR Django:', response.status, response.statusText, errorData)
     }
 
     // Fallback - retourner les données envoyées avec un ID généré
-    console.log('Erreur API, création fallback')
+    console.log('⚠️ FALLBACK: Django non accessible, création en local')
     const fallbackCourse = {
       id: Date.now(), // ID temporaire basé sur timestamp
       ...body,
