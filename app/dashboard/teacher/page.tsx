@@ -146,7 +146,7 @@ export default function TeacherDashboard() {
             </div>
           </SidebarBody>
         </Sidebar>
-        <TeacherDashboardContent />
+        <TeacherDashboardContent teacherData={teacherData} user={user} loading={loading} />
         </div>
       </SidebarProvider>
     </AuthGuard>
@@ -176,7 +176,7 @@ const LogoIcon = () => {
   )
 }
 
-const TeacherDashboardContent = () => {
+const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: any, user: any, loading: boolean }) => {
   const myCourses = [
     { title: "Mathématiques Terminale", students: 45, rating: 4.8, earnings: "2,500 FCFA" },
     { title: "Algèbre Première", students: 32, rating: 4.9, earnings: "1,800 FCFA" },
@@ -196,10 +196,16 @@ const TeacherDashboardContent = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Tableau de bord Professeur</h1>
           <p className="text-laha-gold-light/70">
-            Bienvenue, {teacherData ? 
-              `${teacherData.user?.first_name || ''}` : 
-              (user ? `${user.first_name || ''}` : 'Professeur')
-            } ! Gérez vos cours et suivez vos performances.
+            {loading ? (
+              'Chargement...'
+            ) : (
+              <>
+                Bienvenue, {teacherData ? 
+                  `${teacherData.user?.first_name || ''}` : 
+                  (user ? `${user.first_name || ''}` : 'Professeur')
+                } ! Gérez vos cours et suivez vos performances.
+              </>
+            )}
           </p>
         </div>
 
