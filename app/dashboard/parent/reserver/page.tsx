@@ -62,7 +62,10 @@ export default function ParentReservePage() {
         if (teachersRes.ok) {
           const teachersData = await teachersRes.json()
           console.log('Teachers data loaded:', teachersData)
+          console.log('First teacher courses:', teachersData[0]?.courses)
           setTeachers(Array.isArray(teachersData) ? teachersData : [])
+        } else {
+          console.error('Failed to load teachers:', teachersRes.status, teachersRes.statusText)
         }
 
         // Charger les enfants (avec cache-busting)
@@ -107,8 +110,16 @@ export default function ParentReservePage() {
 
   // Cours disponibles pour le professeur sélectionné
   const availableCourses = useMemo(() => {
-    const selectedTeacher = teachers.find(t => t.id.toString() === teacherId)
-    console.log('Professor selected:', teacherId, selectedTeacher)
+    console.log('Computing available courses...')
+    console.log('Teachers:', teachers.length, 'items')
+    console.log('Selected teacherId:', teacherId, 'type:', typeof teacherId)
+    
+    const selectedTeacher = teachers.find(t => {
+      console.log('Comparing teacher id:', t.id, 'type:', typeof t.id, 'with teacherId:', teacherId)
+      return t.id.toString() === teacherId
+    })
+    
+    console.log('Professor selected:', selectedTeacher)
     console.log('Available courses:', selectedTeacher?.courses)
     return selectedTeacher?.courses || []
   }, [teachers, teacherId])
