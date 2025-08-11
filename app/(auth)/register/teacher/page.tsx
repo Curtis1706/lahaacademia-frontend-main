@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BottomGradient, LabelInputContainer } from '@/components/ui/form-utils'
 import Image from 'next/image'
 import Link from 'next/link'
-import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
+import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, GraduationCap, Clock, DollarSign, FileText } from 'lucide-react'
 
 export default function RegisterTeacherPage() {
   const router = useRouter()
@@ -172,10 +172,15 @@ export default function RegisterTeacherPage() {
                 <label htmlFor="terms" className="select-none">J'accepte les <a className="text-laha-gold hover:underline" href="/terms">conditions d'utilisation</a> et la <a className="text-laha-gold hover:underline" href="/privacy">politique de confidentialité</a></label>
               </div>
 
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => { if (!termsAccepted) return; setError(''); setCurrentStep(2); }} disabled={!termsAccepted} className="group/btn relative block h-12 w-full md:w-auto rounded-md bg-gradient-to-br from-black to-neutral-700 px-6 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff20_inset,0px_-1px_0px_0px_#ffffff20_inset] disabled:opacity-60">
+              <div className="flex justify-end gap-3 pt-4 border-t border-laha-gold-dark/30">
+                <button 
+                  type="button" 
+                  onClick={() => { if (!termsAccepted) return; setError(''); setCurrentStep(2); }} 
+                  disabled={!termsAccepted} 
+                  className="flex items-center justify-center gap-2 h-12 w-full md:w-auto rounded-lg bg-gradient-to-r from-laha-gold to-laha-gold-dark hover:from-laha-gold-dark hover:to-laha-gold text-laha-black font-semibold px-6 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100"
+                >
                   Continuer
-                  <BottomGradient />
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
               </>
@@ -184,72 +189,107 @@ export default function RegisterTeacherPage() {
               {currentStep === 2 && (
                 <>
 
-              <div>
-                <Label htmlFor="specialization" className="text-laha-gold-light">Spécialisation *</Label>
+              <LabelInputContainer>
+                <div className="flex items-center gap-2 mb-2">
+                  <GraduationCap className="h-5 w-5 text-laha-gold" />
+                  <Label htmlFor="specialization" className="text-laha-gold-light">Spécialisation *</Label>
+                </div>
                 <Select value={formData.specialization} onValueChange={value => setFormData({...formData, specialization: value})}>
-                  <SelectTrigger className="bg-laha-black-light/30 border-laha-gold-dark/30 text-laha-gold-light">
+                  <SelectTrigger className="bg-laha-black/60 border-laha-gold-dark/30 text-laha-gold-light focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold backdrop-blur-sm h-12">
                     <SelectValue placeholder="Choisir votre spécialisation" />
                   </SelectTrigger>
-                  <SelectContent className="bg-laha-black border-laha-gold-dark/30">
-                    <SelectItem value="mathematics" className="text-laha-gold-light">Mathématiques</SelectItem>
-                    <SelectItem value="physics" className="text-laha-gold-light">Physique</SelectItem>
-                    <SelectItem value="chemistry" className="text-laha-gold-light">Chimie</SelectItem>
-                    <SelectItem value="biology" className="text-laha-gold-light">Biologie</SelectItem>
-                    <SelectItem value="french" className="text-laha-gold-light">Français</SelectItem>
-                    <SelectItem value="english" className="text-laha-gold-light">Anglais</SelectItem>
-                    <SelectItem value="history" className="text-laha-gold-light">Histoire</SelectItem>
-                    <SelectItem value="geography" className="text-laha-gold-light">Géographie</SelectItem>
+                  <SelectContent className="bg-laha-black/90 border-laha-gold-dark/30 backdrop-blur-md">
+                    <SelectItem value="mathematics" className="text-laha-gold-light focus:bg-laha-gold/20">Mathématiques</SelectItem>
+                    <SelectItem value="physics" className="text-laha-gold-light focus:bg-laha-gold/20">Physique</SelectItem>
+                    <SelectItem value="chemistry" className="text-laha-gold-light focus:bg-laha-gold/20">Chimie</SelectItem>
+                    <SelectItem value="biology" className="text-laha-gold-light focus:bg-laha-gold/20">Biologie</SelectItem>
+                    <SelectItem value="french" className="text-laha-gold-light focus:bg-laha-gold/20">Français</SelectItem>
+                    <SelectItem value="english" className="text-laha-gold-light focus:bg-laha-gold/20">Anglais</SelectItem>
+                    <SelectItem value="history" className="text-laha-gold-light focus:bg-laha-gold/20">Histoire</SelectItem>
+                    <SelectItem value="geography" className="text-laha-gold-light focus:bg-laha-gold/20">Géographie</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </LabelInputContainer>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="experience_years" className="text-laha-gold-light">Années d'expérience</Label>
-                  <Input
-                    id="experience_years"
-                    type="number"
-                    min="0"
-                    value={formData.experience_years}
-                    onChange={e => setFormData({...formData, experience_years: e.target.value})}
-                    className="bg-laha-black-light/30 border-laha-gold-dark/30 text-laha-gold-light"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="hourly_rate" className="text-laha-gold-light">Tarif horaire (FCFA)</Label>
-                  <Input
-                    id="hourly_rate"
-                    type="number"
-                    min="0"
-                    value={formData.hourly_rate}
-                    onChange={e => setFormData({...formData, hourly_rate: e.target.value})}
-                    className="bg-laha-black-light/30 border-laha-gold-dark/30 text-laha-gold-light"
-                    placeholder="5000"
-                  />
-                </div>
+                <LabelInputContainer>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-5 w-5 text-laha-gold" />
+                    <Label htmlFor="experience_years" className="text-laha-gold-light">Années d'expérience</Label>
+                  </div>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
+                    <Input
+                      id="experience_years"
+                      type="number"
+                      min="0"
+                      value={formData.experience_years}
+                      onChange={e => setFormData({...formData, experience_years: e.target.value})}
+                      className="bg-laha-black/60 border-laha-gold-dark/30 text-laha-gold-light pl-10 focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold backdrop-blur-sm h-12"
+                      placeholder="4"
+                    />
+                  </div>
+                </LabelInputContainer>
+                <LabelInputContainer>
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="h-5 w-5 text-laha-gold" />
+                    <Label htmlFor="hourly_rate" className="text-laha-gold-light">Tarif horaire (FCFA)</Label>
+                  </div>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
+                    <Input
+                      id="hourly_rate"
+                      type="number"
+                      min="0"
+                      value={formData.hourly_rate}
+                      onChange={e => setFormData({...formData, hourly_rate: e.target.value})}
+                      className="bg-laha-black/60 border-laha-gold-dark/30 text-laha-gold-light pl-10 focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold backdrop-blur-sm h-12"
+                      placeholder="10000"
+                    />
+                  </div>
+                </LabelInputContainer>
               </div>
 
-              <div>
-                <Label htmlFor="bio" className="text-laha-gold-light">Biographie</Label>
+              <LabelInputContainer>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-5 w-5 text-laha-gold" />
+                  <Label htmlFor="bio" className="text-laha-gold-light">Biographie</Label>
+                </div>
                 <Textarea
                   id="bio"
                   value={formData.bio}
                   onChange={e => setFormData({...formData, bio: e.target.value})}
-                  className="bg-laha-black-light/30 border-laha-gold-dark/30 text-laha-gold-light"
-                  placeholder="Parlez-nous de votre parcours et de votre approche pédagogique..."
+                  className="bg-laha-black/60 border-laha-gold-dark/30 text-laha-gold-light focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold backdrop-blur-sm resize-none"
+                  placeholder="Je suis bon"
                   rows={4}
                 />
-              </div>
+              </LabelInputContainer>
 
-              <div className="flex flex-col md:flex-row gap-3 md:justify-between">
-                <button type="button" onClick={() => setCurrentStep(1)} className="h-12 w-full md:w-auto rounded-md border border-white/20 px-6 text-white/90 hover:bg-white/10">Retour</button>
+              <div className="flex flex-col md:flex-row gap-4 md:justify-between pt-4 border-t border-laha-gold-dark/30">
+                <button 
+                  type="button" 
+                  onClick={() => setCurrentStep(1)} 
+                  className="flex items-center justify-center gap-2 h-12 w-full md:w-auto rounded-lg border border-laha-gold-dark/30 px-6 text-laha-gold-light/90 hover:bg-laha-gold/10 hover:border-laha-gold/50 transition-all backdrop-blur-sm"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Retour
+                </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group/btn relative block h-12 w-full md:w-auto rounded-md bg-gradient-to-br from-black to-neutral-700 px-6 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff20_inset,0px_-1px_0px_0px_#ffffff20_inset] disabled:opacity-60"
+                  className="flex items-center justify-center gap-2 h-12 w-full md:w-auto rounded-lg bg-gradient-to-r from-laha-gold to-laha-gold-dark hover:from-laha-gold-dark hover:to-laha-gold text-laha-black font-semibold px-6 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100"
                 >
-                  {loading ? 'Inscription en cours...' : 'Créer mon compte'}
-                  <BottomGradient />
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-laha-black"></div>
+                      Inscription en cours...
+                    </>
+                  ) : (
+                    <>
+                      <User className="h-4 w-4" />
+                      Créer mon compte
+                    </>
+                  )}
                 </button>
               </div>
               </>
