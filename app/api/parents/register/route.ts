@@ -4,17 +4,15 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({} as any))
 
-    const bUser = body.user || {}
+    // Backend Django expects flat fields (email, password, first_name, last_name)
+    const bUser = (body && typeof body === 'object' ? (body.user || {}) : {}) as any
     const payload = {
-      user: {
-        first_name: bUser.first_name ?? body.first_name ?? '',
-        last_name: bUser.last_name ?? body.last_name ?? '',
-        email: bUser.email ?? body.email ?? '',
-        phone: bUser.phone ?? body.phone ?? '',
-        password: bUser.password ?? body.password ?? '',
-      },
-      occupation: body.occupation ?? '',
-      education_level: body.education_level ?? '',
+      email: (body.email ?? bUser.email ?? '') as string,
+      password: (body.password ?? bUser.password ?? '') as string,
+      first_name: (body.first_name ?? bUser.first_name ?? '') as string,
+      last_name: (body.last_name ?? bUser.last_name ?? '') as string,
+      // Note: occupation/education_level are ignored by the current Django serializer
+      // If needed later, extend the backend ParentRegistrationSerializer to accept them
     }
 
     // Normalize backend base URL (avoid double slashes) and forward the payload
@@ -46,11 +44,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!response.ok) {
-      // Renvoyer tout le payload d'erreurs du backend pour un debug facile
-      return NextResponse.json(
-        data && Object.keys(data).length ? data : { error: "Erreur lors de l'inscription du parent" },
-        { status: response.status }
-      )
+      // Renvoie les erreurs du backend; le frontend pourra les afficher
+      const errPayload = data && Object.keys(data).length ? data : { error: "Erreur lors de l'inscription du parent" }
+      return NextResponse.json(errPayload, { status: response.status })
     }
 
     // Définir le cookie de session avec l'utilisateur créé

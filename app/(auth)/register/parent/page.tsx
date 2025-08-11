@@ -144,17 +144,7 @@ export default function RegisterParentPage() {
                 </LabelInputContainer>
               </div>
 
-              <div>
-                <Label htmlFor="phone" className="text-laha-gold-light">Téléphone *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={e => setFormData({...formData, phone: e.target.value})}
-                  className="bg-laha-black-light/30 border-laha-gold-dark/30 text-laha-gold-light"
-                  required
-                />
-              </div>
+              {/** Removed duplicate phone field to avoid showing it twice */}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <LabelInputContainer>
@@ -192,21 +182,6 @@ export default function RegisterParentPage() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="education_level" className="text-laha-gold-light">Niveau d'éducation</Label>
-                <Select value={formData.education_level} onValueChange={value => setFormData({...formData, education_level: value})}>
-                  <SelectTrigger className="bg-white/10 border-white/20 text-white rounded-lg focus:ring-2 focus:ring-laha-gold/40">
-                    <SelectValue placeholder="Sélectionner votre niveau" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-laha-black border-laha-gold-dark/30">
-                    <SelectItem value="primary" className="text-laha-gold-light">Primaire</SelectItem>
-                    <SelectItem value="secondary" className="text-laha-gold-light">Secondaire</SelectItem>
-                    <SelectItem value="bachelor" className="text-laha-gold-light">Licence</SelectItem>
-                    <SelectItem value="master" className="text-laha-gold-light">Master</SelectItem>
-                    <SelectItem value="phd" className="text-laha-gold-light">Doctorat</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div className="flex items-center gap-3 text-sm text-white/80">
                 <input id="terms" type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="h-4 w-4 rounded border-white/20 bg-white/10" />
