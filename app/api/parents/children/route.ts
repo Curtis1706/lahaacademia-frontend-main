@@ -15,6 +15,8 @@ export async function GET() {
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
     
+    console.log('Tentative de connexion au backend avec token:', user.token?.substring(0, 10) + '...')
+    
     const response = await fetch(`${apiBase}/parents/me/`, {
       headers: {
         'Authorization': `Token ${user.token}`,
@@ -22,15 +24,23 @@ export async function GET() {
       }
     })
 
+    console.log('Réponse API status:', response.status, response.statusText)
+
     if (response.ok) {
       const data = await response.json()
+      console.log('Données complètes du parent:', data)
       const children = data.children || []
       console.log('Enfants récupérés du backend:', children)
       
-      // Si pas d'enfants, retourner les données de test
-      if (children.length === 0) {
-        console.log('Aucun enfant trouvé, utilisation des données de test')
-        const fallbackChildren = [
+      // Si des enfants réels existent, les retourner
+      if (children.length > 0) {
+        console.log('Enfants réels trouvés, retour des données réelles')
+        return NextResponse.json(children)
+      }
+      
+      // Si pas d'enfants, retourner les données de test TEMPORAIREMENT
+      console.log('Aucun enfant trouvé, utilisation des données de test')
+      const fallbackChildren = [
           {
             id: 1,
             user: {
