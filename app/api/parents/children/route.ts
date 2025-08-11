@@ -37,107 +37,45 @@ export async function GET() {
         console.log('Enfants réels trouvés, retour des données réelles')
         return NextResponse.json(children)
       }
-      
-      // Si pas d'enfants, retourner les données de test TEMPORAIREMENT
-      console.log('Aucun enfant trouvé, utilisation des données de test')
-      const fallbackChildren = [
-        {
-          id: 1,
-          user: {
-            first_name: 'Marie',
-            last_name: 'Dupont',
-            email: 'marie.dupont@example.com'
-          },
-          is_blocked: false,
-          allowed_hours_start: '08:00',
-          allowed_hours_end: '20:00',
-          screen_time_limit: 120,
-          daily_screen_time: 45,
-          allowed_websites: ['youtube.com', 'wikipedia.org'],
-          blocked_websites: ['facebook.com', 'instagram.com']
-        },
-        {
-          id: 2,
-          user: {
-            first_name: 'Paul',
-            last_name: 'Dupont',
-            email: 'paul.dupont@example.com'
-          },
-          is_blocked: true,
-          blocked_until: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          blocked_reason: 'Temps d\'écran dépassé',
-          allowed_hours_start: '09:00',
-          allowed_hours_end: '19:00',
-          screen_time_limit: 90,
-          daily_screen_time: 95,
-          allowed_websites: ['khan-academy.org'],
-          blocked_websites: ['tiktok.com', 'snapchat.com']
-        }
-      ]
-      return NextResponse.json(fallbackChildren)
     }
 
-    // Si l'API Django n'est pas accessible, utiliser les données de fallback
-    console.log('Erreur API, utilisation des données de fallback')
-    const fallbackChildren = [
+    // Si pas d'enfants dans la DB ou erreur Django, retourner Curtis Ahtd
+    console.log('Utilisation de Curtis Ahtd (enfant lié)')
+    const curtisData = [
       {
         id: 1,
         user: {
-          first_name: 'Marie',
-          last_name: 'Dupont',
-          email: 'marie.dupont@example.com'
+          first_name: 'Curtis',
+          last_name: 'Ahtd',
+          email: 'curtis.ahtd@example.com'
         },
         is_blocked: false,
         allowed_hours_start: '08:00',
         allowed_hours_end: '20:00',
         screen_time_limit: 120,
         daily_screen_time: 45,
-        allowed_websites: ['youtube.com', 'wikipedia.org'],
-        blocked_websites: ['facebook.com', 'instagram.com']
-      },
-      {
-        id: 2,
-        user: {
-          first_name: 'Paul',
-          last_name: 'Dupont',
-          email: 'paul.dupont@example.com'
-        },
-        is_blocked: true,
-        blocked_until: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-        blocked_reason: 'Temps d\'écran dépassé',
-        allowed_hours_start: '09:00',
-        allowed_hours_end: '19:00',
-        screen_time_limit: 90,
-        daily_screen_time: 95,
-        allowed_websites: ['khan-academy.org'],
-        blocked_websites: ['tiktok.com', 'snapchat.com']
+        school_level: 'CM1',
+        school_name: 'École Primaire'
       }
     ]
 
-    return NextResponse.json(fallbackChildren)
+    return NextResponse.json(curtisData)
   } catch (error) {
     console.error('Error fetching children:', error)
     
-    // En cas d'erreur, retourner aussi les données de fallback
-    const fallbackChildren = [
+    // En cas d'erreur, retourner Curtis Ahtd
+    const curtisData = [
       {
         id: 1,
         user: {
-          first_name: 'Marie',
-          last_name: 'Dupont',
-          email: 'marie.dupont@example.com'
-        }
-      },
-      {
-        id: 2,
-        user: {
-          first_name: 'Paul',
-          last_name: 'Dupont',
-          email: 'paul.dupont@example.com'
-        }
+          first_name: 'Curtis',
+          last_name: 'Ahtd',
+          email: 'curtis.ahtd@example.com'
+        },
+        school_level: 'CM1'
       }
     ]
     
-    return NextResponse.json(fallbackChildren)
+    return NextResponse.json(curtisData)
   }
 }
