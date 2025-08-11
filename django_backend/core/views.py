@@ -8,6 +8,8 @@ from django.utils import timezone as dj_timezone
 from datetime import timedelta
 import secrets
 from .models import *
+from django.db import IntegrityError
+from rest_framework.exceptions import ValidationError
 from .serializers import *
 import uuid
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -408,15 +410,80 @@ class CourseViewSet(viewsets.ModelViewSet):
 class CourseAvailabilityViewSet(viewsets.ModelViewSet):
     queryset = CourseAvailability.objects.all()
     serializer_class = CourseAvailabilitySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]  # Temporaire pour debug
+
+    def create(self, request, *args, **kwargs):
+        """Créer un créneau de disponibilité pour un cours.
+        Nous validons explicitement le rôle utilisateur et assignons
+        le cours et le professeur pour éviter les erreurs 500.
+        """
+        try:
+            if not request.user.is_authenticated:
+                return Response({'error': 'Authentification requise'}, status=status.HTTP_401_UNAUTHORIZED)
+
+            if getattr(request.user, 'role', None) != 'teacher':
+                return Response({'error': 'Seuls les professeurs peuvent créer des disponibilités'}, status=status.HTTP_403_FORBIDDEN)
+
+            try:
+                teacher = Teacher.objects.get(user=request.user)
+            except Teacher.DoesNotExist:
+                return Response({'error': 'Profil professeur introuvable'}, status=status.HTTP_403_FORBIDDEN)
+
+            course_id = request.data.get('course') or request.query_params.get('course')
+            if not course_id:
+                return Response({'error': 'Champ "course" requis'}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                course = Course.objects.get(id=course_id)
+            except Course.DoesNotExist:
+                return Response({'error': 'Cours introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Normaliser les données d'entrée (éviter '' sur DateField)
+            incoming = request.data.copy()
+            if 'specific_date' in incoming and (incoming.get('specific_date') is None or str(incoming.get('specific_date')).strip() == ''):
+                incoming['specific_date'] = None
+
+            # Si une date spécifique est fournie, on autorise n'importe quel day_of_week
+            serializer = self.get_serializer(data=incoming)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except ValidationError as ve:
+                return Response({'error': 'Données invalides', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                availability = serializer.save(teacher=teacher, course=course)
+            except IntegrityError:
+                return Response({'error': 'Un créneau identique existe déjà pour ce jour/heure'}, status=status.HTTP_409_CONFLICT)
+
+            # Retourner la donnée complète (avec cours et professeur sérialisés)
+            output = self.get_serializer(availability).data
+            headers = self.get_success_headers(output)
+            return Response(output, status=status.HTTP_201_CREATED, headers=headers)
+        except Exception as exc:
+            # S'assurer qu'une erreur inattendue ne devient pas silencieuse
+            return Response({'error': f'Erreur interne: {str(exc)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def perform_create(self, serializer):
         """Automatiquement assigner le professeur connecté"""
+        print(f"🔍 Utilisateur connecté: {self.request.user}")
+        print(f"🔍 User authenticated: {self.request.user.is_authenticated}")
+        print(f"🔍 User role: {self.request.user.role if hasattr(self.request.user, 'role') else 'Unknown'}")
+        
         # Récupérer le professeur connecté
         try:
+            if not self.request.user.is_authenticated:
+                print("❌ Utilisateur non authentifié")
+                raise PermissionDenied("Authentification requise")
+            
+            # Vérifier que l'utilisateur a le rôle professeur
+            if hasattr(self.request.user, 'role') and self.request.user.role != 'teacher':
+                print(f"❌ Utilisateur avec rôle '{self.request.user.role}' tente de créer une disponibilité")
+                raise PermissionDenied(f"Seuls les professeurs peuvent créer des disponibilités. Votre rôle actuel: {self.request.user.role}")
+                
             teacher = Teacher.objects.get(user=self.request.user)
+            print(f"✅ Professeur trouvé: {teacher}")
+            # NB: le champ course est injecté dans create() pour garantir la validité
             serializer.save(teacher=teacher)
         except Teacher.DoesNotExist:
+            print(f"❌ Aucun profil professeur pour l'utilisateur: {self.request.user}")
             raise PermissionDenied("Seuls les professeurs peuvent créer des disponibilités")
 
     def perform_update(self, serializer):

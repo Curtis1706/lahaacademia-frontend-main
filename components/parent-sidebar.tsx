@@ -83,12 +83,7 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
       icon: <Settings className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/parametres'
     },
-    { 
-      label: 'Déconnexion', 
-      href: '/api/auth/logout', 
-      icon: <LogOut className="h-5 w-5 shrink-0 text-white" />,
-      active: false
-    },
+    // La déconnexion doit passer par une action JS pour effacer l'état côté client
   ]
 
   return (
@@ -102,6 +97,20 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
                 {links.map((link, idx) => (
                   <SidebarLinkWithActive key={idx} link={link} />
                 ))}
+                <button
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/auth/logout', { method: 'POST' })
+                    } finally {
+                      // Forcer un rechargement dur pour éviter tout état fantôme
+                      window.location.href = '/login'
+                    }
+                  }}
+                  className="flex items-center justify-start gap-2 py-2 px-3 rounded-lg text-white hover:bg-white/10 text-left"
+                >
+                  <LogOut className="h-5 w-5 shrink-0 text-white" />
+                  <span className="text-sm">Déconnexion</span>
+                </button>
               </div>
             </div>
             <div>

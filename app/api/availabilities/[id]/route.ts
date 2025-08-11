@@ -13,7 +13,10 @@ export async function DELETE(
 
     const user = JSON.parse(userSession)
     const availabilityId = params.id
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
+    ? 'http://127.0.0.1:8000/api'
+    : envBase
 
     console.log(`🗑️ Suppression de la disponibilité ${availabilityId}`)
 

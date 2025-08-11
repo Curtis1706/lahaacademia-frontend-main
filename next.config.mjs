@@ -1,13 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*',
-      },
-    ]
-  },
+  // Supprimer le rewrite global pour éviter les conflits
+  // Les routes Next.js locales appelleront Django directement
   images: {
     domains: ['localhost', '127.0.0.1'],
   },

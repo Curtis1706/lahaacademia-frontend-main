@@ -121,38 +121,47 @@ export default function ParentReservePage() {
   }, [teacherId])
     
   useEffect(() => {
-    if (teacherId && date) {
-      // Utilisons des créneaux par défaut pour éviter l'erreur de redirection
-      // TODO: Réactiver l'API quand la route sera fonctionnelle
-      const defaultSlots = [
-        { id: 1, slot: '08:00-09:00', available: true },
-        { id: 2, slot: '09:00-10:00', available: true },
-        { id: 3, slot: '10:00-11:00', available: false },
-        { id: 4, slot: '11:00-12:00', available: true },
-        { id: 5, slot: '14:00-15:00', available: true },
-        { id: 6, slot: '15:00-16:00', available: true },
-        { id: 7, slot: '16:00-17:00', available: false },
-        { id: 8, slot: '17:00-18:00', available: true }
-      ]
-      setTimeSlots(defaultSlots)
-      
-      // Version avec API (temporairement commentée)
-      /*
-      const fetchSlots = async () => {
-      try {
-          const res = await fetch(`/api/teachers/${teacherId}/availability?date=${date}`)
-        const data = await res.json()
-          setTimeSlots(Array.isArray(data) ? data : [])
-        } catch {
-          setTimeSlots([])
-        }
-      }
-      fetchSlots()
-      */
-    } else {
-      setTimeSlots([])
+    const computeBackendDayIndex = (yyyyMmDd: string): number => {
+      if (!yyyyMmDd) return -1
+      const [y, m, d] = yyyyMmDd.split('-').map((v) => parseInt(v, 10))
+      const jsDay = new Date(y, (m || 1) - 1, d || 1).getDay() // 0=dimanche..6=samedi
+      return (jsDay + 6) % 7 // 0=lundi..6=dimanche
     }
-  }, [teacherId, date])
+
+    const toSlotString = (time: string) => time.slice(0, 5) // 'HH:MM:SS' -> 'HH:MM'
+
+    const loadSlots = async () => {
+      setTimeSlots([])
+      setSelectedSlot('')
+      if (!teacherId || !courseId || !date) return
+      try {
+        const res = await fetch(`/api/courses/${courseId}/availabilities`, { cache: 'no-store' })
+        const data = await res.json().catch(() => [])
+        const list: any[] = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : [])
+
+        const dayIndex = computeBackendDayIndex(date)
+        const slots = list
+          .filter((a) => {
+            const matchesSpecific = a.specific_date && typeof a.specific_date === 'string' && a.specific_date.startsWith(date)
+            const matchesDay = a.specific_date == null && a.day_of_week === dayIndex
+            const withinRange = (() => {
+              const fromOk = !a.valid_from || a.valid_from <= date
+              const untilOk = !a.valid_until || date <= a.valid_until
+              return fromOk && untilOk
+            })()
+            return (matchesSpecific || matchesDay) && withinRange && a.is_active !== false
+          })
+          .map((a, idx) => ({ id: a.id || idx, slot: `${toSlotString(a.start_time)}-${toSlotString(a.end_time)}`, available: true }))
+
+        setTimeSlots(slots)
+      } catch (e) {
+        console.error('Erreur chargement disponibilités cours:', e)
+        setTimeSlots([])
+      }
+    }
+
+    loadSlots()
+  }, [teacherId, courseId, date])
 
   const selectedTeacher = useMemo(() => {
     return teachers.find(t => t.id.toString() === teacherId)

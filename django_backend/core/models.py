@@ -199,6 +199,9 @@ class CourseAvailability(models.Model):
     # Statut
     is_active = models.BooleanField(default=True)
     
+    # Date spécifique (optionnel). Si défini, remplace le jour de la semaine
+    specific_date = models.DateField(null=True, blank=True)
+
     # Dates limites (optionnel)
     valid_from = models.DateField(null=True, blank=True)
     valid_until = models.DateField(null=True, blank=True)

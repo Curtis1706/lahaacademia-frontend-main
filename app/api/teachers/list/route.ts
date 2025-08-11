@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
     
     console.log('Récupération de la liste des professeurs')
     
-    const response = await fetch(`${apiBase}/teachers/public_list/`, {
+    const response = await fetch(`${apiBase}/teachers/public_list/?t=${Date.now()}` , {
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      cache: 'no-store'
     })
 
     console.log('Réponse API teachers list status:', response.status, response.statusText)
@@ -28,7 +31,7 @@ export async function GET() {
           console.log(`🔍 Récupération courses pour teacher ${teacher.id}:`, coursesUrl)
           
           // Récupérer les cours de ce professeur avec timeout
-          const coursesResponse = await fetch(coursesUrl, {
+          const coursesResponse = await fetch(`${coursesUrl}?t=${Date.now()}`, {
             headers: {
               'Content-Type': 'application/json'
             },
@@ -53,7 +56,9 @@ export async function GET() {
         }
       }
       
-      return NextResponse.json(enrichedTeachers)
+      const res = NextResponse.json(enrichedTeachers)
+      res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+      return res
     }
 
     // Fallback avec données de test si l'API Django n'est pas accessible

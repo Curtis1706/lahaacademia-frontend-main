@@ -18,7 +18,10 @@ export async function PUT(
 
     const body = await request.json()
     const courseId = params.id
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
+    ? 'http://127.0.0.1:8000/api'
+    : envBase
 
     const djangoPayload = {
       title: body.title,
@@ -91,7 +94,10 @@ export async function DELETE(
     }
 
     const courseId = params.id
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
+  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
+    ? 'http://127.0.0.1:8000/api'
+    : envBase
 
     console.log(`🗑️ Suppression du cours ${courseId}`)
 

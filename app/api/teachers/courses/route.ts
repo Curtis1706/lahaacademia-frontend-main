@@ -13,7 +13,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+  // Ne jamais renvoyer vers 3000 côté server routes
+  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
+    ? 'http://127.0.0.1:8000/api'
+    : envBase
     
     console.log('Récupération des cours du professeur:', user.email)
     
@@ -115,7 +119,10 @@ export async function POST(request: NextRequest) {
     console.log('User token:', user.token?.substring(0, 20) + '...')
     console.log('Course data:', body)
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
+    ? 'http://127.0.0.1:8000/api'
+    : envBase
     
     // Adapter les données pour l'API Django
     const djangoPayload = {

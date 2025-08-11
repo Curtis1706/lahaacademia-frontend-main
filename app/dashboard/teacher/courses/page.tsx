@@ -696,7 +696,8 @@ const AvailabilityModal = ({ course, onClose }: { course: any, onClose: () => vo
   const [newAvailability, setNewAvailability] = useState({
     day_of_week: 0,
     start_time: '09:00',
-    end_time: '10:00'
+    end_time: '10:00',
+    specific_date: '' as string | ''
   })
 
   const days = [
@@ -715,8 +716,11 @@ const AvailabilityModal = ({ course, onClose }: { course: any, onClose: () => vo
       try {
         const response = await fetch(`/api/courses/${course.id}/availabilities`)
         if (response.ok) {
-          const data = await response.json()
-          setAvailabilities(data)
+          const data = await response.json().catch(() => [])
+          const items = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : [])
+          setAvailabilities(items)
+        } else {
+          setAvailabilities([])
         }
       } catch (error) {
         console.error('Erreur lors du chargement des disponibilités:', error)
@@ -737,8 +741,9 @@ const AvailabilityModal = ({ course, onClose }: { course: any, onClose: () => vo
       })
 
       if (response.ok) {
-        const savedAvailability = await response.json()
-        setAvailabilities([...availabilities, savedAvailability])
+    const savedAvailability = await response.json().catch(() => null)
+    const normalized = savedAvailability && typeof savedAvailability === 'object' ? savedAvailability : null
+        setAvailabilities(normalized ? [...availabilities, normalized] : availabilities)
         setShowAddForm(false)
         setNewAvailability({ day_of_week: 0, start_time: '09:00', end_time: '10:00' })
       }
@@ -803,7 +808,7 @@ const AvailabilityModal = ({ course, onClose }: { course: any, onClose: () => vo
                     <div className="flex justify-between items-center">
                       <div>
                         <span className="text-laha-gold font-medium">
-                          {days.find(d => d.value === availability.day_of_week)?.label}
+                          {availability.specific_date ? new Date(availability.specific_date).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }) : days.find(d => d.value === availability.day_of_week)?.label}
                         </span>
                         <span className="text-laha-gold-light ml-2">
                           {availability.start_time} - {availability.end_time}
@@ -841,6 +846,16 @@ const AvailabilityModal = ({ course, onClose }: { course: any, onClose: () => vo
                   </select>
                 </div>
                 
+                <div>
+                  <label className="block text-sm text-laha-gold-light mb-2">Date spécifique (optionnel)</label>
+                  <input
+                    type="date"
+                    value={newAvailability.specific_date as string}
+                    onChange={(e) => setNewAvailability({ ...newAvailability, specific_date: e.target.value })}
+                    className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-3 py-2 text-laha-gold-light"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-sm text-laha-gold-light mb-2">Heure début</label>
                   <input

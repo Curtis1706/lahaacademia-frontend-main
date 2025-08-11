@@ -36,10 +36,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/me')
+        const response = await fetch('/api/auth/me', { cache: 'no-store', credentials: 'include' })
         if (response.ok) {
           const userData = await response.json()
           setUser(userData)
+        } else {
+          setUser(null)
         }
       } catch (error) {
         console.error('Erreur lors de la vérification de l\'authentification:', error)
@@ -49,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     checkAuth()
+
+    // Rafraîchir la session quand l'onglet reprend le focus
+    const onFocus = () => { checkAuth() }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
 
   const login = async (email: string, password: string) => {
@@ -67,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || 'Erreur de connexion' }
       }
 
+      // Mettre à jour immédiatement le contexte avec le bon utilisateur
       setUser(data.user)
       return { success: true, user: data.user as User }
     } catch (error) {
