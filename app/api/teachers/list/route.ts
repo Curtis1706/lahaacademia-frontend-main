@@ -23,7 +23,8 @@ export async function GET() {
       
       for (const teacher of data) {
         try {
-          const coursesUrl = `${apiBase}/teachers/${teacher.id}/courses/`
+          // Essayons une URL directe avec 127.0.0.1 au lieu de localhost
+          const coursesUrl = `http://127.0.0.1:8000/api/teachers/${teacher.id}/courses/`
           console.log(`🔍 Récupération courses pour teacher ${teacher.id}:`, coursesUrl)
           
           // Récupérer les cours de ce professeur avec timeout
