@@ -191,18 +191,18 @@ export default function ParentReservePage() {
                       </div>
                     ) : (
                       <div className="relative">
-                        <select
-                          value={studentId}
+                                          <select
+                    value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
-                    className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold/50 transition-colors appearance-none"
+                    className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
                     required
                   >
-                    <option value="">-- Choisir un enfant --</option>
+                                        <option value="" className="bg-laha-black text-laha-gold-light">-- Choisir un enfant --</option>
                     {children.map((child) => (
-                      <option key={child.id} value={child.id}>
+                      <option key={child.id} value={child.id} className="bg-laha-black text-laha-gold-light">
                         {child.user.first_name} {child.user.last_name}
-                            </option>
-                          ))}
+                      </option>
+                    ))}
                         </select>
                   <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
                       </div>
@@ -221,12 +221,12 @@ export default function ParentReservePage() {
                 <select
                   value={teacherId}
                   onChange={(e) => setTeacherId(e.target.value)}
-                  className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold/50 transition-colors appearance-none"
+                  className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
                   required
                 >
-                  <option value="">-- Sélectionner un professeur --</option>
+                  <option value="" className="bg-laha-black text-laha-gold-light">-- Sélectionner un professeur --</option>
                   {teachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id.toString()}>
+                    <option key={teacher.id} value={teacher.id.toString()} className="bg-laha-black text-laha-gold-light">
                       {teacher.user.first_name} {teacher.user.last_name}
                       {teacher.subjects && teacher.subjects.length > 0 && ` (${teacher.subjects[0]})`}
                     </option>
@@ -249,11 +249,11 @@ export default function ParentReservePage() {
                   <select
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold/50 transition-colors appearance-none"
+                    className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
                   >
-                    <option value="">-- Choisir une matière --</option>
+                    <option value="" className="bg-laha-black text-laha-gold-light">-- Choisir une matière --</option>
                     {subjects.map((subj) => (
-                      <option key={subj} value={subj}>{subj}</option>
+                      <option key={subj} value={subj} className="bg-laha-black text-laha-gold-light">{subj}</option>
                     ))}
                   </select>
                   <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
@@ -270,12 +270,12 @@ export default function ParentReservePage() {
                 </label>
               </div>
               <div className="relative">
-                    <input
-                      type="date"
-                      value={date}
+                                    <input
+                  type="date"
+                  value={date}
                   onChange={(e) => setDate(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold/50 transition-colors"
+                  className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all backdrop-blur-sm [color-scheme:dark]"
                   required
                 />
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
