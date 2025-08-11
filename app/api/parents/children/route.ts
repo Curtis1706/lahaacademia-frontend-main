@@ -15,7 +15,7 @@ export async function GET() {
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
     
-    const response = await fetch(`${apiBase}/parents/children/`, {
+    const response = await fetch(`${apiBase}/parents/me/`, {
       headers: {
         'Authorization': `Token ${user.token}`,
         'Content-Type': 'application/json'
@@ -24,7 +24,8 @@ export async function GET() {
 
     if (response.ok) {
       const data = await response.json()
-      return NextResponse.json(data)
+      // Retourner seulement la liste des enfants
+      return NextResponse.json(data.children || [])
     }
 
     // Fallback avec données de test

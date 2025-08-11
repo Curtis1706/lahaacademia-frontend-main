@@ -97,12 +97,10 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class ParentChildLinkRequestSerializer(serializers.ModelSerializer):
-    parent = ParentSerializer(read_only=True)
-    student = StudentSerializer(read_only=True)
-
     class Meta:
         model = m.ParentChildLinkRequest
-        fields = '__all__'
+        fields = ['id', 'parent', 'student', 'child_email', 'code', 'status', 'expires_at', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
 
 # Registration serializers used in views
@@ -228,5 +226,6 @@ class ParentRegistrationSerializer(serializers.ModelSerializer):
 
         parent = m.Parent.objects.create(user=user)
         return parent
+
 
 

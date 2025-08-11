@@ -23,6 +23,15 @@ type ChildItem = {
 export default function ParentReservePage() {
   const { user } = useAuth()
   const [open, setOpen] = useState(true)
+  
+  // Récupérer l'ID de l'enfant depuis l'URL si présent
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const childId = urlParams.get('child_id')
+    if (childId) {
+      setStudentId(childId)
+    }
+  }, [])
 
   const [teachers, setTeachers] = useState<TeacherItem[]>([])
   const [teacherId, setTeacherId] = useState<string>('')

@@ -218,9 +218,17 @@ class ParentViewSet(viewsets.ModelViewSet):
             req.save()
             return Response({'error': 'Invitation expirée'}, status=status.HTTP_400_BAD_REQUEST)
         req.student = student
-        req.status = 'student_accepted'
+        req.status = 'accepted'  # Approbation automatique
         req.save()
-        return Response(ParentChildLinkRequestSerializer(req).data)
+        
+        # Ajouter l'élève automatiquement à la liste des enfants du parent
+        req.parent.children.add(student)
+        
+        return Response({
+            'message': 'Liaison parent-enfant confirmée automatiquement',
+            'parent_name': f"{req.parent.user.first_name} {req.parent.user.last_name}",
+            'status': 'accepted'
+        })
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
