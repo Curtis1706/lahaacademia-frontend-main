@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
+import { AuthGuard } from "@/components/auth-guard"
+import { useAuth } from "@/hooks/use-auth"
 import {
   IconArrowLeft,
   IconBrandTabler,
@@ -22,6 +24,28 @@ import Image from "next/image"
 import { BookOpen, Users, DollarSign, Star, Calendar, Video, MessageSquare } from "lucide-react"
 
 export default function TeacherDashboard() {
+  const { user } = useAuth()
+  const [teacherData, setTeacherData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchTeacherData = async () => {
+      try {
+        const res = await fetch('/api/teachers/me')
+        if (res.ok) {
+          const data = await res.json()
+          setTeacherData(data)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données professeur:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTeacherData()
+  }, [])
+
   const links = [
     {
       label: "Tableau de bord",
@@ -88,9 +112,10 @@ export default function TeacherDashboard() {
   const [open, setOpen] = useState(false)
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full bg-laha-black dark:bg-laha-black">
-        <Sidebar open={open} setOpen={setOpen}>
+    <AuthGuard requiredRole="teacher">
+      <SidebarProvider defaultOpen={true}>
+        <div className="flex h-screen w-full bg-laha-black dark:bg-laha-black">
+          <Sidebar open={open} setOpen={setOpen}>
           <SidebarBody className="justify-between gap-10">
             <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
               {open ? <Logo /> : <LogoIcon />}
@@ -103,11 +128,13 @@ export default function TeacherDashboard() {
             <div>
               <SidebarLink
                 link={{
-                  label: "Dr. Aminata Diallo",
+                  label: teacherData ? 
+                    `${teacherData.user?.first_name || ''} ${teacherData.user?.last_name || ''}`.trim() || 'Mon profil' :
+                    (user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Mon profil' : 'Mon profil'),
                   href: "#",
                   icon: (
                     <img
-                      src="/placeholder.svg?height=50&width=50&text=AD"
+                      src="/placeholder.svg?height=50&width=50&text=P"
                       className="h-7 w-7 shrink-0 rounded-full"
                       width={50}
                       height={50}
@@ -120,8 +147,9 @@ export default function TeacherDashboard() {
           </SidebarBody>
         </Sidebar>
         <TeacherDashboardContent />
-      </div>
-    </SidebarProvider>
+        </div>
+      </SidebarProvider>
+    </AuthGuard>
   )
 }
 
@@ -167,7 +195,12 @@ const TeacherDashboardContent = () => {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Tableau de bord Professeur</h1>
-          <p className="text-laha-gold-light/70">Bienvenue, Dr. Aminata ! Gérez vos cours et suivez vos performances.</p>
+          <p className="text-laha-gold-light/70">
+            Bienvenue, {teacherData ? 
+              `${teacherData.user?.first_name || ''}` : 
+              (user ? `${user.first_name || ''}` : 'Professeur')
+            } ! Gérez vos cours et suivez vos performances.
+          </p>
         </div>
 
         {/* Stats Cards */}
