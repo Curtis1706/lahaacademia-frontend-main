@@ -360,6 +360,10 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def perform_create(self, serializer):
+        """Automatiquement assigner l'utilisateur connecté comme créateur du cours"""
+        serializer.save(created_by=self.request.user)
+
     def get_queryset(self):
         queryset = Course.objects.filter(is_active=True)
         subject = self.request.query_params.get('subject', None)
