@@ -18,7 +18,7 @@ export async function GET(
       ? 'http://127.0.0.1:8000/api'
       : envBase
 
-    console.log(`🔍 Récupération des disponibilités pour le cours ${courseId}`)
+    console.log(` Récupération des disponibilités pour le cours ${courseId}`)
 
     const response = await fetch(`${apiBase}/course-availabilities/?course=${courseId}`, {
       headers: {
@@ -31,10 +31,10 @@ export async function GET(
       const items = Array.isArray(data)
         ? data
         : (data && Array.isArray((data as any).results) ? (data as any).results : [])
-      console.log(`✅ Disponibilités trouvées:`, items.length)
+      console.log(` Disponibilités trouvées:`, items.length)
       return NextResponse.json(items)
     } else {
-      console.log(`❌ Erreur récupération disponibilités:`, response.status)
+      console.log(` Erreur récupération disponibilités:`, response.status)
       return NextResponse.json([], { status: 200 }) // Retourner tableau vide si pas de disponibilités
     }
   } catch (error) {

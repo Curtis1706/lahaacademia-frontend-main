@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserViewSet, StudentViewSet, TeacherViewSet, AuthorViewSet, ParentViewSet, CourseViewSet, CourseAvailabilityViewSet
+from .views import UserViewSet, StudentViewSet, TeacherViewSet, AuthorViewSet, ParentViewSet, CourseViewSet, CourseAvailabilityViewSet, BookingViewSet
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -10,6 +10,7 @@ router.register(r'authors', AuthorViewSet)
 router.register(r'parents', ParentViewSet)
 router.register(r'courses', CourseViewSet)
 router.register(r'course-availabilities', CourseAvailabilityViewSet)
+router.register(r'bookings', BookingViewSet)
 
 urlpatterns = [
     path('api/', include(router.urls)),

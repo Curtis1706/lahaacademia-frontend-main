@@ -560,11 +560,20 @@ class BookingViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='reserve', permission_classes=[IsAuthenticated])
     def reserve(self, request):
         """Réserver une session pour un élève (étudiant lui-même ou enfant d'un parent)."""
+        print(f"🔍 Données reçues pour réservation: {request.data}")
+        
         teacher_id = request.data.get('teacher_id')
         course_id = request.data.get('course_id')
         start_time = request.data.get('start_time')
         end_time = request.data.get('end_time')
         student_id = request.data.get('student_id')
+        
+        print(f"📋 Paramètres extraits:")
+        print(f"  - teacher_id: {teacher_id} (type: {type(teacher_id)})")
+        print(f"  - course_id: {course_id} (type: {type(course_id)})")  
+        print(f"  - start_time: {start_time} (type: {type(start_time)})")
+        print(f"  - end_time: {end_time} (type: {type(end_time)})")
+        print(f"  - student_id: {student_id} (type: {type(student_id)})")
 
         if not all([teacher_id, start_time, end_time]):
             return Response({'error': 'teacher_id, start_time et end_time sont requis'}, status=status.HTTP_400_BAD_REQUEST)
@@ -599,12 +608,37 @@ class BookingViewSet(viewsets.ModelViewSet):
             except Course.DoesNotExist:
                 return Response({'error': 'Cours introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Parse datetime ISO
+        # Parse datetime ISO avec support des différents formats
         try:
-            st = make_aware(datetime.fromisoformat(start_time)) if isinstance(start_time, str) else start_time
-            et = make_aware(datetime.fromisoformat(end_time)) if isinstance(end_time, str) else end_time
-        except Exception:
-            return Response({'error': 'Format de date invalide (ISO requis)'}, status=status.HTTP_400_BAD_REQUEST)
+            if isinstance(start_time, str):
+                # Supporter les formats avec et sans 'Z'
+                start_clean = start_time.replace('Z', '+00:00') if start_time.endswith('Z') else start_time
+                st = datetime.fromisoformat(start_clean)
+                if st.tzinfo is None:
+                    st = make_aware(st)
+            else:
+                st = start_time
+                
+            if isinstance(end_time, str):
+                end_clean = end_time.replace('Z', '+00:00') if end_time.endswith('Z') else end_time
+                et = datetime.fromisoformat(end_clean)
+                if et.tzinfo is None:
+                    et = make_aware(et)
+            else:
+                et = end_time
+                
+            print(f"🕐 Dates parsées: {st} → {et}")
+            
+        except Exception as e:
+            print(f"❌ Erreur parsing dates: {e}")
+            print(f"📅 start_time reçu: {start_time}")
+            print(f"📅 end_time reçu: {end_time}")
+            return Response({
+                'error': 'Format de date invalide (ISO requis)', 
+                'received_start': str(start_time),
+                'received_end': str(end_time),
+                'details': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         # Collision simple
         overlap = Session.objects.filter(teacher=teacher, start_time__lt=et, end_time__gt=st, status__in=['scheduled','ongoing']).first()
@@ -619,8 +653,8 @@ class BookingViewSet(viewsets.ModelViewSet):
                 start_time=st,
                 end_time=et,
                 status='scheduled',
-                session_type='individual',
-                max_capacity=1,
+                session_type='group',
+                max_capacity=getattr(teacher, 'max_students_per_session', 10) or 10,
                 current_enrollment=0,
             )
 
@@ -642,7 +676,38 @@ class BookingViewSet(viewsets.ModelViewSet):
         Notification.objects.create(user=user, title='Réservation confirmée', message=f'Session avec {teacher.user.first_name}', notification_type='booking')
         Notification.objects.create(user=teacher.user, title='Nouvelle réservation', message=f'{student.user.first_name} a réservé une session', notification_type='booking')
 
-        return Response({'booking_id': str(booking.id), 'session_id': str(session.id)}, status=status.HTTP_201_CREATED)
+        # Réponse enrichie avec tous les détails de la réservation
+        response_data = {
+            'booking_id': str(booking.id),
+            'session_id': str(session.id),
+            'booking_reference': f'REF-{str(booking.id)[:8].upper()}',
+            'status': 'confirmed',
+            'student': {
+                'id': student.id,
+                'name': f'{student.user.first_name} {student.user.last_name}',
+                'email': student.user.email
+            },
+            'teacher': {
+                'id': teacher.id,
+                'name': f'{teacher.user.first_name} {teacher.user.last_name}',
+                'email': teacher.user.email
+            },
+            'course': {
+                'id': course.id if course else None,
+                'name': course.title if course else 'Session individuelle',
+                'description': course.description if course else None
+            },
+            'session': {
+                'start_time': session.start_time.isoformat(),
+                'end_time': session.end_time.isoformat(),
+                'type': session.session_type,
+                'max_capacity': session.max_capacity,
+                'current_enrollment': session.current_enrollment
+            },
+            'message': 'Réservation confirmée avec succès'
+        }
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         """Annuler une réservation"""

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AuthGuard } from '@/components/auth-guard'
 import { ParentSidebar } from '@/components/parent-sidebar'
 import { Users, UserCheck, Calendar, Clock, BookOpen, User, GraduationCap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 type TeacherItem = {
   id: number
@@ -34,6 +35,8 @@ type ChildItem = {
 }
 
 export default function ParentReservePage() {
+  const router = useRouter()
+  
   // Récupérer l'ID de l'enfant depuis l'URL si présent
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -69,7 +72,15 @@ export default function ParentReservePage() {
         if (childrenRes.ok) {
           const childrenData = await childrenRes.json()
           console.log('Données enfants récupérées:', childrenData)
-          setChildren(Array.isArray(childrenData) ? childrenData : [])
+          const childrenArray = Array.isArray(childrenData) ? childrenData : []
+          setChildren(childrenArray)
+          
+          // Auto-sélectionner le premier enfant disponible
+          if (childrenArray.length > 0) {
+            const firstChildId = String(childrenArray[0].id)
+            console.log('Auto-sélection du premier enfant:', firstChildId)
+            setStudentId(firstChildId)
+          }
         } else {
           console.error('Erreur lors du chargement des enfants:', childrenRes.status, childrenRes.statusText)
           // Utiliser Curtis Ahtd si l'API échoue
@@ -84,6 +95,7 @@ export default function ParentReservePage() {
             }
           ]
           setChildren(curtisData)
+          setStudentId("1") // Auto-sélectionner Curtis
         }
       } catch (err) {
         console.error('Erreur lors du chargement des données:', err)
@@ -128,35 +140,64 @@ export default function ParentReservePage() {
       return (jsDay + 6) % 7 // 0=lundi..6=dimanche
     }
 
-    const toSlotString = (time: string) => time.slice(0, 5) // 'HH:MM:SS' -> 'HH:MM'
+    const toSlotString = (time: string) => {
+      if (!time) return '00:00'
+      return time.slice(0, 5) // 'HH:MM:SS' -> 'HH:MM'
+    }
 
     const loadSlots = async () => {
       setTimeSlots([])
       setSelectedSlot('')
       if (!teacherId || !courseId || !date) return
       try {
-        const res = await fetch(`/api/courses/${courseId}/availabilities`, { cache: 'no-store' })
-        const data = await res.json().catch(() => [])
+        const res = await fetch(`/api/courses/${courseId}/availabilities?date=${date}`, { 
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (!res.ok) {
+          throw new Error(`Erreur ${res.status}: ${res.statusText}`)
+        }
+        
+        const data = await res.json()
         const list: any[] = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : [])
 
         const dayIndex = computeBackendDayIndex(date)
         const slots = list
           .filter((a) => {
-            const matchesSpecific = a.specific_date && typeof a.specific_date === 'string' && a.specific_date.startsWith(date)
-            const matchesDay = a.specific_date == null && a.day_of_week === dayIndex
+            // Vérification plus robuste
+            if (!a || typeof a !== 'object') return false
+            
+            const matchesSpecific = a.specific_date && 
+              typeof a.specific_date === 'string' && 
+              a.specific_date.startsWith(date)
+              
+            const matchesDay = !a.specific_date && a.day_of_week === dayIndex
+            
             const withinRange = (() => {
               const fromOk = !a.valid_from || a.valid_from <= date
               const untilOk = !a.valid_until || date <= a.valid_until
               return fromOk && untilOk
             })()
+            
             return (matchesSpecific || matchesDay) && withinRange && a.is_active !== false
           })
-          .map((a, idx) => ({ id: a.id || idx, slot: `${toSlotString(a.start_time)}-${toSlotString(a.end_time)}`, available: true }))
+          .map((a, idx) => ({
+            id: a.id || idx,
+            slot: `${toSlotString(a.start_time)}-${toSlotString(a.end_time)}`,
+            available: true,
+            availability_id: a.id // Garder l'ID original pour référence
+          }))
 
+        console.log('Créneaux chargés:', slots)
         setTimeSlots(slots)
       } catch (e) {
         console.error('Erreur chargement disponibilités cours:', e)
         setTimeSlots([])
+        // Optionnel: afficher un message d'erreur à l'utilisateur
+        setMessage('Impossible de charger les créneaux disponibles')
       }
     }
 
@@ -172,6 +213,17 @@ export default function ParentReservePage() {
     return selectedTeacher.subjects
   }, [selectedTeacher])
 
+  // CORRECTION 7: Validation supplémentaire avant soumission
+  const canSubmit = useMemo(() => {
+    return !submitting && 
+           selectedSlot && 
+           teacherId && 
+           studentId && 
+           courseId && 
+           date &&
+           timeSlots.length > 0
+  }, [submitting, selectedSlot, teacherId, studentId, courseId, date, timeSlots])
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedSlot || !teacherId || !studentId || !courseId) return
@@ -180,15 +232,55 @@ export default function ParentReservePage() {
     setMessage('')
 
     try {
-      const [start, end] = selectedSlot.split('-')
-      const startIso = new Date(`${date}T${start}:00`).toISOString()
-      const endIso = new Date(`${date}T${end}:00`).toISOString()
-      const body: any = {
-        teacher_id: teacherId,
-        course_id: courseId,
-        start_time: startIso,
-        end_time: endIso,
-        student_id: studentId,
+      const [startRaw, endRaw] = selectedSlot.split('-')
+      const start = (startRaw || '').trim()
+      const end = (endRaw || '').trim()
+      
+      // CORRECTION 1: Format des heures plus robuste
+      const formatTime = (time: string) => {
+        if (!time) return '00:00'
+        // Si déjà au format HH:MM, on garde
+        if (time.includes(':') && time.length >= 5) {
+          return time.substring(0, 5) // Assurer HH:MM
+        }
+        // Sinon, ajouter :00
+        return `${time}:00`
+      }
+      
+      const startFormatted = formatTime(start)
+      const endFormatted = formatTime(end)
+      
+      // CORRECTION 2: Construction des dates ISO avec timezone locale ou UTC
+      // Option 1: Sans timezone (recommandé si votre backend attend du local time)
+      const startDateTime = `${date}T${startFormatted}:00`
+      const endDateTime = `${date}T${endFormatted}:00`
+      
+      // Option 2: Avec timezone UTC (si votre backend attend de l'UTC)
+      // const startDateTime = `${date}T${startFormatted}:00Z`
+      // const endDateTime = `${date}T${endFormatted}:00Z`
+      
+      console.log('📅 Données de réservation:', {
+        teacher_id: parseInt(teacherId),
+        course_id: courseId, // Garder en string si c'est un UUID
+        start_time: startDateTime,
+        end_time: endDateTime,
+        student_id: parseInt(studentId),
+        date: date,
+        slot: selectedSlot
+      })
+      
+      // CORRECTION 3: Structure de données plus claire
+      const body = {
+        teacher_id: parseInt(teacherId, 10),
+        course_id: courseId, // Si c'est un UUID, rester en string
+        start_time: startDateTime,
+        end_time: endDateTime,
+        student_id: parseInt(studentId, 10),
+      }
+      
+      // CORRECTION 4: Validation des données avant envoi
+      if (!body.teacher_id || !body.course_id || !body.student_id) {
+        throw new Error('Données manquantes pour la réservation')
       }
       
       const res = await fetch('/api/bookings/reserve', {
@@ -196,11 +288,33 @@ export default function ParentReservePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      
+      // CORRECTION 5: Meilleure gestion des erreurs
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data?.error || 'Réservation impossible')
-      setMessage('Réservation confirmée')
+      
+      if (!res.ok) {
+        // Log de l'erreur complète pour debugging
+        console.error('Erreur API:', {
+          status: res.status,
+          statusText: res.statusText,
+          data: data
+        })
+        throw new Error(data?.error || data?.message || `Erreur ${res.status}: ${res.statusText}`)
+      }
+      
+      // Sauvegarder les données de réservation pour la page de confirmation
+      const bookingId = data.id || data.booking_id || Date.now().toString()
+      if (data && Object.keys(data).length > 0) {
+        sessionStorage.setItem(`booking_${bookingId}`, JSON.stringify(data))
+      }
+      
+      // Redirection vers la page de confirmation avec l'ID de réservation
+      router.push(`/dashboard/parent/confirmation?booking_id=${bookingId}`)
+      return
+      
     } catch (err: any) {
-      setMessage(err?.message || 'Erreur')
+      console.error('Erreur lors de la réservation:', err)
+      setMessage(err?.message || 'Erreur lors de la réservation')
     } finally {
       setSubmitting(false)
     }
@@ -413,7 +527,7 @@ export default function ParentReservePage() {
             <div className="pt-4 border-t border-laha-gold-dark/30">
               <button
                 type="submit"
-                disabled={submitting || !selectedSlot || !teacherId || !studentId}
+                disabled={!canSubmit}
                 className="w-full bg-gradient-to-r from-laha-gold to-laha-gold-dark hover:from-laha-gold-dark hover:to-laha-gold text-laha-black font-semibold py-4 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100"
               >
                 {submitting ? (
