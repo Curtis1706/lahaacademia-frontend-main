@@ -279,7 +279,7 @@ export default function HomePage() {
             <Link href="/devenir-enseignant" className="text-white/80 hover:text-laha-gold transition-colors">
               Devenir Enseignant
             </Link>
-            <Link href="#ouvrages" className="text-white/80 hover:text-laha-gold transition-colors">
+            <Link href="/nos-ouvrages" className="text-white/80 hover:text-laha-gold transition-colors">
             Nos ouvrages
             </Link>
             <Link href="/nos-resultats" className="text-white/80 hover:text-laha-gold transition-colors">

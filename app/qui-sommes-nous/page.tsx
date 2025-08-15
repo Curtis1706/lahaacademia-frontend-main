@@ -31,6 +31,7 @@ import BlurText from "@/components/ui/blur-text"
 import CountUp from "@/components/ui/count-up"
 import { GlassIcon } from "@/components/ui/glass-icon"
 import { cn } from "@/lib/utils"
+import { BackgroundGradient } from "@/components/ui/background-gradient"
 
 export default function QuiSommesNousPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -232,7 +233,7 @@ export default function QuiSommesNousPage() {
                   Depuis plus de 25 ans, LAHA ÉDITIONS s'est donnée pour mission de rendre l'éducation accessible à tous, en proposant des manuels scolaires de qualité à des prix abordables.
                 </p>
                 <p>
-                  Le fondateur, <strong className="text-laha-gold">Monsieur LALEYE</strong>, a été témoin de situations bouleversantes : des élèves contraints de partager des manuels par manque de moyens, une jeune fille tombée enceinte après avoir demandé un livre à son professeur, et une nièce qui devait débourser 13 000 francs CFA – soit 20 % du salaire médian béninois – pour un seul manuel scolaire.
+                  Le fondateur, <span className="text-laha-gold font-bold">Monsieur LALEYE</span>, a été témoin de situations bouleversantes : des élèves contraints de partager des manuels par manque de moyens, une jeune fille tombée enceinte après avoir demandé un livre à son professeur, et une nièce qui devait débourser 13 000 francs CFA – soit 20 % du salaire médian béninois – pour un seul manuel scolaire.
                 </p>
               </div>
             </motion.div>
@@ -241,52 +242,62 @@ export default function QuiSommesNousPage() {
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="max-w-sm w-full group/card"
+              className="w-full max-w-2xl"
             >
-              <div className="cursor-pointer overflow-hidden relative card h-96 rounded-2xl shadow-xl bg-gradient-to-br from-laha-gold-dark/20 to-laha-black border border-laha-gold-dark/20 flex flex-col justify-between p-6">
-                <div className="absolute w-full h-full top-0 left-0 transition duration-300 group-hover/card:bg-black/20 opacity-0 group-hover/card:opacity-100"></div>
-                
-                <div className="flex flex-row items-center space-x-4 z-10">
-                  <div className="p-2 bg-laha-gold/20 rounded-full backdrop-blur-sm">
-                    <Target className="h-6 w-6 text-laha-gold" />
+              <BackgroundGradient>
+                <div className="flex flex-col items-center text-center mb-4 group-hover:scale-105 transition-transform duration-300">
+                  <div className="p-2 bg-laha-gold/20 rounded-full backdrop-blur-sm group-hover:bg-laha-gold/30 transition-colors duration-300 mb-3">
+                    <Target className="h-6 w-6 text-laha-gold group-hover:text-laha-gold-light transition-colors duration-300" />
                   </div>
-                  <div className="flex flex-col">
-                    <p className="font-bold text-lg text-white relative z-10">
+                  <div className="flex flex-col items-center">
+                    <p className="font-bold text-lg text-white group-hover:text-laha-gold transition-colors duration-300">
                       Notre Impact
                     </p>
-                    <p className="text-sm text-white/70">Notre manuel révolutionnaire</p>
+                    <p className="text-sm text-white/70 group-hover:text-white/90 transition-colors duration-300">Notre manuel révolutionnaire</p>
                   </div>
                 </div>
 
-                <div className="flex justify-center my-4 z-10">
+                <div className="flex justify-center my-4">
                   <Image
-                    src="/Fantomes.png"
-                    alt="Fantôme du Brésil"
-                    width={120}
-                    height={350}
-                    className="rounded-lg shadow-lg object-cover"
+                    src="/Livres-LAHA/BEPC.png"
+                    alt="BEPC - Guide de préparation"
+                    height={400}
+                    width={400}
+                    className="object-contain rounded-lg shadow-lg"
                   />
                 </div>
 
-                <div className="text-content z-10">
-                  <h1 className="font-bold text-xl md:text-2xl text-white relative z-10 mb-4 text-center">
-                    "Les fantômes du Brésil"
+                <div className="text-content">
+                  <h1 className="font-bold text-xl md:text-2xl text-white mb-4 text-center group-hover:text-laha-gold transition-colors duration-300">
+                    BEPC - Guide de préparation
                   </h1>
+
+                  <p className="text-sm text-white/70 mb-4 text-center group-hover:text-white/90 transition-colors duration-300">
+                    Guide complet de préparation au BEPC (Brevet d'Études du Premier Cycle). Exercices et conseils méthodologiques.
+                  </p>
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between bg-black/30 backdrop-blur-sm rounded-lg p-3">
                       <span className="text-white/90 text-sm">Prix initial</span>
-                      <span className="text-white line-through text-sm">18 000 FCFA</span>
+                      <span className="text-white line-through text-sm">15 000 FCFA</span>
                     </div>
                     <div className="flex items-center justify-between bg-laha-gold/20 backdrop-blur-sm rounded-lg p-3">
                       <span className="text-white font-medium text-sm">Prix LAHA</span>
-                      <span className="text-laha-gold font-bold">1 500 FCFA</span>
+                      <span className="text-laha-gold font-bold">1 200 FCFA</span>
                     </div>
                     <div className="text-center">
-                      <span className="text-laha-gold font-bold text-lg">12x moins cher</span>
+                      <span className="text-laha-gold font-bold text-lg">12.5x moins cher</span>
                     </div>
                   </div>
+
+                  <button className="rounded-full pl-4 pr-1 py-1 text-white flex items-center space-x-1 bg-laha-black mt-4 text-xs font-bold dark:bg-zinc-800 mx-auto">
+                    <span>Consulter maintenant</span>
+                    <span className="bg-laha-gold text-laha-black rounded-full text-[0.6rem] px-2 py-0 font-bold">
+                      GRATUIT
+                    </span>
+                  </button>
                 </div>
-              </div>
+              </BackgroundGradient>
             </motion.div>
           </div>
         </div>
