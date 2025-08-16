@@ -18,6 +18,7 @@ import {
   Plus 
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
+import { AnimatedThemeToggler } from '@/components/magicui/animated-theme-toggler'
 
 interface ParentSidebarProps {
   children: React.ReactNode
@@ -113,7 +114,13 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
                 </button>
               </div>
             </div>
-            <div>
+            <div className="space-y-4">
+              {/* Bouton de thème */}
+              <div className="flex justify-center">
+                <AnimatedThemeToggler />
+              </div>
+              
+              {/* Profil parent */}
               <SidebarLink
                 link={{
                   label: `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() || 'Mon profil',
@@ -127,7 +134,7 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
           </SidebarBody>
         </Sidebar>
 
-        <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl border border-laha-gold-dark/20 bg-gradient-to-br from-laha-black/50 to-laha-gold-dark/30 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
+        <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl bg-gradient-to-br from-laha-background via-laha-surface/50 to-laha-gold-light-new/20 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
           {children}
         </div>
       </div>

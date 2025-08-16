@@ -13,8 +13,6 @@ import {
   Award,
   Play,
   ArrowRight,
-  Menu,
-  X,
   Star,
   CheckCircle,
   Shield,
@@ -33,10 +31,10 @@ import { ProfileCard } from "@/components/ui/profile-card"
 import { InfiniteScroll } from "@/components/ui/infinite-scroll"
 import { CardSwap } from "@/components/ui/card-swap"
 import Tablet3DSection from "@/components/Tablet3DSection"
+import Navigation from "@/components/Navigation"
 
 export default function HomePage() {
   const [showContent, setShowContent] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => setShowContent(true), 3500)
@@ -220,158 +218,16 @@ export default function HomePage() {
     },
   ]
 
- /*  const faqItems = [
-    {
-      question: "Comment fonctionne Lahacademia ?",
-      answer:
-        "Lahacademia est une plateforme d'apprentissage en ligne qui propose des cours interactifs, des exercices pratiques et un suivi personnalisé. Vous pouvez apprendre à votre rythme, participer à des cours en direct et échanger avec d'autres étudiants.",
-    },
-    {
-      question: "Les certificats sont-ils reconnus officiellement ?",
-      answer:
-        "Oui, nos certificats sont reconnus par les ministères de l'éducation de 12 pays africains francophones. Ils peuvent être utilisés pour des candidatures universitaires ou professionnelles.",
-    },
-    {
-      question: "Puis-je accéder aux cours sans connexion internet ?",
-      answer:
-        "Oui, notre application mobile permet de télécharger les cours pour un accès hors ligne. Vous pouvez étudier même sans connexion internet et synchroniser vos progrès une fois reconnecté.",
-    },
-    {
-      question: "Comment puis-je contacter un professeur ?",
-      answer:
-        "Vous pouvez contacter vos enseignants via la messagerie intégrée, participer aux sessions de questions-réponses en direct, ou réserver des cours particuliers selon votre plan d'abonnement.",
-    },
-    {
-      question: "Y a-t-il une garantie de remboursement ?",
-      answer:
-        "Oui, nous offrons une garantie de remboursement de 30 jours si vous n'êtes pas satisfait de nos services. De plus, le plan Premium inclut une garantie réussite.",
-    },
-  ]
- */
   if (!showContent) {
     return <Preloader />
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-laha-black via-laha-black to-laha-gold-dark overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-laha-background via-laha-surface to-laha-gold-light-new">
       <PixelTransition trigger="scroll" />
 
-      {/* Header */}
-      <header className="relative z-50 py-4 px-4 sm:px-6 lg:px-8">
-        <nav className="max-w-8xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <Image
-              src="/logo.png"
-              alt="LAHA Editions"
-              width={40}
-              height={40}
-              className="rounded-lg w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12"
-            />
-            <span className="font-heading text-lg sm:text-xl lg:text-2xl font-bold text-laha-gold">Lahacademia</span>
-          </div>
-
-          {/* Navigation Desktop */}
-          <div className="hidden lg:flex items-center space-x-8">
-
-            <Link href="/qui-sommes-nous" className="text-white/80 hover:text-laha-gold transition-colors">
-              Qui-sommes nous ?
-            </Link>
-            <Link href="/devenir-enseignant" className="text-white/80 hover:text-laha-gold transition-colors">
-              Devenir Enseignant
-            </Link>
-            <Link href="/nos-ouvrages" className="text-white/80 hover:text-laha-gold transition-colors">
-            Nos ouvrages
-            </Link>
-            <Link href="/nos-resultats" className="text-white/80 hover:text-laha-gold transition-colors">
-              Nos résultats
-            </Link>
-            <Link href="#contact" className="text-white/80 hover:text-laha-gold transition-colors">
-              Contact
-            </Link>
-          </div>
-
-          <div className="hidden lg:flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="text-white/80 hover:text-laha-gold transition-colors font-medium"
-            >
-              Se connecter
-            </Link>
-            <Link
-              href="/account-type"
-              className="px-6 py-2 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all"
-            >
-              S'inscrire
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-white"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </nav>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="md:hidden absolute top-full left-0 right-0 bg-laha-black-light/95 backdrop-blur-md border-t border-laha-gold-dark/20"
-          >
-            <div className="px-4 py-4 space-y-4">
-              <a
-                href="#features"
-                className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Fonctionnalités
-              </a>
-              <a
-                href="#teachers"
-                className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Devenir enseignat
-              </a>
-              <a
-                href="#pricing"
-                className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Tarifs
-              </a>
-              <a
-                href="#about"
-                className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                À propos
-              </a>
-              <div className="pt-4 border-t border-laha-gold-dark/20 space-y-3">
-                <Link
-                  href="/login"
-                  className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Connexion
-                </Link>
-                <Link
-                  href="/account-type"
-                  className="block w-full px-4 py-3 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-medium rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-center"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  S'inscrire
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </header>
+      {/* Header unifié avec Navigation */}
+      <Navigation currentPage="/" />
 
       {/* Hero Section */}
       <section className="relative px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 min-h-screen flex items-center justify-center">
@@ -381,7 +237,7 @@ export default function HomePage() {
             delay={150}
             animateBy="words"
             direction="top"
-            className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 sm:mb-6"
+            className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-laha-text mb-4 sm:mb-6"
           />
 
           <BlurText
@@ -389,7 +245,7 @@ export default function HomePage() {
             delay={200}
             animateBy="words"
             direction="bottom"
-            className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/80 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed"
+            className="text-base sm:text-lg md:text-xl lg:text-2xl text-laha-text-secondary mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed"
           />
 
           <motion.div
@@ -406,8 +262,8 @@ export default function HomePage() {
               <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
 
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 text-laha-gold-light hover:text-laha-gold transition-colors px-6 py-3 lg:px-8 lg:py-4 bg-laha-black-light/20 hover:bg-laha-gold-dark/20 rounded-lg text-sm lg:text-base border border-laha-gold-dark/30">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-laha-gold-dark/20 backdrop-blur-md flex items-center justify-center border border-laha-gold-dark/40">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 text-laha-text-secondary hover:text-laha-gold transition-colors px-6 py-3 lg:px-8 lg:py-4 bg-laha-surface/20 hover:bg-laha-gold/20 rounded-lg text-sm lg:text-base border border-laha-border">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-laha-gold/20 backdrop-blur-md flex items-center justify-center border border-laha-gold/40">
                 <Play className="h-4 w-4 sm:h-5 sm:w-5 ml-1 text-laha-gold" />
               </div>
               Voir la démo
@@ -424,15 +280,15 @@ export default function HomePage() {
             <motion.div
               animate={{ y: [0, 10, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="flex flex-col items-center text-white/60 cursor-pointer"
+              className="flex flex-col items-center text-laha-text-secondary cursor-pointer"
               onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
             >
               <span className="text-sm mb-2">Découvrir plus</span>
-              <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
+              <div className="w-6 h-10 border-2 border-laha-border rounded-full flex justify-center">
                 <motion.div
                   animate={{ y: [0, 12, 0] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-1 h-3 bg-white/60 rounded-full mt-2"
+                  className="w-1 h-3 bg-laha-gold rounded-full mt-2"
                 />
               </div>
             </motion.div>
@@ -456,10 +312,10 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-laha-text mb-4 sm:mb-6">
               Une expérience éducative complète
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-laha-text-secondary max-w-3xl mx-auto leading-relaxed">
               Découvrez nos fonctionnalités innovantes conçues pour révolutionner l'apprentissage en Afrique francophone
             </p>
           </motion.div>
@@ -472,18 +328,18 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
                 whileHover={{ scale: 1.02 }}
-                className="relative h-full rounded-2xl border border-white/10 p-2"
+                className="relative h-full rounded-2xl border border-laha-border p-2"
               >
-                <div className="relative flex h-full flex-col justify-between gap-4 sm:gap-6 overflow-hidden rounded-xl p-4 sm:p-6 bg-white/5 backdrop-blur-md">
+                <div className="relative flex h-full flex-col justify-between gap-4 sm:gap-6 overflow-hidden rounded-xl p-4 sm:p-6 bg-laha-surface/5 backdrop-blur-md">
                   <div className="relative flex flex-1 flex-col justify-between gap-2 sm:gap-3">
-                    <div className="w-fit rounded-lg border border-blue-500/30 bg-blue-500/10 p-2 sm:p-3">
+                    <div className="w-fit rounded-lg border border-laha-gold/30 bg-laha-gold/10 p-2 sm:p-3">
                       {item.icon}
                     </div>
                     <div className="space-y-2 sm:space-y-3">
-                      <h3 className="font-heading text-responsive-lg sm:text-responsive-xl lg:text-responsive-2xl font-semibold text-white leading-tight">
+                      <h3 className="font-heading text-responsive-lg sm:text-responsive-xl lg:text-responsive-2xl font-semibold text-laha-text leading-tight">
                         {item.title}
                       </h3>
-                      <p className="text-responsive-sm sm:text-responsive-base text-white/70 leading-relaxed">
+                      <p className="text-responsive-sm sm:text-responsive-base text-laha-text-secondary leading-relaxed">
                         {item.description}
                       </p>
                     </div>
@@ -506,16 +362,16 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="bg-laha-black-light/20 backdrop-blur-md border border-laha-gold-dark/20 rounded-xl p-6 sm:p-8 text-center hover:scale-105 transition-transform duration-300 min-h-[280px] flex flex-col justify-between"
+                className="bg-laha-surface/20 backdrop-blur-md border border-laha-border rounded-xl p-6 sm:p-8 text-center hover:scale-105 transition-transform duration-300 min-h-[280px] flex flex-col justify-between"
               >
                 <div className="flex justify-center mb-4 sm:mb-6">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-laha-gold/20 to-laha-gold-warm/20 border border-laha-gold-dark/30 flex items-center justify-center">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-laha-gold/20 to-laha-gold-warm/20 border border-laha-gold/30 flex items-center justify-center">
                     {feature.icon}
                   </div>
                 </div>
                 <div className="flex-1 flex flex-col justify-center">
-                  <h3 className="text-lg sm:text-xl font-semibold text-laha-gold-light mb-3 sm:mb-4">{feature.title}</h3>
-                  <p className="text-sm sm:text-base text-laha-gold-light/70 leading-relaxed">{feature.description}</p>
+                  <h3 className="text-lg sm:text-xl font-semibold text-laha-text mb-3 sm:mb-4">{feature.title}</h3>
+                  <p className="text-sm sm:text-base text-laha-text-secondary leading-relaxed">{feature.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -532,10 +388,10 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-laha-text mb-4 sm:mb-6">
               Nos enseignants Certifiés
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-laha-text-secondary max-w-3xl mx-auto leading-relaxed">
               Une équipe de plus de 500 enseignants qualifiés, diplômés des meilleures universités africaines et
               internationales
             </p>
@@ -570,10 +426,10 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-laha-text mb-4 sm:mb-6">
               Ce que disent nos apprenants
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-laha-text-secondary max-w-3xl mx-auto leading-relaxed">
               Plus de 50,000 apprenants nous font confiance à travers l'Afrique francophone
             </p>
           </motion.div>
@@ -590,19 +446,19 @@ export default function HomePage() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-white font-semibold text-base sm:text-lg">{testimonial.name}</h4>
+                        <h4 className="text-laha-text font-semibold text-base sm:text-lg">{testimonial.name}</h4>
                         <div className="flex">
                           {[...Array(testimonial.rating)].map((_, i) => (
                             <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
                           ))}
                         </div>
                       </div>
-                      <p className="text-white/60 text-sm">{testimonial.role}</p>
+                      <p className="text-laha-text-secondary text-sm">{testimonial.role}</p>
                     </div>
                   </div>
                   <div className="relative">
                     <Quote className="absolute -top-2 -left-2 h-8 w-8 text-blue-400/30" />
-                    <p className="text-white text-base sm:text-lg leading-relaxed pl-6">{testimonial.content}</p>
+                    <p className="text-laha-text text-base sm:text-lg leading-relaxed pl-6">{testimonial.content}</p>
                   </div>
                 </div>
               ))}
@@ -620,10 +476,10 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-laha-text mb-4 sm:mb-6">
               Choisissez votre plan
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-laha-text-secondary max-w-3xl mx-auto leading-relaxed">
               Des tarifs adaptés à tous les budgets, avec la possibilité de commencer gratuitement
             </p>
           </motion.div>
@@ -635,7 +491,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
-                className={`relative bg-laha-black-light/20 backdrop-blur-md border border-laha-gold-dark/20 rounded-xl p-6 sm:p-8 ${
+                className={`relative bg-laha-surface/20 backdrop-blur-md border border-laha-border rounded-xl p-6 sm:p-8 ${
                   plan.popular ? "ring-2 ring-laha-gold scale-105" : ""
                 }`}
               >
@@ -648,7 +504,7 @@ export default function HomePage() {
                 )}
 
                 <div className="text-center mb-6">
-                  <h3 className="text-xl font-bold text-laha-gold-light mb-2">{plan.name}</h3>
+                  <h3 className="text-xl font-bold text-laha-text mb-2">{plan.name}</h3>
                   <div className="mb-4">
                     <span className="text-3xl font-bold text-laha-gold">{plan.price}</span>
                     <span className="text-laha-gold-light/60 text-sm ml-1">FCFA</span>
@@ -669,7 +525,7 @@ export default function HomePage() {
                   className={`w-full px-6 py-3 font-semibold rounded-lg transition-all ${
                     plan.popular
                       ? "bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black hover:from-laha-gold-warm hover:to-laha-gold-dark"
-                      : "bg-laha-black-light/20 text-laha-gold-light hover:bg-laha-gold-dark/20 border border-laha-gold-dark/30"
+                      : "bg-laha-surface/20 text-laha-gold-light hover:bg-laha-gold/20 border border-laha-border"
                   }`}
                 >
                   {plan.cta}
@@ -692,10 +548,10 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-8 sm:p-12"
           >
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-laha-text mb-4 sm:mb-6">
               Prêt à révolutionner votre apprentissage ?
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/70 mb-6 sm:mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-laha-text-secondary mb-6 sm:mb-8 leading-relaxed">
               Rejoignez plus de 50,000 étudiants qui transforment déjà leur avenir avec Lahacademia
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -708,7 +564,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/login"
-                className="w-full sm:w-auto px-6 py-3 lg:px-8 lg:py-4 bg-laha-black-light/20 text-laha-gold-light hover:bg-laha-gold-dark/20 hover:text-laha-gold transition-all rounded-lg border border-laha-gold-dark/30"
+                className="w-full sm:w-auto px-6 py-3 lg:px-8 lg:py-4 bg-laha-surface/20 text-laha-gold-light hover:bg-laha-gold/20 hover:text-laha-gold transition-all rounded-lg border border-laha-border"
               >
                 Déjà inscrit ? Se connecter
               </Link>
@@ -729,7 +585,7 @@ export default function HomePage() {
                 height={32}
                 className="rounded-lg w-8 h-8 sm:w-10 sm:h-10"
               />
-              <span className="font-heading text-lg sm:text-xl font-bold text-white">Lahacademia</span>
+              <span className="font-heading text-lg sm:text-xl font-bold text-laha-text">Lahacademia</span>
             </div>
 
             <div className="flex items-center justify-center space-x-4 sm:space-x-6">
@@ -757,100 +613,100 @@ export default function HomePage() {
           {/* Footer Links */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8">
             <div>
-              <h4 className="text-white font-semibold text-base mb-4">Plateforme</h4>
+              <h4 className="text-laha-text font-semibold text-base mb-4">Plateforme</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/courses" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/courses" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Cours
                   </Link>
                 </li>
                 <li>
-                  <Link href="/teachers" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/teachers" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Enseignants
                   </Link>
                 </li>
                 <li>
-                  <Link href="/pricing" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/pricing" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Tarifs
                   </Link>
                 </li>
                 <li>
-                  <Link href="/mobile" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/mobile" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     App Mobile
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold text-base mb-4">Support</h4>
+              <h4 className="text-laha-text font-semibold text-base mb-4">Support</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/help" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/help" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Centre d'aide
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/contact" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Contact
                   </Link>
                 </li>
                 <li>
-                  <Link href="/faq" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/faq" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     FAQ
                   </Link>
                 </li>
                 <li>
-                  <Link href="/status" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/status" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Statut
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold text-base mb-4">Entreprise</h4>
+              <h4 className="text-laha-text font-semibold text-base mb-4">Entreprise</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/about" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/about" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     À propos
                   </Link>
                 </li>
                 <li>
-                  <Link href="/careers" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/careers" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Carrières
                   </Link>
                 </li>
                 <li>
-                  <Link href="/press" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/press" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Presse
                   </Link>
                 </li>
                 <li>
-                  <Link href="/partners" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/partners" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Partenaires
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold text-base mb-4">Légal</h4>
+              <h4 className="text-laha-text font-semibold text-base mb-4">Légal</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/terms" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/terms" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Conditions
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/privacy" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Confidentialité
                   </Link>
                 </li>
                 <li>
-                  <Link href="/cookies" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/cookies" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Cookies
                   </Link>
                 </li>
                 <li>
-                  <Link href="/licenses" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/licenses" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Licences
                   </Link>
                 </li>
@@ -859,7 +715,7 @@ export default function HomePage() {
           </div>
 
           <div className="text-center pt-8 border-t border-white/10">
-            <p className="text-white/60 text-sm leading-relaxed">
+            <p className="text-laha-text-secondary text-sm leading-relaxed">
               © 2024 LAHA Editions. Tous droits réservés. Révolutionner l'éducation en Afrique francophone.
             </p>
           </div>

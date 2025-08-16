@@ -19,8 +19,6 @@ import {
   Clock,
   Award,
   Globe,
-  Menu,
-  X,
   Lightbulb,
   ScrollText,
   FileUser,
@@ -29,10 +27,10 @@ import {
 import Stepper, { Step } from "@/components/Stepper"
 import CountUp from "@/components/ui/count-up"
 import { GlassIcon } from "@/components/ui/glass-icon"
+import Navigation from "@/components/Navigation"
 
 export default function DevenirEnseignantPage() {
   const [activeStep, setActiveStep] = useState(1)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const steps = [
     {
@@ -87,122 +85,10 @@ export default function DevenirEnseignantPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-laha-black via-laha-black to-laha-gold-dark">
-      <header className="relative z-50 py-4 px-4 sm:px-6 lg:px-8">
-              <nav className="max-w-8xl mx-auto flex items-center justify-between">
-                <div className="flex items-center space-x-2 sm:space-x-3">
-                  <Image
-                    src="/logo.png"
-                    alt="LAHA Editions"
-                    width={40}
-                    height={40}
-                    className="rounded-lg w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12"
-                  />
-                  <span className="font-heading text-lg sm:text-xl lg:text-2xl font-bold text-laha-gold">Lahacademia</span>
-                </div>
-      
-                {/* Navigation Desktop */}
-                <div className="hidden lg:flex items-center space-x-8">
-      
-                  <Link href="#features" className="text-white/80 hover:text-laha-gold transition-colors">
-                    Qui-sommes nous ?
-                  </Link>
-                  <Link href="/devenir-enseignant" className="text-white/80 hover:text-laha-gold transition-colors">
-                    Devenir Enseignant
-                  </Link>
-                  <Link href="" className="text-white/80 hover:text-laha-gold transition-colors">
-                  Nos ouvrages
-                  </Link>
-                  <Link href="/nos-resultats" className="text-white/80 hover:text-laha-gold transition-colors">
-                    Nos résultats
-                  </Link>
-                  <Link href="#contact" className="text-white/80 hover:text-laha-gold transition-colors">
-                    Contact
-                  </Link>
-                </div>
-      
-                <div className="hidden lg:flex items-center space-x-4">
-                  <Link
-                    href="/login"
-                    className="text-white/80 hover:text-laha-gold transition-colors font-medium"
-                  >
-                    Se connecter
-                  </Link>
-                  <Link
-                    href="/account-type"
-                    className="px-6 py-2 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all"
-                  >
-                    S'inscrire
-                  </Link>
-                </div>
-      
-                {/* Mobile Menu Button */}
-                <button
-                  className="md:hidden p-2 text-white"
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  aria-label="Toggle menu"
-                >
-                  {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                </button>
-              </nav>
-      
-              {/* Mobile Menu */}
-              {mobileMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="md:hidden absolute top-full left-0 right-0 bg-laha-black-light/95 backdrop-blur-md border-t border-laha-gold-dark/20"
-                >
-                  <div className="px-4 py-4 space-y-4">
-                    <a
-                      href="#features"
-                      className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Fonctionnalités
-                    </a>
-                    <a
-                      href="#teachers"
-                      className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Devenir enseignat
-                    </a>
-                    <a
-                      href="#pricing"
-                      className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Tarifs
-                    </a>
-                    <a
-                      href="#about"
-                      className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      À propos
-                    </a>
-                    <div className="pt-4 border-t border-laha-gold-dark/20 space-y-3">
-                      <Link
-                        href="/login"
-                        className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Connexion
-                      </Link>
-                      <Link
-                        href="/account-type"
-                        className="block w-full px-4 py-3 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-medium rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-center"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        S'inscrire
-                      </Link>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </header>
+    <div className="min-h-screen bg-gradient-to-br from-laha-background via-laha-surface to-laha-gold-light-new">
+      {/* Header unifié avec Navigation */}
+      <Navigation currentPage="/devenir-enseignant" />
+
       {/* Header */}
       <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         <div className="max-w-4xl mx-auto text-center">
@@ -211,10 +97,10 @@ export default function DevenirEnseignantPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6">
+            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-laha-text mb-6">
               Devenir Enseignant 
             </h1>
-            <p className="text-xl sm:text-2xl text-white/80 mb-8 leading-relaxed">
+            <p className="text-xl sm:text-2xl text-laha-text-secondary mb-8 leading-relaxed">
               Rejoignez notre communauté d'enseignants qualifiés et transformez l'éducation en Afrique francophone
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -227,7 +113,7 @@ export default function DevenirEnseignantPage() {
               </Link>
               <Link
                 href="/login"
-                className="px-8 py-4 bg-laha-black-light/20 text-laha-gold-light hover:bg-laha-gold-dark/20 hover:text-laha-gold transition-all rounded-lg border border-laha-gold-dark/30"
+                className="px-8 py-4 bg-laha-surface/20 text-laha-text hover:bg-laha-gold/20 hover:text-laha-gold transition-all rounded-lg border border-laha-border"
               >
                 Déjà inscrit ?Se connecter
               </Link>
@@ -245,10 +131,10 @@ export default function DevenirEnseignantPage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12"
           >
-            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-laha-text mb-4">
               Processus en 3 étapes
             </h2>
-            <p className="text-lg text-white/70 max-w-2xl mx-auto">
+            <p className="text-lg text-laha-text-secondary max-w-2xl mx-auto">
               Devenez enseignant répétiteur en quelques étapes simples
             </p>
           </motion.div>
@@ -267,16 +153,16 @@ export default function DevenirEnseignantPage() {
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-laha-gold to-laha-gold-warm rounded-full mb-6">
                   <FileText className="h-10 w-10 text-laha-black" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Inscription</h3>
-                <p className="text-laha-gold-light font-semibold mb-4">Créez votre profil</p>
-                <p className="text-white/70 mb-6">
+                <h3 className="text-2xl font-bold text-laha-text mb-4">Inscription</h3>
+                <p className="text-laha-gold font-semibold mb-4">Créez votre profil</p>
+                <p className="text-laha-text-secondary mb-6">
                   Remplissez votre profil avec vos informations personnelles et académiques. 
                   Cette étape est essentielle pour établir votre crédibilité en tant qu'enseignant.
                 </p>
-                <div className="bg-laha-gold-dark/10 rounded-lg p-4 border border-laha-gold-dark/20">
+                <div className="bg-laha-gold/10 rounded-lg p-4 border border-laha-gold/20">
                   <div className="flex items-center justify-center gap-2">
                     <Lightbulb className="h-4 w-4 text-laha-gold" />
-                    <p className="text-laha-gold-light text-sm">
+                    <p className="text-laha-text text-sm">
                       Conseil : Prenez le temps de bien remplir votre profil pour attirer plus d'élèves
                     </p>
                   </div>
@@ -289,29 +175,29 @@ export default function DevenirEnseignantPage() {
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-laha-gold to-laha-gold-warm rounded-full mb-6">
                   <CheckCircle className="h-10 w-10 text-laha-black" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Vérification</h3>
-                <p className="text-laha-gold-light font-semibold mb-4">Envoyez diplômes, CV + casier judiciaire</p>
-                <p className="text-white/70 mb-6">
+                <h3 className="text-2xl font-bold text-laha-text mb-4">Vérification</h3>
+                <p className="text-laha-gold font-semibold mb-4">Envoyez diplômes, CV + casier judiciaire</p>
+                <p className="text-laha-text-secondary mb-6">
                   Soumettez vos documents pour validation de votre profil. Cette étape garantit 
                   la qualité et la sécurité de notre plateforme.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-laha-black-light/20 rounded-lg p-3 border border-laha-gold-dark/20">
+                  <div className="bg-laha-surface/20 rounded-lg p-3 border border-laha-border">
                     <div className="flex items-center gap-2">
                       <ScrollText className="h-4 w-4 text-laha-gold" />
-                      <p className="text-laha-gold-light text-sm font-medium">Diplômes</p>
+                      <p className="text-laha-text text-sm font-medium">Diplômes</p>
                     </div>
                   </div>
-                  <div className="bg-laha-black-light/20 rounded-lg p-3 border border-laha-gold-dark/20">
+                  <div className="bg-laha-surface/20 rounded-lg p-3 border border-laha-border">
                     <div className="flex items-center gap-2">
                       <FileUser className="h-4 w-4 text-laha-gold" />
-                      <p className="text-laha-gold-light text-sm font-medium">CV</p>
+                      <p className="text-laha-text text-sm font-medium">CV</p>
                     </div>
                   </div>
-                  <div className="bg-laha-black-light/20 rounded-lg p-3 border border-laha-gold-dark/20">
+                  <div className="bg-laha-surface/20 rounded-lg p-3 border border-laha-border">
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-laha-gold" />
-                      <p className="text-laha-gold-light text-sm font-medium">Casier judiciaire</p>
+                      <p className="text-laha-text text-sm font-medium">Casier judiciaire</p>
                     </div>
                   </div>
                 </div>
@@ -323,9 +209,9 @@ export default function DevenirEnseignantPage() {
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-laha-gold to-laha-gold-warm rounded-full mb-6">
                   <DollarSign className="h-10 w-10 text-laha-black" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Enseignez</h3>
-                <p className="text-laha-gold-light font-semibold mb-4">Fixez vos tarifs (20 000 FCFA min/heure)</p>
-                <p className="text-white/70 mb-6">
+                <h3 className="text-2xl font-bold text-laha-text mb-4">Enseignez</h3>
+                <p className="text-laha-gold font-semibold mb-4">Fixez vos tarifs (20 000 FCFA min/heure)</p>
+                <p className="text-laha-text-secondary mb-6">
                   Commencez à enseigner et gagnez selon vos tarifs. Vous avez le contrôle total 
                   sur votre emploi du temps et vos revenus.
                 </p>
@@ -334,7 +220,7 @@ export default function DevenirEnseignantPage() {
                     <PartyPopper className="h-5 w-5 text-laha-gold" />
                     <p className="text-laha-gold text-lg font-semibold">Félicitations !</p>
                   </div>
-                  <p className="text-white/80 text-sm">
+                  <p className="text-laha-text-secondary text-sm">
                     Vous êtes maintenant prêt à commencer votre parcours d'enseignant sur Lahacademia
                   </p>
                 </div>
@@ -353,10 +239,10 @@ export default function DevenirEnseignantPage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12"
           >
-            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-laha-text mb-4">
               Avantages enseignants
             </h2>
-            <p className="text-lg text-white/70 max-w-2xl mx-auto">
+            <p className="text-lg text-laha-text-secondary max-w-2xl mx-auto">
               Fonctionnalités exclusives pour optimiser votre expérience d'enseignement
             </p>
           </motion.div>
@@ -368,15 +254,15 @@ export default function DevenirEnseignantPage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.2, duration: 0.5 }}
-                className="bg-laha-black-light/20 backdrop-blur-md border border-laha-gold-dark/20 rounded-xl p-8 hover:bg-laha-gold-dark/10 transition-all"
+                className="bg-laha-surface/20 backdrop-blur-md border border-laha-border rounded-xl p-8 hover:bg-laha-gold/10 transition-all"
               >
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
                     {advantage.icon}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-2">{advantage.title}</h3>
-                    <p className="text-white/70">{advantage.description}</p>
+                    <h3 className="text-xl font-bold text-laha-text mb-2">{advantage.title}</h3>
+                    <p className="text-laha-text-secondary">{advantage.description}</p>
                   </div>
                 </div>
               </motion.div>
@@ -398,7 +284,7 @@ export default function DevenirEnseignantPage() {
               <div className="text-3xl md:text-4xl font-bold text-laha-gold mb-2">
                 <CountUp to={500} duration={2} delay={0.2} />+
               </div>
-              <div className="text-white/70 text-sm">Enseignants actifs</div>
+              <div className="text-laha-text-secondary text-sm">Enseignants actifs</div>
             </motion.div>
             
             <motion.div
@@ -410,7 +296,7 @@ export default function DevenirEnseignantPage() {
               <div className="text-3xl md:text-4xl font-bold text-laha-gold mb-2">
                 <CountUp to={50000} duration={2.5} delay={0.4} separator="," />+
               </div>
-              <div className="text-white/70 text-sm">Élèves satisfaits</div>
+              <div className="text-laha-text-secondary text-sm">Élèves satisfaits</div>
             </motion.div>
             
             <motion.div
@@ -422,7 +308,7 @@ export default function DevenirEnseignantPage() {
               <div className="text-3xl md:text-4xl font-bold text-laha-gold mb-2">
                 <CountUp to={15} duration={1.5} delay={0.6} />
               </div>
-              <div className="text-white/70 text-sm">Pays couverts</div>
+              <div className="text-laha-text-secondary text-sm">Pays couverts</div>
             </motion.div>
             
             <motion.div
@@ -434,7 +320,7 @@ export default function DevenirEnseignantPage() {
               <div className="text-3xl md:text-4xl font-bold text-laha-gold mb-2">
                 <CountUp to={95} duration={2} delay={0.8} />%
               </div>
-              <div className="text-white/70 text-sm">Taux de satisfaction</div>
+              <div className="text-laha-text-secondary text-sm">Taux de satisfaction</div>
             </motion.div>
           </div>
         </div>
@@ -447,12 +333,12 @@ export default function DevenirEnseignantPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-8 sm:p-12"
+            className="bg-laha-surface/5 backdrop-blur-md border border-laha-border rounded-xl p-8 sm:p-12"
           >
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-laha-text mb-4 sm:mb-6">
               Prêt à rejoindre notre équipe ?
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/70 mb-6 sm:mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-laha-text-secondary mb-6 sm:mb-8 leading-relaxed">
               Commencez votre parcours d'enseignant répétiteur dès aujourd'hui
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -465,7 +351,7 @@ export default function DevenirEnseignantPage() {
               </Link>
               <Link
                 href="/contact"
-                className="w-full sm:w-auto px-8 py-4 bg-laha-black-light/20 text-laha-gold-light hover:bg-laha-gold-dark/20 hover:text-laha-gold transition-all rounded-lg border border-laha-gold-dark/30"
+                className="w-full sm:w-auto px-8 py-4 bg-laha-surface/20 text-laha-text hover:bg-laha-gold/20 hover:text-laha-gold transition-all rounded-lg border border-laha-border"
               >
                 Nous contacter
               </Link>
@@ -473,7 +359,7 @@ export default function DevenirEnseignantPage() {
           </motion.div>
         </div>
       </section>
-      <footer className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 border-t border-white/10">
+      <footer className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 border-t border-laha-border">
               <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                   <div className="flex items-center space-x-2 sm:space-x-3">
@@ -484,7 +370,7 @@ export default function DevenirEnseignantPage() {
                       height={32}
                       className="rounded-lg w-8 h-8 sm:w-10 sm:h-10"
                     />
-                    <span className="font-heading text-lg sm:text-xl font-bold text-white">Lahacademia</span>
+                    <span className="font-heading text-lg sm:text-xl font-bold text-laha-text">Lahacademia</span>
                   </div>
       
                   <div className="flex items-center justify-center space-x-4 sm:space-x-6">
@@ -512,100 +398,100 @@ export default function DevenirEnseignantPage() {
                 {/* Footer Links */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8">
                   <div>
-                    <h4 className="text-white font-semibold text-base mb-4">Plateforme</h4>
+                    <h4 className="text-laha-text font-semibold text-base mb-4">Plateforme</h4>
                     <ul className="space-y-2">
                       <li>
-                        <Link href="/courses" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/courses" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Cours
                         </Link>
                       </li>
                       <li>
-                        <Link href="/teachers" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/teachers" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Enseignants
                         </Link>
                       </li>
                       <li>
-                        <Link href="/pricing" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/pricing" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Tarifs
                         </Link>
                       </li>
                       <li>
-                        <Link href="/mobile" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/mobile" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           App Mobile
                         </Link>
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-white font-semibold text-base mb-4">Support</h4>
+                    <h4 className="text-laha-text font-semibold text-base mb-4">Support</h4>
                     <ul className="space-y-2">
                       <li>
-                        <Link href="/help" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/help" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Centre d'aide
                         </Link>
                       </li>
                       <li>
-                        <Link href="/contact" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/contact" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Contact
                         </Link>
                       </li>
                       <li>
-                        <Link href="/faq" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/faq" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           FAQ
                         </Link>
                       </li>
                       <li>
-                        <Link href="/status" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/status" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Statut
                         </Link>
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-white font-semibold text-base mb-4">Entreprise</h4>
+                    <h4 className="text-laha-text font-semibold text-base mb-4">Entreprise</h4>
                     <ul className="space-y-2">
                       <li>
-                        <Link href="/about" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/about" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           À propos
                         </Link>
                       </li>
                       <li>
-                        <Link href="/careers" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/careers" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Carrières
                         </Link>
                       </li>
                       <li>
-                        <Link href="/press" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/press" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Presse
                         </Link>
                       </li>
                       <li>
-                        <Link href="/partners" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/partners" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Partenaires
                         </Link>
                       </li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-white font-semibold text-base mb-4">Légal</h4>
+                    <h4 className="text-laha-text font-semibold text-base mb-4">Légal</h4>
                     <ul className="space-y-2">
                       <li>
-                        <Link href="/terms" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/terms" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Conditions
                         </Link>
                       </li>
                       <li>
-                        <Link href="/privacy" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/privacy" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Confidentialité
                         </Link>
                       </li>
                       <li>
-                        <Link href="/cookies" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/cookies" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Cookies
                         </Link>
                       </li>
                       <li>
-                        <Link href="/licenses" className="text-white/70 hover:text-white transition-colors text-sm">
+                        <Link href="/licenses" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                           Licences
                         </Link>
                       </li>
@@ -613,8 +499,8 @@ export default function DevenirEnseignantPage() {
                   </div>
                 </div>
       
-                <div className="text-center pt-8 border-t border-white/10">
-                  <p className="text-white/60 text-sm leading-relaxed">
+                <div className="text-center pt-8 border-t border-laha-border">
+                  <p className="text-laha-text-secondary text-sm leading-relaxed">
                     © 2024 LAHA Editions. Tous droits réservés. Révolutionner l'éducation en Afrique francophone.
                   </p>
                 </div>

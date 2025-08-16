@@ -14,20 +14,32 @@ const config: Config = {
         heading: ["var(--font-poppins)", "system-ui", "sans-serif"],
       },
       colors: {
+        // Variables CSS pour les thèmes
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         
-        // Palette LAHA - Couleurs authentiques du logo
-        'laha-gold': '#F6C10A',        // Doré principal du logo
-        'laha-gold-warm': '#D9AA05',   // Doré chaud des ombres
-        'laha-gold-soft': '#E1AF0E',   // Doré intermédiaire
-        'laha-gold-light': '#E9E4D8',  // Doré très clair pour backgrounds
-        'laha-gold-dark': '#BFA55A',   // Doré foncé pour textes
-        'laha-black': '#1A1A1A',       // Noir velours
+        // Palette LAHA - Couleurs identitaires
+        'laha-gold': 'var(--laha-gold)',
+        'laha-gold-warm': 'var(--laha-gold-warm)',
+        'laha-gold-soft': 'var(--laha-gold-soft)',
+        'laha-gold-light': 'var(--laha-gold-light)',
+        'laha-gold-dark': 'var(--laha-gold-dark)',
+        'laha-black': 'var(--laha-black)',
+        'laha-black-light': 'var(--laha-black-light)',
+        'laha-black-dark': 'var(--laha-black-dark)',
         
+        // Thème clair LAHA - Variables personnalisées
+        'laha-background': 'var(--laha-background)',
+        'laha-surface': 'var(--laha-surface)',
+        'laha-text': 'var(--laha-text)',
+        'laha-text-secondary': 'var(--laha-text-secondary)',
+        'laha-gold-light-new': 'var(--laha-gold-light-new)',
+        'laha-border': 'var(--laha-border)',
+        
+        // Composants UI avec variables CSS
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

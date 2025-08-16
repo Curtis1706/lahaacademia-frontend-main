@@ -21,7 +21,7 @@ const ParentDashboardContent = () => {
     <div className="h-full overflow-auto">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Tableau de bord Parent</h1>
-        <p className="text-laha-gold-light/70">Bienvenue ! Suivez les progrès de vos enfants.</p>
+        <p className="text-laha-text-secondary">Bienvenue ! Suivez les progrès de vos enfants.</p>
       </div>
 
       {/* Résumé des enfants */}
@@ -30,7 +30,7 @@ const ParentDashboardContent = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-gradient-to-br from-laha-gold/10 to-laha-gold/5 rounded-xl p-6 border border-laha-gold/20"
+          className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 rounded-xl p-6 border border-laha-border"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-laha-gold">Koffi Diop</h3>
@@ -53,7 +53,7 @@ const ParentDashboardContent = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="bg-gradient-to-br from-laha-gold/10 to-laha-gold/5 rounded-xl p-6 border border-laha-gold/20"
+          className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 rounded-xl p-6 border border-laha-border"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-laha-gold">Aïcha Diop</h3>
@@ -79,18 +79,18 @@ const ParentDashboardContent = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
-          className="xl:col-span-2 bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20"
+          className="xl:col-span-2 bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-6 border border-laha-border"
         >
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <h3 className="text-lg font-semibold text-laha-gold-light">Alertes & Notifications</h3>
+            <h3 className="text-lg font-semibold text-laha-text">Alertes & Notifications</h3>
           </div>
           <div className="space-y-4">
             <div className="flex items-start gap-3 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
               <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
               <div className="flex-1">
-                <p className="text-laha-gold-light text-sm">Koffi a obtenu 18/20 en Mathématiques</p>
-                <p className="text-laha-gold-light/60 text-xs mt-1">Il y a 2h</p>
+                <p className="text-laha-text text-sm">Koffi a obtenu 18/20 en Mathématiques</p>
+                <p className="text-laha-text-secondary text-xs mt-1">Il y a 2h</p>
               </div>
               <div className="flex gap-2">
                 <button className="px-3 py-1 bg-laha-gold/20 text-laha-gold text-xs rounded hover:bg-laha-gold/30">

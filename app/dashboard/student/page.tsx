@@ -26,6 +26,7 @@ import Image from "next/image"
 import { BookOpen, Clock, Star, TrendingUp, Award, Play, Calendar, MessageSquare } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/hooks/use-auth"
+import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth()
@@ -135,7 +136,13 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               </div>
-              <div>
+              <div className="space-y-4">
+                {/* Bouton de thème */}
+                <div className="flex justify-center">
+                  <AnimatedThemeToggler />
+                </div>
+                
+                {/* Profil étudiant */}
                 <SidebarLink
                   link={{
                     label: `${user?.first_name} ${user?.last_name}`,
@@ -206,61 +213,61 @@ const StudentDashboardContent = ({ user }: { user: any }) => {
 
   return (
     <div className="flex flex-1">
-      <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl border border-laha-gold-dark/20 bg-gradient-to-br from-laha-black/50 to-laha-gold-dark/30 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
+      <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl bg-gradient-to-br from-laha-background via-laha-surface/50 to-laha-gold-light-new/20 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white font-heading mb-2">Tableau de bord Élève</h1>
-          <p className="text-white/70">
+          <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Tableau de bord Élève</h1>
+          <p className="text-laha-text-secondary">
             Bienvenue, {user?.first_name} {user?.last_name} ! Continuez votre parcours d'excellence.
           </p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-4 border border-laha-gold-dark/20">
+          <div className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-4 border border-laha-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-laha-gold/20 rounded-lg">
                 <BookOpen className="h-5 w-5 text-laha-gold" />
               </div>
               <div>
-                <p className="text-laha-gold-light/70 text-sm">Cours suivis</p>
-                <p className="text-laha-gold-light text-xl font-bold">12</p>
+                <p className="text-laha-text-secondary text-sm">Cours suivis</p>
+                <p className="text-laha-text text-xl font-bold">12</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-4 border border-laha-gold-dark/20">
+          <div className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-4 border border-laha-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-laha-gold-warm/20 rounded-lg">
                 <Clock className="h-5 w-5 text-laha-gold-warm" />
               </div>
               <div>
-                <p className="text-laha-gold-light/70 text-sm">Heures d'étude</p>
-                <p className="text-laha-gold-light text-xl font-bold">45h</p>
+                <p className="text-laha-text-secondary text-sm">Heures d'étude</p>
+                <p className="text-laha-text text-xl font-bold">45h</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-4 border border-laha-gold-dark/20">
+          <div className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-4 border border-laha-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-laha-gold-soft/20 rounded-lg">
                 <Star className="h-5 w-5 text-laha-gold-soft" />
               </div>
               <div>
-                <p className="text-laha-gold-light/70 text-sm">Moyenne générale</p>
-                <p className="text-laha-gold-light text-xl font-bold">16.5/20</p>
+                <p className="text-laha-text-secondary text-sm">Moyenne générale</p>
+                <p className="text-laha-text text-xl font-bold">16.5/20</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-4 border border-laha-gold-dark/20">
+          <div className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-4 border border-laha-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-laha-gold/20 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-laha-gold" />
               </div>
               <div>
-                <p className="text-laha-gold-light/70 text-sm">Progression</p>
-                <p className="text-laha-gold-light text-xl font-bold">+12%</p>
+                <p className="text-laha-text-secondary text-sm">Progression</p>
+                <p className="text-laha-text text-xl font-bold">+12%</p>
               </div>
             </div>
           </div>

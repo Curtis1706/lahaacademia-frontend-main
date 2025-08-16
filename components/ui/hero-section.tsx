@@ -14,13 +14,13 @@ export function HeroSection({ title, description }: HeroSectionProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="text-center mb-12 mx-auto"
+      className="text-center mb-12 mx-auto max-w-4xl"
     >
       <BlurText 
         text={title}
-        className="text-4xl md:text-6xl font-bold text-laha-gold mb-6" 
+        className="text-4xl md:text-6xl font-bold text-laha-gold mb-6 text-center" 
       />
-      <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+      <p className="text-xl text-laha-text-secondary max-w-3xl mx-auto leading-relaxed text-center">
         {description}
       </p>
     </motion.div>

@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 
 export function PageFooter() {
   return (
-    <footer className="border-t border-laha-gold-dark/20 mt-20 py-8">
+    <footer className="border-t border-laha-border mt-20 py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -12,7 +12,7 @@ export function PageFooter() {
         viewport={{ once: true }}
         className="max-w-7xl mx-auto px-4 text-center"
       >
-        <p className="text-gray-400">
+        <p className="text-laha-text-secondary">
           © 2024 LAHA Editions. Tous droits réservés. 
           <span className="text-laha-gold"> Éducation pour tous, partout en Afrique.</span>
         </p>

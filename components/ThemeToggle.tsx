@@ -1,40 +1,63 @@
 "use client";
+import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { Sun, Moon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+interface ThemeToggleProps {
+  variant?: "default" | "sidebar" | "header";
+  className?: string;
+}
 
+export default function ThemeToggle({ variant = "default", className }: ThemeToggleProps) {
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  // Éviter l'hydratation
   useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      setTheme("dark");
-      document.documentElement.classList.add("dark");
-    } else {
-      setTheme("light");
-      document.documentElement.classList.remove("dark");
-    }
+    setMounted(true);
   }, []);
 
+  const variantClasses = {
+    default: "px-4 py-3 bg-laha-gold/10 text-laha-gold-dark hover:bg-laha-gold hover:text-laha-black border border-laha-gold/20 transition-all duration-200",
+    sidebar: "p-2 bg-white/5 text-white/70 hover:bg-laha-gold/20 hover:text-laha-gold transition-all duration-200",
+    header: "px-4 py-2 bg-laha-gold text-laha-black hover:bg-laha-gold-warm border border-laha-gold-dark shadow-lg font-semibold transition-all duration-200 hover:shadow-xl"
+  };
+
+  if (!mounted) {
+    return (
+      <button className={cn("rounded-lg font-medium", variantClasses[variant], className)}>
+        <div className="w-5 h-5" />
+      </button>
+    );
+  }
+
   const toggleTheme = () => {
-    if (theme === "light") {
-      setTheme("dark");
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      setTheme("light");
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    setTheme(theme === "light" ? "dark" : "light");
   };
 
   return (
     <button
       onClick={toggleTheme}
-      aria-label={`Passer en mode ${theme === "light" ? "nuit" : "jour"}`}
-      className="px-4 py-2 rounded-lg font-medium transition-all bg-white/10 text-white hover:bg-laha-gold hover:text-laha-black ml-2"
-      style={{ cursor: "pointer" }}
+      aria-label={`Passer en mode ${theme === "light" ? "sombre" : "clair"}`}
+      title={`Passer en mode ${theme === "light" ? "sombre" : "clair"}`}
+      className={cn(
+        "rounded-lg font-medium flex items-center gap-2 transition-all duration-200",
+        variantClasses[variant],
+        className
+      )}
     >
-      {theme === "light" ? "🌙 Mode Nuit" : "☀️ Mode Jour"}
+      {theme === "light" ? (
+        <>
+          <Moon className="h-4 w-4" />
+          <span className="text-sm font-medium">Mode Nuit</span>
+        </>
+      ) : (
+        <>
+          <Sun className="h-4 w-4" />
+          <span className="text-sm font-medium">Mode Jour</span>
+        </>
+      )}
     </button>
   );
 } 

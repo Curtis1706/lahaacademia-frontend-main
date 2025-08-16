@@ -38,9 +38,9 @@ export function BookCard({
     <motion.div 
       whileHover={{ scale: 1.03 }} 
       transition={{ duration: 0.3 }}
-      className="group"
+      className="group h-full"
     >
-      <Card className="overflow-hidden border border-laha-gold-dark/20 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-laha-gold/10 transition-all duration-300 bg-laha-black/50 hover:bg-laha-black/70">
+      <Card className="overflow-hidden border border-laha-border rounded-2xl shadow-sm hover:shadow-xl hover:shadow-laha-gold/10 transition-all duration-300 bg-laha-surface/50 hover:bg-laha-surface/70 h-full flex flex-col">
         <div className="relative overflow-hidden">
           <Image
             src={cover}
@@ -54,24 +54,24 @@ export function BookCard({
               NOUVEAU
             </Badge>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-laha-text/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
         
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-4 space-y-3 flex-1 flex flex-col">
           {/* Location and Year */}
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-laha-text-secondary">
               <MapPin className="h-4 w-4" />
               {countryName}
             </div>
-            <div className="flex items-center gap-1 text-sm text-gray-400">
+            <div className="flex items-center gap-1 text-sm text-laha-text-secondary">
               <Calendar className="h-4 w-4" />
               {year}
             </div>
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-semibold text-laha-gold line-clamp-2 group-hover:text-laha-gold-light transition-colors">
+          <h3 className="text-lg font-semibold text-laha-text line-clamp-2 group-hover:text-laha-gold transition-colors">
             {title}
           </h3>
 
@@ -83,7 +83,7 @@ export function BookCard({
           )}
 
           {/* Description */}
-          <p className="text-sm text-gray-400 line-clamp-2">
+          <p className="text-sm text-laha-text-secondary line-clamp-2 flex-1">
             {description}
           </p>
 
@@ -98,11 +98,11 @@ export function BookCard({
                 className={i < Math.floor(rating) ? "fill-current" : ""}
               />
             ))}
-            <span className="text-sm text-gray-300 ml-1">{rating.toFixed(1)}</span>
+            <span className="text-sm text-laha-text ml-1">{rating.toFixed(1)}</span>
           </div>
 
           {/* Stats */}
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-laha-text-secondary">
             <div className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
               {views.toLocaleString()}
@@ -114,12 +114,12 @@ export function BookCard({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2">
-            <Button className="flex-1 bg-laha-gold text-laha-black hover:bg-laha-gold-light transition-colors flex items-center justify-center gap-2">
+          <div className="flex gap-2 pt-2 mt-auto">
+            <Button className="flex-1 bg-laha-gold text-laha-black hover:bg-laha-gold-warm transition-colors flex items-center justify-center gap-2">
               <BookOpen className="h-4 w-4" />
               Consulter
             </Button>
-            <Button variant="outline" size="icon" className="border-gray-600 text-gray-400 hover:text-laha-gold hover:border-laha-gold">
+            <Button variant="outline" size="icon" className="border-laha-border text-laha-text-secondary hover:text-laha-gold hover:border-laha-gold">
               <Heart className="h-4 w-4" />
             </Button>
           </div>

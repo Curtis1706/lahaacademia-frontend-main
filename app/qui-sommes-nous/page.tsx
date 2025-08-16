@@ -17,8 +17,6 @@ import {
   Target,
   Lightbulb,
   TrendingUp,
-  Menu,
-  X,
   Tablet,
   MessageCircle,
   Brain,
@@ -32,10 +30,9 @@ import CountUp from "@/components/ui/count-up"
 import { GlassIcon } from "@/components/ui/glass-icon"
 import { cn } from "@/lib/utils"
 import { BackgroundGradient } from "@/components/ui/background-gradient"
+import Navigation from "@/components/Navigation"
 
 export default function QuiSommesNousPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
   const stats = [
     { number: 100, label: "Ouvrages au Bénin", suffix: "+", icon: <BookOpen className="h-6 w-6" /> },
     { number: 25, label: "Années d'expérience", suffix: "+", icon: <Award className="h-6 w-6" /> },
@@ -88,108 +85,9 @@ export default function QuiSommesNousPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-laha-black via-laha-black to-laha-gold-dark">
-      {/* Header */}
-      <header className="relative border-b border-laha-gold-dark/20">
-        <nav className="flex items-center justify-between p-4 max-w-7xl mx-auto">
-          <Link href="/" className="flex items-center space-x-3">
-            <Image
-              src="/logo.png"
-              alt="LAHA Editions"
-              width={40}
-              height={40}
-              className="rounded-lg w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12"
-            />
-            <span className="font-heading text-lg sm:text-xl lg:text-2xl font-bold text-laha-gold">Lahacademia</span>
-          </Link>
-
-          {/* Navigation Desktop */}
-          <div className="hidden lg:flex items-center space-x-8">
-            <Link href="/#features" className="text-white/80 hover:text-laha-gold transition-colors">
-              Qui-sommes nous ?
-            </Link>
-            <Link href="/devenir-enseignant" className="text-white/80 hover:text-laha-gold transition-colors">
-              Devenir Enseignant
-            </Link>
-            <Link href="" className="text-white/80 hover:text-laha-gold transition-colors">
-              Nos ouvrages
-            </Link>
-            <Link href="/nos-resultats" className="text-white/80 hover:text-laha-gold transition-colors">
-              Nos résultats
-            </Link>
-            <Link href="/#contact" className="text-white/80 hover:text-laha-gold transition-colors">
-              Contact
-            </Link>
-          </div>
-
-          <div className="hidden lg:flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="text-white/80 hover:text-laha-gold transition-colors font-medium"
-            >
-              Se connecter
-            </Link>
-            <Link
-              href="/account-type"
-              className="px-6 py-2 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all"
-            >
-              S'inscrire
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-white"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </nav>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="md:hidden absolute top-full left-0 right-0 bg-laha-black-light/95 backdrop-blur-md border-t border-laha-gold-dark/20 z-50"
-          >
-            <div className="px-4 py-4 space-y-4">
-              <Link
-                href="/#features"
-                className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Qui-sommes nous ?
-              </Link>
-              <Link
-                href="/devenir-enseignant"
-                className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Devenir Enseignant
-              </Link>
-              <div className="pt-4 border-t border-laha-gold-dark/20 space-y-3">
-                <Link
-                  href="/login"
-                  className="block py-2 text-laha-gold-light/80 hover:text-laha-gold-light transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Connexion
-                </Link>
-                <Link
-                  href="/account-type"
-                  className="block w-full px-4 py-3 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-medium rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-center"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  S'inscrire
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-laha-background via-laha-surface to-laha-gold-light-new">
+      {/* Header unifié avec Navigation */}
+      <Navigation currentPage="/qui-sommes-nous" />
 
       {/* Hero Section */}
       <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
@@ -204,9 +102,9 @@ export default function QuiSommesNousPage() {
               delay={150}
               animateBy="words"
               direction="top"
-              className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 justify-center"
+              className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-laha-text mb-6 justify-center"
             />
-            <p className="text-xl sm:text-2xl text-white/80 mb-8 leading-relaxed">
+            <p className="text-xl sm:text-2xl text-laha-text-secondary mb-8 leading-relaxed">
               L'histoire de LAHACADEMIA et notre mission pour une éducation accessible à tous
             </p>
           </motion.div>
@@ -225,9 +123,9 @@ export default function QuiSommesNousPage() {
               <h2 className="font-heading text-3xl sm:text-4xl font-bold text-laha-gold mb-6">
                 Une vision née d'une expérience vécue
               </h2>
-              <div className="space-y-4 text-white/80">
+              <div className="space-y-4 text-laha-text-secondary">
                 <p>
-                  <strong className="text-laha-gold">LAHACADEMIA</strong> est la plateforme éducative numérique francophone conçue par <strong className="text-laha-gold">LAHA ÉDITIONS</strong>, une maison d'édition africaine fondée en 1997.
+                  <span className="text-laha-gold font-bold">LAHACADEMIA</span> est la plateforme éducative numérique francophone conçue par <span className="text-laha-gold font-bold">LAHA ÉDITIONS</span>, une maison d'édition africaine fondée en 1997.
                 </p>
                 <p>
                   Depuis plus de 25 ans, LAHA ÉDITIONS s'est donnée pour mission de rendre l'éducation accessible à tous, en proposant des manuels scolaires de qualité à des prix abordables.
@@ -250,10 +148,10 @@ export default function QuiSommesNousPage() {
                     <Target className="h-6 w-6 text-laha-gold group-hover:text-laha-gold-light transition-colors duration-300" />
                   </div>
                   <div className="flex flex-col items-center">
-                    <p className="font-bold text-lg text-white group-hover:text-laha-gold transition-colors duration-300">
+                    <p className="font-bold text-lg text-laha-text group-hover:text-laha-gold transition-colors duration-300">
                       Notre Impact
                     </p>
-                    <p className="text-sm text-white/70 group-hover:text-white/90 transition-colors duration-300">Notre manuel révolutionnaire</p>
+                    <p className="text-sm text-laha-text-secondary group-hover:text-laha-text transition-colors duration-300">Notre manuel révolutionnaire</p>
                   </div>
                 </div>
 
@@ -268,21 +166,21 @@ export default function QuiSommesNousPage() {
                 </div>
 
                 <div className="text-content">
-                  <h1 className="font-bold text-xl md:text-2xl text-white mb-4 text-center group-hover:text-laha-gold transition-colors duration-300">
+                  <h1 className="font-bold text-xl md:text-2xl text-laha-text mb-4 text-center group-hover:text-laha-gold transition-colors duration-300">
                     BEPC - Guide de préparation
                   </h1>
 
-                  <p className="text-sm text-white/70 mb-4 text-center group-hover:text-white/90 transition-colors duration-300">
+                  <p className="text-sm text-laha-text-secondary mb-4 text-center group-hover:text-laha-text transition-colors duration-300">
                     Guide complet de préparation au BEPC (Brevet d'Études du Premier Cycle). Exercices et conseils méthodologiques.
                   </p>
 
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between bg-black/30 backdrop-blur-sm rounded-lg p-3">
-                      <span className="text-white/90 text-sm">Prix initial</span>
-                      <span className="text-white line-through text-sm">15 000 FCFA</span>
+                    <div className="flex items-center justify-between bg-laha-surface/30 backdrop-blur-sm rounded-lg p-3">
+                      <span className="text-laha-text text-sm">Prix initial</span>
+                      <span className="text-laha-text line-through text-sm">15 000 FCFA</span>
                     </div>
                     <div className="flex items-center justify-between bg-laha-gold/20 backdrop-blur-sm rounded-lg p-3">
-                      <span className="text-white font-medium text-sm">Prix LAHA</span>
+                      <span className="text-laha-text font-medium text-sm">Prix LAHA</span>
                       <span className="text-laha-gold font-bold">1 200 FCFA</span>
                     </div>
                     <div className="text-center">
@@ -290,9 +188,9 @@ export default function QuiSommesNousPage() {
                     </div>
                   </div>
 
-                  <button className="rounded-full pl-4 pr-1 py-1 text-white flex items-center space-x-1 bg-laha-black mt-4 text-xs font-bold dark:bg-zinc-800 mx-auto">
+                  <button className="rounded-full pl-4 pr-1 py-1 text-laha-black flex items-center space-x-1 bg-laha-gold mt-4 text-xs font-bold mx-auto">
                     <span>Consulter maintenant</span>
-                    <span className="bg-laha-gold text-laha-black rounded-full text-[0.6rem] px-2 py-0 font-bold">
+                    <span className="bg-laha-black text-laha-gold rounded-full text-[0.6rem] px-2 py-0 font-bold">
                       GRATUIT
                     </span>
                   </button>
@@ -313,13 +211,20 @@ export default function QuiSommesNousPage() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="text-center"
+                className="text-center bg-laha-surface/20 backdrop-blur-md rounded-2xl p-6 border border-laha-border hover:bg-laha-surface/30 hover:border-laha-gold/30 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-laha-gold/10"
               >
-                <div className="text-3xl md:text-4xl font-bold text-laha-gold mb-2">
+                <div className="flex justify-center mb-4">
+                  <div className="p-3 bg-laha-gold/20 rounded-full">
+                    <div className="text-laha-gold">
+                      {stat.icon}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-3xl md:text-4xl font-bold text-laha-gold mb-3">
                   <CountUp to={stat.number} duration={2} delay={0.2 + index * 0.1} />
                   {stat.suffix}
                 </div>
-                <div className="text-white/70 text-sm">{stat.label}</div>
+                <div className="text-laha-text-secondary text-sm font-medium">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -338,26 +243,28 @@ export default function QuiSommesNousPage() {
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-laha-gold mb-6">
               LAHACADEMIA : une plateforme pour une éducation inclusive
             </h2>
-            <p className="text-xl text-white/80 max-w-4xl mx-auto">
+            <p className="text-xl text-laha-text-secondary max-w-4xl mx-auto">
               Dans la continuité de sa mission sociale, LAHA ÉDITIONS a lancé LAHACADEMIA, une plateforme numérique éducative pensée pour tous
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {publicCible.map((item, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="bg-laha-gold-dark/10 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20 text-center"
+                className="bg-laha-surface/20 backdrop-blur-md rounded-2xl p-8 border border-laha-border text-center hover:bg-laha-surface/30 hover:border-laha-gold/30 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-laha-gold/10"
               >
-                <div className="flex justify-center mb-4">
-                  <div className="p-3 bg-laha-gold/20 rounded-full">
-                    {item.icon}
+                <div className="flex justify-center mb-6">
+                  <div className="p-4 bg-laha-gold/20 rounded-full hover:bg-laha-gold/30 transition-colors duration-300">
+                    <div className="text-laha-gold">
+                      {item.icon}
+                    </div>
                   </div>
                 </div>
-                <p className="text-white/80 text-sm">{item.text}</p>
+                <p className="text-laha-text-secondary text-base leading-relaxed">{item.text}</p>
               </motion.div>
             ))}
           </div>
@@ -376,7 +283,7 @@ export default function QuiSommesNousPage() {
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-laha-gold mb-6">
               Une plateforme complète
             </h2>
-            <p className="text-xl text-white/80 max-w-4xl mx-auto">
+            <p className="text-xl text-laha-text-secondary max-w-4xl mx-auto">
               Accessible via tablette sécurisée et application web, LAHACADEMIA propose un écosystème éducatif complet
             </p>
           </motion.div>
@@ -388,15 +295,15 @@ export default function QuiSommesNousPage() {
                 initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="bg-laha-gold-dark/10 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20"
+                className="bg-laha-surface/20 backdrop-blur-md rounded-2xl p-8 border border-laha-border hover:bg-laha-surface/30 hover:border-laha-gold/30 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-laha-gold/10"
               >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
+                <div className="flex items-start gap-6">
+                  <div className="flex-shrink-0 p-3 bg-laha-gold/20 rounded-full hover:bg-laha-gold/30 transition-colors duration-300">
                     {feature.icon}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                    <p className="text-white/70">{feature.description}</p>
+                    <h3 className="text-xl font-bold text-laha-text mb-3">{feature.title}</h3>
+                    <p className="text-laha-text-secondary leading-relaxed">{feature.description}</p>
                   </div>
                 </div>
               </motion.div>
@@ -417,7 +324,7 @@ export default function QuiSommesNousPage() {
               <h2 className="font-heading text-3xl sm:text-4xl font-bold text-laha-gold mb-6">
                 Un écosystème éducatif durable
               </h2>
-              <p className="text-white/80 mb-6">
+              <p className="text-laha-text-secondary mb-6">
                 LAHACADEMIA repose sur un modèle économique social et inclusif, conçu pour être accessible à tous, partout en Afrique.
               </p>
               <div className="space-y-4">
@@ -426,7 +333,7 @@ export default function QuiSommesNousPage() {
                     <div className="text-laha-gold">
                       {item.icon}
                     </div>
-                    <span className="text-white/80">{item.text}</span>
+                    <span className="text-laha-text-secondary">{item.text}</span>
                   </div>
                 ))}
               </div>
@@ -436,13 +343,13 @@ export default function QuiSommesNousPage() {
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="bg-laha-gold-dark/10 backdrop-blur-md rounded-2xl p-8 border border-laha-gold-dark/20"
+              className="bg-laha-surface/20 backdrop-blur-md rounded-2xl p-8 border border-laha-border hover:bg-laha-surface/30 hover:border-laha-gold/30 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-laha-gold/10"
             >
               <div className="flex items-center gap-3 mb-6">
                 <Globe className="h-8 w-8 text-laha-gold" />
                 <h3 className="text-2xl font-bold text-laha-gold">Services Disponibles</h3>
               </div>
-              <div className="space-y-3 text-white/80">
+              <div className="space-y-3 text-laha-text-secondary">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-laha-gold rounded-full"></div>
                   <span>Révisions et exercices interactifs</span>
@@ -485,26 +392,28 @@ export default function QuiSommesNousPage() {
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-laha-gold mb-6">
               Sécurité, inclusion et performance
             </h2>
-            <p className="text-xl text-white/80 max-w-4xl mx-auto">
+            <p className="text-xl text-laha-text-secondary max-w-4xl mx-auto">
               Une plateforme sécurisée avec des profils adaptés et des outils analytiques avancés
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {securite.map((item, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="bg-laha-gold-dark/10 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20 text-center"
+                className="bg-laha-surface/20 backdrop-blur-md rounded-2xl p-8 border border-laha-border text-center hover:bg-laha-surface/30 hover:border-laha-gold/30 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-laha-gold/10"
               >
-                <div className="flex justify-center mb-4">
-                  <div className="p-3 bg-laha-gold/20 rounded-full">
-                    {item.icon}
+                <div className="flex justify-center mb-6">
+                  <div className="p-4 bg-laha-gold/20 rounded-full hover:bg-laha-gold/30 transition-colors duration-300">
+                    <div className="text-laha-gold">
+                      {item.icon}
+                    </div>
                   </div>
                 </div>
-                <p className="text-white/80 text-sm">{item.text}</p>
+                <p className="text-laha-text-secondary text-base leading-relaxed">{item.text}</p>
               </motion.div>
             ))}
           </div>
@@ -513,13 +422,13 @@ export default function QuiSommesNousPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mt-12 bg-laha-gold-dark/10 backdrop-blur-md rounded-2xl p-8 border border-laha-gold-dark/20 text-center"
+            className="mt-12 bg-laha-surface/20 backdrop-blur-md rounded-2xl p-8 border border-laha-border hover:bg-laha-surface/30 hover:border-laha-gold/30 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-laha-gold/10 text-center"
           >
             <div className="flex items-center justify-center gap-3 mb-6">
               <BarChart3 className="h-8 w-8 text-laha-gold" />
               <h3 className="text-2xl font-bold text-laha-gold">Plateforme Analytique</h3>
             </div>
-            <p className="text-white/80 max-w-3xl mx-auto">
+            <p className="text-laha-text-secondary max-w-3xl mx-auto">
               Parents, professeurs et administrateurs peuvent suivre les performances, niveaux d'engagement, revenus, paiements, et contenus utilisés via des tableaux de bord dynamiques.
             </p>
           </motion.div>
@@ -533,12 +442,12 @@ export default function QuiSommesNousPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-8 sm:p-12"
+            className="bg-laha-surface/20 backdrop-blur-md border border-laha-border rounded-2xl p-8 sm:p-12 hover:bg-laha-surface/30 hover:border-laha-gold/30 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-laha-gold/10"
           >
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-laha-text mb-4 sm:mb-6">
               Rejoignez la révolution éducative africaine
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/70 mb-6 sm:mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-laha-text-secondary mb-6 sm:mb-8 leading-relaxed">
               Découvrez comment LAHACADEMIA transforme l'éducation en Afrique francophone
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -559,7 +468,7 @@ export default function QuiSommesNousPage() {
         </div>
       </section>
       {/* Footer */}
-      <footer className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 border-t border-white/10">
+      <footer className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 border-t border-laha-border">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -570,7 +479,7 @@ export default function QuiSommesNousPage() {
                 height={32}
                 className="rounded-lg w-8 h-8 sm:w-10 sm:h-10"
               />
-              <span className="font-heading text-lg sm:text-xl font-bold text-white">Lahacademia</span>
+              <span className="font-heading text-lg sm:text-xl font-bold text-laha-text">Lahacademia</span>
             </div>
 
             <div className="flex items-center justify-center space-x-4 sm:space-x-6">
@@ -598,100 +507,100 @@ export default function QuiSommesNousPage() {
           {/* Footer Links */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8">
             <div>
-              <h4 className="text-white font-semibold text-base mb-4">Plateforme</h4>
+              <h4 className="text-laha-text font-semibold text-base mb-4">Plateforme</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/courses" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/courses" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Cours
                   </Link>
                 </li>
                 <li>
-                  <Link href="/teachers" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/teachers" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Enseignants
                   </Link>
                 </li>
                 <li>
-                  <Link href="/pricing" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/pricing" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Tarifs
                   </Link>
                 </li>
                 <li>
-                  <Link href="/mobile" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/mobile" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     App Mobile
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold text-base mb-4">Support</h4>
+              <h4 className="text-laha-text font-semibold text-base mb-4">Support</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/help" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/help" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Centre d'aide
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/contact" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Contact
                   </Link>
                 </li>
                 <li>
-                  <Link href="/faq" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/faq" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     FAQ
                   </Link>
                 </li>
                 <li>
-                  <Link href="/status" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/status" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Statut
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold text-base mb-4">Entreprise</h4>
+              <h4 className="text-laha-text font-semibold text-base mb-4">Entreprise</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/about" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/about" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     À propos
                   </Link>
                 </li>
                 <li>
-                  <Link href="/careers" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/careers" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Carrières
                   </Link>
                 </li>
                 <li>
-                  <Link href="/press" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/press" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Presse
                   </Link>
                 </li>
                 <li>
-                  <Link href="/partners" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/partners" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Partenaires
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold text-base mb-4">Légal</h4>
+              <h4 className="text-laha-text font-semibold text-base mb-4">Légal</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/terms" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/terms" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Conditions
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/privacy" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Confidentialité
                   </Link>
                 </li>
                 <li>
-                  <Link href="/cookies" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/cookies" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Cookies
                   </Link>
                 </li>
                 <li>
-                  <Link href="/licenses" className="text-white/70 hover:text-white transition-colors text-sm">
+                  <Link href="/licenses" className="text-laha-text-secondary hover:text-laha-text transition-colors text-sm">
                     Licences
                   </Link>
                 </li>
@@ -699,8 +608,8 @@ export default function QuiSommesNousPage() {
             </div>
           </div>
 
-          <div className="text-center pt-8 border-t border-white/10">
-            <p className="text-white/60 text-sm leading-relaxed">
+          <div className="text-center pt-8 border-t border-laha-border">
+            <p className="text-laha-text-secondary text-sm leading-relaxed">
               © 2024 LAHA Editions. Tous droits réservés. Révolutionner l'éducation en Afrique francophone.
             </p>
           </div>

@@ -1,0 +1,143 @@
+.scroll-list-container {
+  position: relative;
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.scroll-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: #F6C10A transparent;
+}
+
+.scroll-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-list::-webkit-scrollbar-thumb {
+  background: #F6C10A;
+  border-radius: 3px;
+}
+
+.scroll-list::-webkit-scrollbar-thumb:hover {
+  background: #D9AA05;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.item {
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.item:hover {
+  background: rgba(246, 193, 10, 0.1);
+  border-color: rgba(246, 193, 10, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(246, 193, 10, 0.2);
+}
+
+.item.selected {
+  background: rgba(246, 193, 10, 0.15);
+  border-color: rgba(246, 193, 10, 0.5);
+  box-shadow: 0 4px 16px rgba(246, 193, 10, 0.3);
+}
+
+.item-text {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.top-gradient,
+.bottom-gradient {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40px;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.top-gradient {
+  top: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 100%
+  );
+}
+
+.bottom-gradient {
+  bottom: 0;
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 100%
+  );
+}
+
+/* Animation pour les items */
+.item {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .scroll-list-container {
+    max-height: 300px;
+  }
+  
+  .scroll-list {
+    max-height: 300px;
+    padding: 0.75rem;
+  }
+  
+  .item {
+    padding: 0.75rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .item-text {
+    font-size: 0.875rem;
+  }
+}
+

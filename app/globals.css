@@ -4,12 +4,12 @@
 
 @layer base {
   :root {
-    /* Fond et texte */
-    --background: 48 100% 98%; /* #FFFDF5 : blanc légèrement doré */
-    --foreground: 42 10% 15%; /* #262211 : brun très sombre lisible sur fond clair */
+    /* Thème Jour LAHA - Palette personnalisée exacte */
+    --background: 48 100% 98%; /* #faf8f3 : fond principal très clair */
+    --foreground: 42 10% 15%; /* #4a3f35 : texte principal */
 
     /* Cartes et surfaces secondaires */
-    --card: 48 100% 97%; /* #FFFBEF : blanc doré très léger */
+    --card: 48 100% 97%; /* #f5f1e8 : fond secondaire */
     --card-foreground: 42 10% 15%;
 
     --popover: 48 100% 97%;
@@ -20,7 +20,7 @@
     --primary-foreground: 0 0% 100%; /* Blanc sur bouton doré */
 
     /* Tons secondaires */
-    --secondary: 44 40% 93%;  /* #F7F3DD */
+    --secondary: 44 40% 93%;  /* #f4e4a6 : accent doré clair */
     --secondary-foreground: 42 10% 20%;
 
     --muted: 44 30% 90%; /* pour badges, éléments neutres */
@@ -32,7 +32,7 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 42 30% 85%;
+    --border: 42 30% 85%; /* #e5d7c3 : bordures */
     --input: 42 30% 90%;
     --ring: 47 90% 50%; /* halo doré lors du focus */
 
@@ -46,7 +46,7 @@
     --sidebar-border: 42 30% 85%;
     --sidebar-ring: 47 96% 51%; /* même que primary */
 
-    /* Palette identitaire conservée */
+    /* Palette identitaire LAHA - Thème clair */
     --laha-gold: #F6C10A;
     --laha-gold-warm: #D9AA05;
     --laha-gold-soft: #E1AF0E;
@@ -55,38 +55,73 @@
     --laha-black: #1A1A1A;
     --laha-black-light: #2A2A2A;
     --laha-black-dark: #0F0F0F;
+
+    /* Variables du thème clair LAHA - Palette exacte demandée */
+    --laha-background: #faf8f3;       /* Fond principal très clair */
+    --laha-surface: #f5f1e8;          /* Fond secondaire */
+    --laha-text: #4a3f35;             /* Texte principal */
+    --laha-text-secondary: #7c6f63;   /* Texte secondaire */
+    --laha-gold-light-new: #f4e4a6;   /* Accent doré clair */
+    --laha-border: #e5d7c3;           /* Bordures */
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    /* Thème Nuit LAHA - Dégradés dorés */
+    --background: 0 0% 10%; /* #1A1A1A : noir velours */
+    --foreground: 48 100% 98%; /* #FFFDF5 : blanc légèrement doré */
+
+    --card: 0 0% 8%; /* #141414 : noir plus foncé */
+    --card-foreground: 48 100% 98%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 48 100% 98%;
+
+    --primary: 47 96% 51%; /* #F6C10A : doré principal */
+    --primary-foreground: 0 0% 10%; /* Noir sur bouton doré */
+
+    --secondary: 0 0% 15%; /* #262626 : gris très foncé */
+    --secondary-foreground: 48 100% 98%;
+
+    --muted: 0 0% 12%; /* pour badges, éléments neutres */
+    --muted-foreground: 48 100% 70%;
+
+    --accent: 0 0% 18%; /* gris foncé */
+    --accent-foreground: 48 100% 98%;
+
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --destructive-foreground: 48 100% 98%;
+
+    --border: 0 0% 20%; /* #333333 : bordures grises */
+    --input: 0 0% 15%;
+    --ring: 47 96% 51%; /* halo doré lors du focus */
 
     /* Sidebar dark variables */
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 240 5.9% 10%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 48 100% 98%;
+    --sidebar-primary: 47 96% 51%; /* #F6C10A */
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 48 100% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 47 96% 51%;
+
+    /* Palette identitaire LAHA - Thème sombre */
+    --laha-gold: #F6C10A;
+    --laha-gold-warm: #D9AA05;
+    --laha-gold-soft: #E1AF0E;
+    --laha-gold-light: #E9E4D8;
+    --laha-gold-dark: #BFA55A;
+    --laha-black: #1A1A1A;
+    --laha-black-light: #2A2A2A;
+    --laha-black-dark: #0F0F0F;
+
+    /* Variables du thème sombre LAHA */
+    --laha-background: #1A1A1A;
+    --laha-surface: #141414;
+    --laha-text: #FFFDF5;
+    --laha-text-secondary: #E9E4D8;
+    --laha-gold-light-new: #F6C10A;
+    --laha-border: #333333;
   }
 }
 
@@ -794,7 +829,7 @@ body {
   line-clamp: 5;
 }
 
-
-
-
-
+::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}

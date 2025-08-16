@@ -61,7 +61,7 @@ export default function Stepper({
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
                   index + 1 <= currentStep
                     ? "bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black"
-                    : "bg-laha-black-light/20 text-white/50 border border-laha-gold-dark/30"
+                    : "bg-laha-surface/20 text-laha-text-secondary border border-laha-border"
                 }`}
               >
                 {index + 1}
@@ -71,14 +71,14 @@ export default function Stepper({
                   className={`h-0.5 w-16 mx-2 transition-all ${
                     index + 1 < currentStep
                       ? "bg-gradient-to-r from-laha-gold to-laha-gold-warm"
-                      : "bg-laha-gold-dark/30"
+                      : "bg-laha-border"
                   }`}
                 />
               )}
             </div>
           ))}
         </div>
-        <div className="text-center text-white/70 text-sm">
+        <div className="text-center text-laha-text-secondary text-sm">
           Étape {currentStep} sur {totalSteps}
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function Stepper({
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
         transition={{ duration: 0.3 }}
-        className="bg-laha-black-light/20 backdrop-blur-md border border-laha-gold-dark/20 rounded-xl p-8 mb-8"
+        className="bg-laha-surface/20 backdrop-blur-md border border-laha-border rounded-xl p-8 mb-8"
       >
         {children[currentStep - 1]}
       </motion.div>
@@ -102,8 +102,8 @@ export default function Stepper({
           disabled={currentStep === 1}
           className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all ${
             currentStep === 1
-              ? "bg-laha-black-light/10 text-white/30 cursor-not-allowed"
-              : "bg-laha-black-light/20 text-laha-gold-light hover:bg-laha-gold-dark/20 hover:text-laha-gold border border-laha-gold-dark/30"
+              ? "bg-laha-surface/10 text-laha-text-secondary/50 cursor-not-allowed"
+              : "bg-laha-surface/20 text-laha-gold hover:bg-laha-gold/20 hover:text-laha-gold border border-laha-border"
           }`}
         >
           <ChevronLeft className="h-4 w-4" />

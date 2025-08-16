@@ -58,7 +58,7 @@ export const HoverEffect = ({
               )}
               <div>
                 <div className="text-2xl font-bold text-laha-gold mb-2">{item.stat}</div>
-                <p className="text-white/80 text-sm">{item.text}</p>
+                <p className="text-laha-text-secondary text-sm">{item.text}</p>
               </div>
             </div>
           </Card>
@@ -78,7 +78,7 @@ export const Card = ({
   return (
     <div
       className={cn(
-        "rounded-xl h-full w-full p-6 overflow-hidden bg-laha-gold-dark/10 backdrop-blur-md border border-laha-gold-dark/20 relative z-20",
+        "rounded-xl h-full w-full p-6 overflow-hidden bg-laha-surface/20 backdrop-blur-md border border-laha-border relative z-20",
         className
       )}
     >

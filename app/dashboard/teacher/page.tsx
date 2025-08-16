@@ -22,6 +22,7 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { BookOpen, Users, DollarSign, Star, Calendar, Video, MessageSquare } from "lucide-react"
+import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
 
 export default function TeacherDashboard() {
   const { user } = useAuth()
@@ -125,7 +126,13 @@ export default function TeacherDashboard() {
                 ))}
               </div>
             </div>
-            <div>
+            <div className="space-y-4">
+              {/* Bouton de thème */}
+              <div className="flex justify-center">
+                <AnimatedThemeToggler />
+              </div>
+              
+              {/* Profil professeur */}
               <SidebarLink
                 link={{
                   label: teacherData ? 
@@ -191,11 +198,11 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
 
   return (
     <div className="flex flex-1">
-      <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl border border-laha-gold-dark/20 bg-gradient-to-br from-laha-black/50 to-laha-gold-dark/30 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
+              <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl bg-gradient-to-br from-laha-background via-laha-surface/50 to-laha-gold-light-new/20 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Tableau de bord Professeur</h1>
-          <p className="text-laha-gold-light/70">
+          <p className="text-laha-text-secondary">
             {loading ? (
               'Chargement...'
             ) : (
@@ -211,50 +218,50 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-4 border border-laha-gold-dark/20">
+          <div className="bg-laha-surface/20 backdrop-blur-md rounded-xl p-4 border border-laha-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-laha-gold/20 rounded-lg">
                 <BookOpen className="h-5 w-5 text-laha-gold" />
               </div>
               <div>
-                <p className="text-laha-gold-light/70 text-sm">Cours actifs</p>
-                <p className="text-laha-gold-light text-xl font-bold">8</p>
+                <p className="text-laha-text-secondary text-sm">Cours actifs</p>
+                <p className="text-laha-text text-xl font-bold">8</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-4 border border-laha-gold-dark/20">
+          <div className="bg-laha-surface/20 backdrop-blur-md rounded-xl p-4 border border-laha-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-laha-gold-warm/20 rounded-lg">
                 <Users className="h-5 w-5 text-laha-gold-warm" />
               </div>
               <div>
-                <p className="text-laha-gold-light/70 text-sm">Total apprenants</p>
-                <p className="text-laha-gold-light text-xl font-bold">156</p>
+                <p className="text-laha-text-secondary text-sm">Total apprenants</p>
+                <p className="text-laha-text text-xl font-bold">156</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-4 border border-laha-gold-dark/20">
+          <div className="bg-laha-surface/20 backdrop-blur-md rounded-xl p-4 border border-laha-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-laha-gold-soft/20 rounded-lg">
                 <DollarSign className="h-5 w-5 text-laha-gold-soft" />
               </div>
               <div>
-                <p className="text-laha-gold-light/70 text-sm">Revenus ce mois</p>
-                <p className="text-laha-gold-light text-xl font-bold">45,000 FCFA</p>
+                <p className="text-laha-text-secondary text-sm">Revenus ce mois</p>
+                <p className="text-laha-text text-xl font-bold">45,000 FCFA</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-4 border border-laha-gold-dark/20">
+          <div className="bg-laha-surface/20 backdrop-blur-md rounded-xl p-4 border border-laha-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-laha-gold/20 rounded-lg">
                 <Star className="h-5 w-5 text-laha-gold" />
               </div>
               <div>
-                <p className="text-laha-gold-light/70 text-sm">Note moyenne</p>
-                <p className="text-laha-gold-light text-xl font-bold">4.8/5</p>
+                <p className="text-laha-text-secondary text-sm">Note moyenne</p>
+                <p className="text-laha-text text-xl font-bold">4.8/5</p>
               </div>
             </div>
           </div>
@@ -263,19 +270,19 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
           {/* My Courses */}
-          <div className="lg:col-span-2 bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20">
-            <h2 className="text-xl font-semibold text-laha-gold-light mb-4 flex items-center gap-2">
+          <div className="lg:col-span-2 bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-6 border border-laha-border">
+            <h2 className="text-xl font-semibold text-laha-text mb-4 flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-laha-gold" />
               Mes Cours
             </h2>
             <div className="space-y-4">
               {myCourses.map((course, index) => (
-                <div key={index} className="bg-laha-black-light/10 rounded-lg p-4">
+                <div key={index} className="bg-gradient-to-br from-laha-surface/20 to-laha-surface/10 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-laha-gold-light font-medium">{course.title}</h3>
+                    <h3 className="text-laha-text font-medium">{course.title}</h3>
                     <span className="text-laha-gold text-sm font-medium">{course.earnings}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-laha-gold-light/70">
+                  <div className="flex items-center gap-4 text-sm text-laha-text-secondary">
                     <span className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
                       {course.students} apprenants

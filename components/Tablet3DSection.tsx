@@ -18,14 +18,14 @@ export default function Tablet3DSection() {
   const store = useTabletStore()
 
   return (
-    <section className="w-full bg-gradient-to-br from-laha-black via-laha-black to-laha-gold-dark py-16 px-4 flex flex-col items-center">
-      <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4 text-center">La Tablette Tout-en-Un</h2>
-      <p className="text-white/80 text-lg mb-8 text-center max-w-2xl">
+    <section className="w-full bg-gradient-to-br from-laha-background via-laha-surface to-laha-gold-light-new py-16 px-4 flex flex-col items-center">
+      <h2 className="font-heading text-3xl md:text-4xl font-bold text-laha-text mb-4 text-center">La Tablette Tout-en-Un</h2>
+      <p className="text-laha-text-secondary text-lg mb-8 text-center max-w-2xl">
         Découvrez la tablette éducative la plus avancée pour l'apprentissage en Afrique francophone.
       </p>
       
       <div className="relative w-full max-w-4xl mx-auto">
-        <div className="w-full h-[400px] bg-black/20 rounded-xl border border-laha-gold/30 overflow-hidden">
+        <div className="w-full h-[400px] bg-laha-surface/20 rounded-xl border border-laha-border overflow-hidden">
           <Canvas 
             camera={{ position: [0, 0, 4], fov: 40 }}
             style={{ borderRadius: '1rem' }}
@@ -42,10 +42,10 @@ export default function Tablet3DSection() {
         </div>
 
         {/* Fiche technique qui apparaît au survol */}
-        <div 
+                <div 
           className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ${
             store.open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-          } bg-laha-black-light/90 backdrop-blur-md border border-laha-gold/30 rounded-xl p-6 text-white shadow-2xl z-10 w-80`}
+          } bg-laha-surface/90 backdrop-blur-md border border-laha-border rounded-xl p-6 text-laha-text shadow-2xl z-10 w-80`}
         >
           <h3 className="text-laha-gold font-bold text-lg mb-4">Fiche Technique</h3>
           <ul className="space-y-3">
@@ -65,11 +65,11 @@ export default function Tablet3DSection() {
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-laha-gold-soft rounded-full"></span>
                 <span>Géolocalisation anti-vol</span>
-              </li>
+            </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-laha-gold-soft rounded-full"></span>
                 <span>Mise à jour automatique des programmes</span>
-              </li>
+            </li>
             </ul>
           </ul>
         </div>
@@ -83,10 +83,10 @@ export default function Tablet3DSection() {
       </button>
 
       {showVideo && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-          <div className="bg-laha-black rounded-xl p-6 max-w-2xl w-full mx-4 relative">
+        <div className="fixed inset-0 bg-laha-text/90 flex items-center justify-center z-50">
+          <div className="bg-laha-surface rounded-xl p-6 max-w-2xl w-full mx-4 relative border border-laha-border">
             <button 
-              className="absolute top-4 right-4 text-white text-3xl hover:text-laha-gold transition-colors" 
+              className="absolute top-4 right-4 text-laha-text text-3xl hover:text-laha-gold transition-colors" 
               onClick={() => setShowVideo(false)}
             >
               ×
