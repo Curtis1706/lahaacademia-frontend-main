@@ -398,7 +398,7 @@ export default function ParentReservationsPage() {
               <div className="p-3 bg-yellow-500/20 rounded-lg">
                 <DollarSign className="h-6 w-6 text-yellow-400" />
               </div>
-              <div className="text-3xl font-bold text-yellow-500">{totalSpent.toFixed(2)}€</div>
+              <div className="text-3xl font-bold text-yellow-500">{totalSpent.toFixed(2)}FCFA</div>
             </div>
             <h3 className="text-yellow-400 font-semibold mb-1">Total Dépensé</h3>
             <p className="text-yellow-200/60 text-sm">Cours payés</p>
@@ -409,7 +409,7 @@ export default function ParentReservationsPage() {
               <div className="p-3 bg-yellow-500/20 rounded-lg">
                 <CreditCard className="h-6 w-6 text-yellow-400" />
               </div>
-              <div className="text-3xl font-bold text-yellow-500">{totalPendingAmount.toFixed(2)}€</div>
+              <div className="text-3xl font-bold text-yellow-500">{totalPendingAmount.toFixed(2)}FCFA</div>
             </div>
             <h3 className="text-yellow-400 font-semibold mb-1">Paiements en Attente</h3>
             <p className="text-yellow-200/60 text-sm">{pendingPayments} réservations</p>
@@ -571,7 +571,7 @@ export default function ParentReservationsPage() {
                   <div className="flex flex-col items-end gap-4">
                     <div className="text-right">
                       <div className="text-3xl font-bold text-yellow-500 mb-1">
-                        {booking.price.toFixed(2)}€
+                        {booking.price.toFixed(2)}FCFA
                       </div>
                       <div className="text-sm text-gray-400">
                         Réf: {booking.reference}

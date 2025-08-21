@@ -593,7 +593,7 @@ export default function ParentReservePage() {
                 {selectedTeacher.hourly_rate && (
                   <div>
                     <h4 className="text-sm font-medium text-laha-gold-light/80 mb-2">Tarif</h4>
-                    <p className="text-laha-gold font-medium">{selectedTeacher.hourly_rate}€/heure</p>
+                    <p className="text-laha-gold font-medium">{selectedTeacher.hourly_rate}FCFA/heure</p>
                     </div>
                   )}
                 </div>

@@ -528,7 +528,7 @@ const CourseCard = ({ course, onBook }: { course: Course; onBook: () => void }) 
              </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-green-600">{course.price}€</div>
+            <div className="text-2xl font-bold text-green-600">{course.price}FCFA</div>
             <div className="text-sm text-gray-500">par heure</div>
           </div>
         </div>
@@ -626,7 +626,7 @@ const TeacherCard = ({ teacher, onBook }: { teacher: Teacher; onBook: () => void
             </div>
           </div>
                      <div className="text-right">
-             <div className="text-2xl font-bold text-green-600">{teacher.hourly_rate}€</div>
+             <div className="text-2xl font-bold text-green-600">{teacher.hourly_rate}FCFA</div>
              <div className="text-sm text-gray-500">par heure</div>
            </div>
         </div>

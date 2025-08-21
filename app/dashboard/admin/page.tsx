@@ -399,7 +399,7 @@ function AdminContent() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-laha-gold font-medium">{teacher.hourly_rate}€/h</div>
+                        <div className="text-laha-gold font-medium">{teacher.hourly_rate}FCFA/h</div>
                         <div className="text-sm text-laha-text-secondary flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                           {teacher.rating}
@@ -458,7 +458,7 @@ function AdminContent() {
                         </div>
                       </div>
                       <div className="text-right ml-3">
-                        <div className="text-laha-gold font-medium">{course.price}€</div>
+                        <div className="text-laha-gold font-medium">{course.price}FCFA</div>
                         <div className="text-sm text-laha-text-secondary">{course.duration}min</div>
                       </div>
                     </div>
