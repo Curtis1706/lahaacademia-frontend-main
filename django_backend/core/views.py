@@ -106,6 +106,81 @@ class TeacherViewSet(viewsets.ModelViewSet):
         except Teacher.DoesNotExist:
             return Response({'error': 'Professeur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=False, methods=['get'], url_path='available-for-booking', permission_classes=[AllowAny])
+    def available_for_booking(self, request):
+        """Récupérer les professeurs disponibles pour la réservation"""
+        from django.db import models
+        
+        # Récupérer TOUS les professeurs actifs (temporairement sans validation)
+        teachers = Teacher.objects.filter(
+            user__is_active=True
+        )
+        
+        # Appliquer des filtres
+        subject = request.query_params.get('subject')
+        country = request.query_params.get('country')
+        search = request.query_params.get('search')
+        min_rating = request.query_params.get('min_rating')
+        max_price = request.query_params.get('max_price')
+        
+        if subject and subject != 'all':
+            teachers = teachers.filter(subjects__contains=[subject])
+        if country and country != 'all':
+            teachers = teachers.filter(user__student__country__icontains=country)
+        if search:
+            teachers = teachers.filter(
+                models.Q(user__first_name__icontains=search) |
+                models.Q(user__last_name__icontains=search) |
+                models.Q(bio__icontains=search)
+            )
+        if min_rating:
+            try:
+                min_rating = float(min_rating)
+                teachers = teachers.filter(average_rating__gte=min_rating)
+            except ValueError:
+                pass
+        if max_price:
+            try:
+                max_price = float(max_price)
+                teachers = teachers.filter(hourly_rate__lte=max_price)
+            except ValueError:
+                pass
+        
+        # Optimisation des requêtes
+        teachers = teachers.select_related('user').prefetch_related('user__course_set')
+        
+        # Préparer les données enrichies
+        enriched_teachers = []
+        for teacher in teachers:
+            teacher_data = {
+                'id': teacher.id,
+                'name': f"{teacher.user.first_name} {teacher.user.last_name}",
+                'avatar': teacher.profile_photo.url if teacher.profile_photo else None,
+                'subjects': teacher.subjects,
+                'rating': teacher.average_rating,
+                'experience': f"{teacher.experience_years} ans",
+                'hourly_rate': float(teacher.hourly_rate),
+                'country': getattr(teacher.user.student, 'country', 'Non spécifié') if hasattr(teacher.user, 'student') else 'Non spécifié',
+                'total_students': teacher.total_students,
+                'total_sessions': teacher.total_sessions,
+                'bio': teacher.bio,
+                'specializations': teacher.specializations,
+                'certifications': teacher.certifications
+            }
+            enriched_teachers.append(teacher_data)
+        
+        return Response({
+            'teachers': enriched_teachers,
+            'total': len(enriched_teachers),
+            'filters_applied': {
+                'subject': subject,
+                'country': country,
+                'search': search,
+                'min_rating': min_rating,
+                'max_price': max_price
+            }
+        })
+
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def courses(self, request, pk=None):
         """Récupérer les cours d'un professeur"""
@@ -399,12 +474,155 @@ class CourseViewSet(viewsets.ModelViewSet):
             
         return queryset
 
-    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
-    def availabilities(self, request, pk=None):
+    @action(detail=False, methods=['get'], url_path='available-courses')
+    def available_courses(self, request):
+        """Obtenir les cours disponibles pour les élèves"""
+        # Filtrer les cours actifs
+        courses = Course.objects.filter(is_active=True)
+        
+        # Appliquer des filtres optionnels
+        subject = request.query_params.get('subject')
+        level = request.query_params.get('level')
+        country = request.query_params.get('country')
+        difficulty = request.query_params.get('difficulty')
+        
+        if subject:
+            courses = courses.filter(subject__icontains=subject)
+        if level:
+            courses = courses.filter(level__icontains=level)
+        if country:
+            courses = courses.filter(country__icontains=country)
+        if difficulty:
+            courses = courses.filter(difficulty_level=difficulty)
+        
+        # Inclure les informations sur les professeurs et disponibilités
+        courses = courses.select_related('created_by').prefetch_related('availabilities')
+        
+        # Sérialiser avec des informations enrichies
+        from .serializers import CourseSerializer
+        serializer = CourseSerializer(courses, many=True, context={'request': request})
+        
+        return Response({
+            'courses': serializer.data,
+            'total': courses.count(),
+            'filters_applied': {
+                'subject': subject,
+                'level': level,
+                'country': country,
+                'difficulty': difficulty
+            }
+        })
+
+    @action(detail=True, methods=['get'], url_path='availabilities')
+    def course_availabilities(self, request, pk=None):
         """Récupérer les disponibilités d'un cours"""
         course = self.get_object()
         availabilities = CourseAvailability.objects.filter(course=course, is_active=True)
         return Response(CourseAvailabilitySerializer(availabilities, many=True).data)
+
+    @action(detail=False, methods=['get'], url_path='courses-with-teachers', permission_classes=[AllowAny])
+    def courses_with_teachers(self, request):
+        """Récupérer les cours avec les détails des professeurs pour la réservation"""
+        from django.db import models
+        
+        # Récupérer les cours actifs
+        courses = Course.objects.filter(is_active=True)
+        
+        # Appliquer des filtres
+        subject = request.query_params.get('subject')
+        level = request.query_params.get('level')
+        country = request.query_params.get('country')
+        search = request.query_params.get('search')
+        
+        if subject and subject != 'all':
+            courses = courses.filter(subject=subject)
+        if level and level != 'all':
+            courses = courses.filter(level=level)
+        if country and country != 'all':
+            courses = courses.filter(country=country)
+        if search:
+            courses = courses.filter(
+                models.Q(title__icontains=search) |
+                models.Q(description__icontains=search)
+            )
+        
+        # Optimisation des requêtes
+        courses = courses.select_related('created_by').prefetch_related(
+            'availabilities__teacher__user'
+        )
+        
+        # Préparer les données enrichies
+        enriched_courses = []
+        for course in courses:
+            course_data = CourseSerializer(course).data
+            
+            # Récupérer les professeurs disponibles pour ce cours
+            availabilities = CourseAvailability.objects.filter(
+                course=course, 
+                is_active=True
+            ).select_related('teacher', 'teacher__user')
+            
+            teachers = []
+            for availability in availabilities:
+                teacher = availability.teacher
+                teacher_data = {
+                    'id': teacher.id,
+                    'name': f"{teacher.user.first_name} {teacher.user.last_name}",
+                    'avatar': teacher.profile_photo.url if teacher.profile_photo else None,
+                    'rating': teacher.average_rating,
+                    'experience': f"{teacher.experience_years} ans",
+                    'hourly_rate': float(teacher.hourly_rate),
+                    'subjects': teacher.subjects,
+                    'country': getattr(teacher.user.student, 'country', 'Non spécifié') if hasattr(teacher.user, 'student') else 'Non spécifié',
+                    'total_students': teacher.total_students,
+                    'total_sessions': teacher.total_sessions,
+                    'bio': teacher.bio,
+                    'availability_id': availability.id,
+                    'day_of_week': availability.day_of_week,
+                    'start_time': availability.start_time,
+                    'end_time': availability.end_time
+                }
+                teachers.append(teacher_data)
+            
+            # Ajouter les informations du professeur principal (créateur du cours)
+            if course.created_by and hasattr(course.created_by, 'teacher'):
+                main_teacher = course.created_by.teacher
+                main_teacher_data = {
+                    'id': main_teacher.id,
+                    'name': f"{main_teacher.user.first_name} {main_teacher.user.last_name}",
+                    'avatar': main_teacher.profile_photo.url if main_teacher.profile_photo else None,
+                    'rating': main_teacher.average_rating,
+                    'experience': f"{main_teacher.experience_years} ans",
+                    'hourly_rate': float(main_teacher.hourly_rate),
+                    'subjects': main_teacher.subjects,
+                    'country': getattr(main_teacher.user.student, 'country', 'Non spécifié') if hasattr(main_teacher.user, 'student') else 'Non spécifié',
+                    'total_students': main_teacher.total_students,
+                    'total_sessions': main_teacher.total_sessions,
+                    'bio': main_teacher.bio,
+                    'is_main_teacher': True
+                }
+                
+                # Éviter les doublons
+                if not any(t['id'] == main_teacher.id for t in teachers):
+                    teachers.append(main_teacher_data)
+            
+            course_data['teachers'] = teachers
+            course_data['available_spots'] = 10  # Valeur par défaut, à adapter selon la logique métier
+            course_data['max_capacity'] = 15     # Valeur par défaut, à adapter selon la logique métier
+            course_data['next_session'] = None   # À calculer selon les disponibilités
+            
+            enriched_courses.append(course_data)
+        
+        return Response({
+            'courses': enriched_courses,
+            'total': len(enriched_courses),
+            'filters_applied': {
+                'subject': subject,
+                'level': level,
+                'country': country,
+                'search': search
+            }
+        })
 
 
 class CourseAvailabilityViewSet(viewsets.ModelViewSet):
@@ -578,10 +796,16 @@ class BookingViewSet(viewsets.ModelViewSet):
         if not all([teacher_id, start_time, end_time]):
             return Response({'error': 'teacher_id, start_time et end_time sont requis'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Déterminer l'élève
+        # Déterminer l'élève et vérifier les permissions
         user = request.user
+        student = None
+        
+        # Cas 1: L'utilisateur est un élève qui réserve pour lui-même
         if hasattr(user, 'student') and user.student:
             student = user.student
+            print(f"🎓 Élève réservant pour lui-même: {student.user.first_name}")
+            
+        # Cas 2: L'utilisateur est un parent qui réserve pour son enfant
         elif hasattr(user, 'parent') and user.parent:
             if not student_id:
                 return Response({'error': 'student_id est requis pour les parents'}, status=status.HTTP_400_BAD_REQUEST)
@@ -590,14 +814,28 @@ class BookingViewSet(viewsets.ModelViewSet):
                 if s not in user.parent.children.all():
                     return Response({'error': "Cet élève n'est pas associé à ce parent"}, status=status.HTTP_403_FORBIDDEN)
                 student = s
+                print(f"👨‍👩‍👧‍👦 Parent réservant pour son enfant: {student.user.first_name}")
             except Student.DoesNotExist:
                 return Response({'error': 'Élève introuvable'}, status=status.HTTP_404_NOT_FOUND)
         else:
-            return Response({'error': 'Utilisateur non autorisé'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Utilisateur non autorisé. Seuls les élèves et parents peuvent réserver des cours.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Vérifier que l'élève n'est pas bloqué
+        if student.is_blocked:
+            if student.blocked_until and student.blocked_until > dj_timezone.now():
+                return Response({
+                    'error': f'Cet élève est temporairement bloqué jusqu\'au {student.blocked_until.strftime("%d/%m/%Y %H:%M")}'
+                }, status=status.HTTP_403_FORBIDDEN)
+            else:
+                # Débloquer automatiquement si la date de blocage est passée
+                student.is_blocked = False
+                student.save()
 
         # Récupérer teacher & course
         try:
             teacher = Teacher.objects.get(id=teacher_id)
+            if not teacher.is_validated:
+                return Response({'error': 'Ce professeur n\'est pas encore validé'}, status=status.HTTP_400_BAD_REQUEST)
         except Teacher.DoesNotExist:
             return Response({'error': 'Professeur introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -605,6 +843,8 @@ class BookingViewSet(viewsets.ModelViewSet):
         if course_id:
             try:
                 course = Course.objects.get(id=course_id)
+                if not course.is_active:
+                    return Response({'error': 'Ce cours n\'est plus disponible'}, status=status.HTTP_400_BAD_REQUEST)
             except Course.DoesNotExist:
                 return Response({'error': 'Cours introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -629,6 +869,15 @@ class BookingViewSet(viewsets.ModelViewSet):
                 
             print(f"🕐 Dates parsées: {st} → {et}")
             
+            # Vérifier que la date n'est pas dans le passé
+            if st <= dj_timezone.now():
+                return Response({'error': 'Impossible de réserver une session dans le passé'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Vérifier que la durée est raisonnable (entre 30 min et 4h)
+            duration = (et - st).total_seconds() / 60
+            if duration < 30 or duration > 240:
+                return Response({'error': 'La durée de la session doit être entre 30 minutes et 4 heures'}, status=status.HTTP_400_BAD_REQUEST)
+            
         except Exception as e:
             print(f"❌ Erreur parsing dates: {e}")
             print(f"📅 start_time reçu: {start_time}")
@@ -640,13 +889,25 @@ class BookingViewSet(viewsets.ModelViewSet):
                 'details': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Collision simple
-        overlap = Session.objects.filter(teacher=teacher, start_time__lt=et, end_time__gt=st, status__in=['scheduled','ongoing']).first()
-        if overlap and overlap.current_enrollment >= overlap.max_capacity:
-            return Response({'error': 'Créneau déjà complet'}, status=status.HTTP_409_CONFLICT)
-
-        session = overlap
-        if session is None:
+        # Vérifier les conflits de disponibilité
+        overlap = Session.objects.filter(
+            teacher=teacher, 
+            start_time__lt=et, 
+            end_time__gt=st, 
+            status__in=['scheduled','ongoing']
+        ).first()
+        
+        if overlap:
+            if overlap.current_enrollment >= overlap.max_capacity:
+                return Response({'error': 'Créneau déjà complet'}, status=status.HTTP_409_CONFLICT)
+            
+            # Vérifier que l'élève n'est pas déjà inscrit à cette session
+            if student in overlap.students.all():
+                return Response({'error': 'Vous êtes déjà inscrit à cette session'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            session = overlap
+        else:
+            # Créer une nouvelle session
             session = Session.objects.create(
                 course=course,
                 teacher=teacher,
@@ -658,13 +919,16 @@ class BookingViewSet(viewsets.ModelViewSet):
                 current_enrollment=0,
             )
 
-        if student in session.students.all():
-            return Response({'error': 'Déjà inscrit'}, status=status.HTTP_400_BAD_REQUEST)
+        # Vérifier la capacité de la session
+        if session.current_enrollment >= session.max_capacity:
+            return Response({'error': 'Cette session est complète'}, status=status.HTTP_409_CONFLICT)
 
+        # Ajouter l'élève à la session
         session.students.add(student)
         session.current_enrollment += 1
         session.save()
 
+        # Créer la réservation
         booking = Booking.objects.create(
             student=student,
             teacher=teacher,
@@ -673,8 +937,20 @@ class BookingViewSet(viewsets.ModelViewSet):
             payment_status='pending',
         )
 
-        Notification.objects.create(user=user, title='Réservation confirmée', message=f'Session avec {teacher.user.first_name}', notification_type='booking')
-        Notification.objects.create(user=teacher.user, title='Nouvelle réservation', message=f'{student.user.first_name} a réservé une session', notification_type='booking')
+        # Créer les notifications
+        Notification.objects.create(
+            user=user, 
+            title='Réservation confirmée', 
+            message=f'Votre session avec {teacher.user.first_name} a été confirmée pour le {st.strftime("%d/%m/%Y à %H:%M")}', 
+            notification_type='booking'
+        )
+        
+        Notification.objects.create(
+            user=teacher.user, 
+            title='Nouvelle réservation', 
+            message=f'{student.user.first_name} a réservé une session pour le {st.strftime("%d/%m/%Y à %H:%M")}', 
+            notification_type='booking'
+        )
 
         # Réponse enrichie avec tous les détails de la réservation
         response_data = {
@@ -708,6 +984,60 @@ class BookingViewSet(viewsets.ModelViewSet):
         }
         
         return Response(response_data, status=status.HTTP_201_CREATED)
+    @action(detail=False, methods=['get'], url_path='my-bookings')
+    def my_bookings(self, request):
+        """Obtenir les réservations de l'utilisateur connecté (élève ou parent)"""
+        user = request.user
+        bookings = []
+        
+        # Cas 1: L'utilisateur est un élève
+        if hasattr(user, 'student') and user.student:
+            bookings = Booking.objects.filter(student=user.student).order_by('-booking_date')
+            print(f"🎓 Récupération des réservations pour l'élève: {user.student.user.first_name}")
+            
+        # Cas 2: L'utilisateur est un parent
+        elif hasattr(user, 'parent') and user.parent:
+            # Récupérer toutes les réservations des enfants du parent
+            children_students = user.parent.children.all()
+            bookings = Booking.objects.filter(student__in=children_students).order_by('-booking_date')
+            print(f"👨‍👩‍👧‍👦 Récupération des réservations pour les enfants du parent: {user.parent.user.first_name}")
+        else:
+            return Response({'error': 'Utilisateur non autorisé'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Sérialiser les réservations avec les détails
+        serializer = self.get_serializer(bookings, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='upcoming-sessions')
+    def upcoming_sessions(self, request):
+        """Obtenir les sessions à venir pour l'utilisateur connecté"""
+        user = request.user
+        sessions = []
+        
+        # Cas 1: L'utilisateur est un élève
+        if hasattr(user, 'student') and user.student:
+            sessions = Session.objects.filter(
+                students=user.student,
+                start_time__gte=dj_timezone.now(),
+                status='scheduled'
+            ).order_by('start_time')
+            
+        # Cas 2: L'utilisateur est un parent
+        elif hasattr(user, 'parent') and user.parent:
+            children_students = user.parent.children.all()
+            sessions = Session.objects.filter(
+                students__in=children_students,
+                start_time__gte=dj_timezone.now(),
+                status='scheduled'
+            ).order_by('start_time')
+        else:
+            return Response({'error': 'Utilisateur non autorisé'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Sérialiser les sessions
+        from .serializers import SessionSerializer
+        serializer = SessionSerializer(sessions, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         """Annuler une réservation"""
@@ -773,6 +1103,62 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Obtenir le nombre de notifications non lues"""
         count = Notification.objects.filter(user=request.user, is_read=False).count()
         return Response({'unread_count': count})
+
+    @action(detail=False, methods=['get'], url_path='available-teachers')
+    def available_teachers(self, request):
+        """Obtenir les professeurs disponibles pour les élèves"""
+        # Filtrer les professeurs validés et actifs
+        teachers = Teacher.objects.filter(
+            is_validated=True,
+            user__is_active=True
+        )
+        
+        # Appliquer des filtres optionnels
+        subject = request.query_params.get('subject')
+        country = request.query_params.get('country')
+        min_rating = request.query_params.get('min_rating')
+        max_price = request.query_params.get('max_price')
+        
+        if subject:
+            teachers = teachers.filter(subjects__contains=[subject])
+        if country:
+            teachers = teachers.filter(user__country__icontains=country)
+        if min_rating:
+            try:
+                min_rating = float(min_rating)
+                teachers = teachers.filter(average_rating__gte=min_rating)
+            except ValueError:
+                pass
+        if max_price:
+            try:
+                max_price = float(max_price)
+                teachers = teachers.filter(hourly_rate__lte=max_price)
+            except ValueError:
+                pass
+        
+        # Inclure les informations sur l'utilisateur et les cours
+        teachers = teachers.select_related('user').prefetch_related('user__teacher__courses')
+        
+        # Sérialiser avec des informations enrichies
+        from .serializers import TeacherSerializer
+        serializer = TeacherSerializer(teachers, many=True, context={'request': request})
+        
+        return Response({
+            'teachers': serializer.data,
+            'total': teachers.count(),
+            'filters_applied': {
+                'subject': subject,
+                'country': country,
+                'min_rating': min_rating,
+                'max_price': max_price
+            }
+        })
+
+    @action(detail=True, methods=['get'], url_path='schedule')
+    def teacher_schedule(self, request, pk=None):
+        """Obtenir l'emploi du temps d'un professeur"""
+        # Placeholder pour l'emploi du temps
+        return Response({'message': 'Fonctionnalité à implémenter'})
 
 
 

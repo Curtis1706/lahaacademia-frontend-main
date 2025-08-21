@@ -59,7 +59,7 @@ export default function StudentDashboard() {
     },
     {
       label: "Réservation de cours",
-      href: "#",
+      href: "/dashboard/student/course-booking",
       icon: <IconCalendarEvent className="h-5 w-5 shrink-0 text-white" />,
     },
     {

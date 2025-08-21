@@ -54,6 +54,12 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
       icon: <Calendar className="h-5 w-5 shrink-0 text-white" />,
       active: pathname === '/dashboard/parent/reserver'
     },
+    {
+      label: 'Mes Reservations',
+      href: '/dashboard/parent/reservations',
+      icon: <Calendar className="h-5 w-5 shrink-0 text-white" />,
+      active: pathname === '/dashboard/parent/reservations'
+    },
     { 
       label: 'Notifications', 
       href: '/dashboard/parent/notifications', 

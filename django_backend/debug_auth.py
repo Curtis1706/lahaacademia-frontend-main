@@ -35,20 +35,20 @@ def debug_auth():
         # Vérifier si cet utilisateur a un profil Teacher
         try:
             teacher = Teacher.objects.get(user=token.user)
-            print(f"     ✅ A un profil Teacher (ID: {teacher.id})")
+            print(f"      A un profil Teacher (ID: {teacher.id})")
         except Teacher.DoesNotExist:
-            print(f"     ❌ N'a PAS de profil Teacher")
+            print(f"      N'a PAS de profil Teacher")
     
     # 5. Vérifier le cours spécifique de l'erreur
     course_id = "44a9f118-6cfe-4e8e-a72d-6738f42ac30e"
     print(f"\n5. VÉRIFICATION DU COURS {course_id}:")
     try:
         course = Course.objects.get(id=course_id)
-        print(f"   ✅ Cours trouvé: {course.title}")
-        print(f"   ✅ Créé par: {course.created_by.email}")
+        print(f"    Cours trouvé: {course.title}")
+        print(f"    Créé par: {course.created_by.email}")
     except Course.DoesNotExist:
-        print(f"   ❌ Cours NON TROUVÉ avec cet ID")
-        print("   📋 Cours disponibles:")
+        print(f"    Cours NON TROUVÉ avec cet ID")
+        print("    Cours disponibles:")
         for course in Course.objects.all():
             print(f"      - {course.title}: {course.id}")
 

@@ -72,7 +72,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
           </Link>
           <Link
             href="/account-type"
-            className="px-6 py-2 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all"
+            className="px-6 py-2 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-xl hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all"
           >
             S'inscrire
           </Link>

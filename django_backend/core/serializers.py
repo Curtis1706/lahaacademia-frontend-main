@@ -77,20 +77,144 @@ class SessionSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
     teacher = TeacherSerializer(read_only=True)
     students = StudentSerializer(many=True, read_only=True)
+    
+    # Champs calculés
+    is_full = serializers.SerializerMethodField()
+    available_spots = serializers.SerializerMethodField()
+    time_until_start = serializers.SerializerMethodField()
+    duration_minutes = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    can_join = serializers.SerializerMethodField()
 
     class Meta:
         model = m.Session
-        fields = '__all__'
+        fields = [
+            'id', 'course', 'teacher', 'students', 'start_time', 'end_time', 
+            'status', 'meeting_link', 'meeting_password', 'max_capacity', 
+            'current_enrollment', 'session_type', 'agenda', 'materials',
+            'is_full', 'available_spots', 'time_until_start', 'duration_minutes',
+            'status_display', 'can_join'
+        ]
+
+    def get_is_full(self, obj):
+        """Vérifier si la session est complète"""
+        return obj.current_enrollment >= obj.max_capacity
+
+    def get_available_spots(self, obj):
+        """Calculer le nombre de places disponibles"""
+        return max(0, obj.max_capacity - obj.current_enrollment)
+
+    def get_time_until_start(self, obj):
+        """Calculer le temps restant jusqu'au début de la session"""
+        from django.utils import timezone
+        if obj.start_time:
+            delta = obj.start_time - timezone.now()
+            if delta.total_seconds() > 0:
+                days = delta.days
+                hours = delta.seconds // 3600
+                minutes = (delta.seconds % 3600) // 60
+                
+                if days > 0:
+                    return f"{days} jour(s), {hours}h {minutes}min"
+                elif hours > 0:
+                    return f"{hours}h {minutes}min"
+                else:
+                    return f"{minutes}min"
+            else:
+                return "Session en cours ou terminée"
+        return None
+
+    def get_duration_minutes(self, obj):
+        """Calculer la durée de la session en minutes"""
+        if obj.start_time and obj.end_time:
+            delta = obj.end_time - obj.start_time
+            return int(delta.total_seconds() / 60)
+        return None
+
+    def get_status_display(self, obj):
+        """Obtenir le statut traduit"""
+        status_map = {
+            'scheduled': 'Programmée',
+            'ongoing': 'En cours',
+            'completed': 'Terminée',
+            'cancelled': 'Annulée'
+        }
+        return status_map.get(obj.status, obj.status)
+
+    def get_can_join(self, obj):
+        """Vérifier si l'utilisateur peut rejoindre cette session"""
+        from django.utils import timezone
+        user = self.context.get('request').user if self.context.get('request') else None
+        
+        if not user:
+            return False
+            
+        # Vérifier si l'utilisateur est déjà inscrit
+        if hasattr(user, 'student') and user.student in obj.students.all():
+            return False
+            
+        # Vérifier si la session est complète
+        if obj.current_enrollment >= obj.max_capacity:
+            return False
+            
+        # Vérifier si la session n'a pas encore commencé
+        if obj.start_time <= timezone.now():
+            return False
+            
+        return True
 
 
 class BookingSerializer(serializers.ModelSerializer):
     student = StudentSerializer(read_only=True)
     teacher = TeacherSerializer(read_only=True)
     session = SessionSerializer(read_only=True)
+    
+    # Champs calculés pour une meilleure expérience utilisateur
+    booking_reference = serializers.SerializerMethodField()
+    days_until_session = serializers.SerializerMethodField()
+    session_status_display = serializers.SerializerMethodField()
+    payment_status_display = serializers.SerializerMethodField()
 
     class Meta:
         model = m.Booking
-        fields = '__all__'
+        fields = [
+            'id', 'student', 'teacher', 'session', 'booking_date', 'status', 
+            'payment_status', 'special_requirements', 'cancellation_reason', 
+            'refund_amount', 'booking_reference', 'days_until_session',
+            'session_status_display', 'payment_status_display'
+        ]
+
+    def get_booking_reference(self, obj):
+        """Générer une référence de réservation lisible"""
+        return f"REF-{str(obj.id)[:8].upper()}"
+
+    def get_days_until_session(self, obj):
+        """Calculer le nombre de jours jusqu'à la session"""
+        from django.utils import timezone
+        if obj.session.start_time:
+            delta = obj.session.start_time - timezone.now()
+            return max(0, delta.days)
+        return None
+
+    def get_session_status_display(self, obj):
+        """Obtenir le statut de session traduit"""
+        status_map = {
+            'scheduled': 'Programmée',
+            'ongoing': 'En cours',
+            'completed': 'Terminée',
+            'cancelled': 'Annulée'
+        }
+        return status_map.get(obj.session.status, obj.session.status)
+
+    def get_payment_status_display(self, obj):
+        """Obtenir le statut de paiement traduit"""
+        status_map = {
+            'pending': 'En attente',
+            'paid': 'Payé',
+            'failed': 'Échoué',
+            'refunded': 'Remboursé'
+        }
+        return status_map.get(obj.payment_status, obj.payment_status)
 
 
 class ProgressSerializer(serializers.ModelSerializer):

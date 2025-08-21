@@ -76,7 +76,7 @@ export default function Tablet3DSection() {
       </div>
 
       <button
-        className="mt-10 px-8 py-4 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-lg flex items-center gap-3 shadow-lg hover:shadow-xl"
+        className="mt-10 px-8 py-4 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-xl hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-lg flex items-center gap-3 shadow-lg hover:shadow-xl"
         onClick={() => setShowVideo(true)}
       >
         <span>Voir la tablette en action</span>

@@ -106,16 +106,17 @@ export default function DevenirEnseignantPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 href="/account-type"
-                className="px-8 py-4 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-lg flex items-center gap-3 shadow-lg hover:shadow-xl"
+                className="px-8 py-4 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-xl hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-lg flex items-center gap-3 shadow-lg hover:shadow-xl"
               >
                 Commencer maintenant
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
                 href="/login"
-                className="px-8 py-4 bg-laha-surface/20 text-laha-text hover:bg-laha-gold/20 hover:text-laha-gold transition-all rounded-lg border border-laha-border"
+                className="px-8 py-4 bg-laha-surface/20 text-laha-text hover:bg-laha-gold/20 hover:text-laha-gold transition-all rounded-xl border border-laha-border"
               >
-                Déjà inscrit ?Se connecter
+                Déjà inscrit ?
+                Se connecter
               </Link>
             </div>
           </motion.div>

@@ -256,13 +256,13 @@ export default function HomePage() {
           >
             <Link
               href="/account-type"
-              className="w-full sm:w-auto px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all flex items-center justify-center gap-2 text-sm lg:text-base"
+              className="w-full sm:w-auto px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-semibold rounded-xl hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all flex items-center justify-center gap-2 text-sm lg:text-base"
             >
               Commencer maintenant
               <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
 
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 text-laha-text-secondary hover:text-laha-gold transition-colors px-6 py-3 lg:px-8 lg:py-4 bg-laha-surface/20 hover:bg-laha-gold/20 rounded-lg text-sm lg:text-base border border-laha-border">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 text-laha-text-secondary hover:text-laha-gold transition-colors px-6 py-3 lg:px-8 lg:py-4 bg-laha-surface/20 hover:bg-laha-gold/20 rounded-xl text-sm lg:text-base border border-laha-border">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-laha-gold/20 backdrop-blur-md flex items-center justify-center border border-laha-gold/40">
                 <Play className="h-4 w-4 sm:h-5 sm:w-5 ml-1 text-laha-gold" />
               </div>
@@ -536,7 +536,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FAQ Section */}
+      {/* Tablet 3D Section */}
       <Tablet3DSection />
 
       {/* CTA Section */}

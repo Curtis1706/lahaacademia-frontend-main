@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AuthGuard } from "@/components/auth-guard"
 import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
 import { motion } from "framer-motion"
@@ -27,12 +27,14 @@ import {
   Eye,
   Plus,
   Upload,
+  Star,
 } from "lucide-react"
 import { UsersEvolutionChart } from '@/components/charts/users-evolution-chart'
 import { RolesDistributionChart } from '@/components/charts/roles-distribution-chart'
 import { ActivityChart } from '@/components/charts/activity-chart'
 import { RevenueTrendChart } from '@/components/charts/revenue-trend-chart'
 import { PerformanceRadarChart } from '@/components/charts/performance-radar-chart'
+import { getAvailableTeachers, getCoursesWithTeachers, Teacher, Course } from '@/lib/api-courses'
 
 export default function AdminDashboard() {
   const [open, setOpen] = useState(true)
@@ -131,6 +133,35 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 function AdminContent() {
   const [selectedPeriod, setSelectedPeriod] = useState('30j')
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [courses, setCourses] = useState<Course[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Fonction pour charger les données
+  const loadData = async () => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const [teachersResponse, coursesResponse] = await Promise.all([
+        getAvailableTeachers(),
+        getCoursesWithTeachers()
+      ])
+      
+      setTeachers(teachersResponse.data)
+      setCourses(coursesResponse.data)
+    } catch (err) {
+      console.error('Erreur lors du chargement des données:', err)
+      setError('Erreur lors du chargement des données')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  
+  useEffect(() => {
+    loadData()
+  }, [])
 
   return (
           <div className="flex flex-1">
@@ -172,9 +203,9 @@ function AdminContent() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-laha-text-secondary mb-1">Utilisateurs Actifs</p>
-                <p className="text-2xl font-bold text-laha-gold">2,134</p>
-                <p className="text-xs text-green-400 mt-1">+12% ce mois</p>
+                <p className="text-sm font-medium text-laha-text-secondary mb-1">Professeurs Inscrits</p>
+                <p className="text-2xl font-bold text-laha-gold">{isLoading ? '...' : teachers.length}</p>
+                <p className="text-xs text-green-400 mt-1">Total des professeurs</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-laha-gold/20 flex items-center justify-center">
                 <UsersIcon className="h-6 w-6 text-laha-gold" />
@@ -191,9 +222,9 @@ function AdminContent() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-laha-text-secondary mb-1">Cours Actifs</p>
-                <p className="text-2xl font-bold text-laha-gold">456</p>
-                <p className="text-xs text-green-400 mt-1">+8% ce mois</p>
+                <p className="text-sm font-medium text-laha-text-secondary mb-1">Cours Disponibles</p>
+                <p className="text-2xl font-bold text-laha-gold">{isLoading ? '...' : courses.length}</p>
+                <p className="text-xs text-green-400 mt-1">Total des cours</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-laha-gold/20 flex items-center justify-center">
                 <BookOpen className="h-6 w-6 text-laha-gold" />
@@ -311,6 +342,140 @@ function AdminContent() {
           </motion.div>
         </div>
 
+        {/* Error display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 text-red-800">
+              <span className="text-sm font-medium">Erreur :</span>
+              <span className="text-sm">{error}</span>
+              <button 
+                onClick={loadData}
+                className="ml-auto text-sm underline hover:no-underline"
+              >
+                Réessayer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Sections pour afficher les professeurs et cours */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+          {/* Section Professeurs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-6 border border-laha-border hover:border-laha-gold/30 transition-all duration-300"
+          >
+            <h3 className="text-xl font-semibold text-laha-gold mb-4 flex items-center gap-2">
+              <UsersIcon className="h-5 w-5" />
+              Professeurs Inscrits ({teachers.length})
+            </h3>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-laha-gold"></div>
+              </div>
+            ) : teachers.length === 0 ? (
+              <p className="text-laha-text-secondary text-center py-8">
+                Aucun professeur inscrit pour le moment
+              </p>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {teachers.slice(0, 10).map((teacher) => (
+                  <div key={teacher.id} className="bg-laha-black/40 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={teacher.avatar || "/placeholder.svg?height=40&width=40&text=T"}
+                          alt={teacher.name}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                        <div>
+                          <div className="font-medium text-laha-text">{teacher.name}</div>
+                          <div className="text-sm text-laha-text-secondary">
+                            {teacher.subjects.slice(0, 2).join(', ')}
+                            {teacher.subjects.length > 2 && '...'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-laha-gold font-medium">{teacher.hourly_rate}€/h</div>
+                        <div className="text-sm text-laha-text-secondary flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          {teacher.rating}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {teachers.length > 10 && (
+                  <div className="text-center py-2">
+                    <span className="text-sm text-laha-text-secondary">
+                      +{teachers.length - 10} autres professeurs
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Section Cours */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-6 border border-laha-border hover:border-laha-gold/30 transition-all duration-300"
+          >
+            <h3 className="text-xl font-semibold text-laha-gold mb-4 flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Cours Disponibles ({courses.length})
+            </h3>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-laha-gold"></div>
+              </div>
+            ) : courses.length === 0 ? (
+              <p className="text-laha-text-secondary text-center py-8">
+                Aucun cours disponible pour le moment
+              </p>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {courses.slice(0, 10).map((course) => (
+                  <div key={course.id} className="bg-laha-black/40 rounded-lg p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-laha-text mb-1">{course.title}</div>
+                        <div className="text-sm text-laha-text-secondary mb-2">
+                          {course.description.substring(0, 80)}...
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-laha-gold/20 text-laha-gold px-2 py-1 rounded">
+                            {course.subject}
+                          </span>
+                          <span className="text-xs bg-laha-surface/60 text-laha-text-secondary px-2 py-1 rounded">
+                            {course.level}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right ml-3">
+                        <div className="text-laha-gold font-medium">{course.price}€</div>
+                        <div className="text-sm text-laha-text-secondary">{course.duration}min</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {courses.length > 10 && (
+                  <div className="text-center py-2">
+                    <span className="text-sm text-laha-text-secondary">
+                      +{courses.length - 10} autres cours
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        </div>
+
         {/* Sections modernisées */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <motion.div
@@ -346,7 +511,7 @@ function AdminContent() {
                     <Eye className="h-4 w-4" />
                     <span className="text-sm font-medium">Voir tous les utilisateurs</span>
                   </div>
-                  <span className="text-xs bg-laha-gold text-laha-black px-2 py-1 rounded font-medium">2,134</span>
+                  <span className="text-xs bg-laha-gold text-laha-black px-2 py-1 rounded font-medium">{teachers.length}</span>
                 </div>
               </button>
             </div>
