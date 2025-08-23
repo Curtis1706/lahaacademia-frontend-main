@@ -323,97 +323,96 @@ export default function ParentReservePage() {
   return (
     <AuthGuard requiredRole="parent">
       <ParentSidebar>
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Réserver un cours</h1>
-              <p className="text-laha-gold-light/70">Choisissez un professeur, une date et un créneau.</p>
-            </div>
+        <div className="h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-heading mb-2">Réserver un cours</h1>
+            <p className="text-slate-600 dark:text-slate-400">Choisissez un professeur, une date et un créneau.</p>
+          </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Colonne gauche: formulaire */}
-          <form onSubmit={submit} className="lg:col-span-2 bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Colonne gauche: formulaire */}
+            <form onSubmit={submit} className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
             
             {/* Sélection de l'enfant */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-laha-gold" />
-                <label className="text-sm font-medium text-laha-gold-light">
-                      Sélectionner un enfant
-                    </label>
+                <Users className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Sélectionner un enfant
+                </label>
               </div>
-                    {children.length === 0 ? (
-                      <div className="w-full rounded-lg bg-laha-black-light/30 border border-laha-gold-dark/30 p-4 text-center">
+              {children.length === 0 ? (
+                <div className="w-full rounded-lg bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 p-4 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-laha-gold/20 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-laha-gold" />
+                    <div className="h-12 w-12 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-slate-600 dark:text-slate-400" />
                     </div>
                     <div>
-                      <p className="text-laha-gold-light font-medium">Aucun enfant associé</p>
-                      <p className="text-laha-gold-light/60 text-sm mt-1">Invitez votre enfant pour commencer</p>
+                      <p className="text-slate-800 dark:text-slate-100 font-medium">Aucun enfant associé</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Invitez votre enfant pour commencer</p>
                     </div>
-                          <a
-                            href="/dashboard/parent/invitations"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-laha-gold text-laha-black rounded-lg hover:bg-laha-gold/90 transition-colors text-sm font-medium"
-                          >
+                    <a
+                      href="/dashboard/parent/invitations"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors text-sm font-medium"
+                    >
                       <Users className="h-4 w-4" />
-                            Inviter un enfant
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <select
-                          value={studentId}
+                      Inviter un enfant
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative">
+                  <select
+                    value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
-                    className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
+                    className="w-full rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-4 py-3 pl-10 text-slate-800 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all appearance-none"
                     required
                   >
-                                        <option value="" className="bg-laha-black text-laha-gold-light">-- Choisir un enfant --</option>
+                    <option value="" className="bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100">-- Choisir un enfant --</option>
                     {children.map((child) => (
-                      <option key={child.id} value={child.id} className="bg-laha-black text-laha-gold-light">
+                      <option key={child.id} value={child.id} className="bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100">
                         {child.user.first_name} {child.user.last_name}
-                            </option>
-                          ))}
-                        </select>
-                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
-                      </div>
-                    )}
+                      </option>
+                    ))}
+                  </select>
+                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-slate-400" />
+                </div>
+              )}
             </div>
 
             {/* Sélection du professeur */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-laha-gold" />
-                <label className="text-sm font-medium text-laha-gold-light">
+                <GraduationCap className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Choisir un professeur
                 </label>
-                          </div>
+              </div>
               <div className="relative">
                 <select
                   value={teacherId}
                   onChange={(e) => setTeacherId(e.target.value)}
-                  className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
+                  className="w-full rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-4 py-3 pl-10 text-slate-800 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all appearance-none"
                   required
                 >
-                  <option value="" className="bg-laha-black text-laha-gold-light">-- Sélectionner un professeur --</option>
+                  <option value="" className="bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100">-- Sélectionner un professeur --</option>
                   {teachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id.toString()} className="bg-laha-black text-laha-gold-light">
+                    <option key={teacher.id} value={teacher.id.toString()} className="bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100">
                       {teacher.user.first_name} {teacher.user.last_name}
                       {teacher.subjects && teacher.subjects.length > 0 && ` (${teacher.subjects[0]})`}
                     </option>
                   ))}
                 </select>
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
-                          </div>
-                        </div>
-
-
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-slate-400" />
+              </div>
+            </div>
 
             {/* Sélection du cours */}
             {teacherId && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-laha-gold" />
-                  <label className="text-sm font-medium text-laha-gold-light">
+                  <BookOpen className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Cours disponibles
                   </label>
                 </div>
@@ -603,6 +602,7 @@ export default function ParentReservePage() {
               </div>
             )}
           </div>
+        </div>
         </div>
       </ParentSidebar>
     </AuthGuard>

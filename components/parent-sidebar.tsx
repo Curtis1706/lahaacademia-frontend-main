@@ -33,61 +33,61 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
     { 
       label: 'Tableau de bord', 
       href: '/dashboard/parent', 
-      icon: <LayoutDashboard className="h-5 w-5 shrink-0 text-white" />,
+      icon: <LayoutDashboard className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent'
     },
     { 
       label: 'Invitations', 
       href: '/dashboard/parent/invitations', 
-      icon: <Plus className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Plus className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/invitations'
     },
     { 
       label: 'Mes Enfants', 
       href: '/dashboard/parent/enfants', 
-      icon: <Users className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Users className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/enfants'
     },
     { 
       label: 'Réserver un cours', 
       href: '/dashboard/parent/reserver', 
-      icon: <Calendar className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Calendar className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/reserver'
     },
     {
       label: 'Mes Reservations',
       href: '/dashboard/parent/reservations',
-      icon: <Calendar className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Calendar className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/reservations'
     },
     { 
       label: 'Notifications', 
       href: '/dashboard/parent/notifications', 
-      icon: <Bell className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Bell className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/notifications'
     },
     { 
       label: 'Messages', 
       href: '/dashboard/parent/messages', 
-      icon: <MessageSquare className="h-5 w-5 shrink-0 text-white" />,
+      icon: <MessageSquare className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/messages'
     },
     { 
       label: 'Statistiques', 
       href: '/dashboard/parent/statistiques', 
-      icon: <BarChart3 className="h-5 w-5 shrink-0 text-white" />,
+      icon: <BarChart3 className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/statistiques'
     },
     { 
       label: 'Profil', 
       href: '/dashboard/parent/profil', 
-      icon: <User className="h-5 w-5 shrink-0 text-white" />,
+      icon: <User className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/profil'
     },
     { 
       label: 'Paramètres', 
       href: '/dashboard/parent/parametres', 
-      icon: <Settings className="h-5 w-5 shrink-0 text-white" />,
+      icon: <Settings className="h-5 w-5 shrink-0 text-slate-400" />,
       active: pathname === '/dashboard/parent/parametres'
     },
     // La déconnexion doit passer par une action JS pour effacer l'état côté client
@@ -95,7 +95,7 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full bg-laha-black">
+      <div className="flex h-screen w-full bg-slate-900 dark:bg-slate-950">
         <Sidebar open={open} setOpen={setOpen}>
           <SidebarBody className="justify-between gap-10">
             <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
@@ -113,9 +113,9 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
                       window.location.href = '/login'
                     }
                   }}
-                  className="flex items-center justify-start gap-2 py-2 px-3 rounded-lg text-white hover:bg-white/10 text-left"
+                  className="flex items-center justify-start gap-2 py-2 px-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white text-left transition-colors"
                 >
-                  <LogOut className="h-5 w-5 shrink-0 text-white" />
+                  <LogOut className="h-5 w-5 shrink-0 text-slate-400" />
                   <span className="text-sm">Déconnexion</span>
                 </button>
               </div>
@@ -140,7 +140,7 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
           </SidebarBody>
         </Sidebar>
 
-        <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl bg-gradient-to-br from-laha-background via-laha-surface/50 to-laha-gold-light-new/20 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
+        <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
           {children}
         </div>
       </div>
@@ -163,8 +163,8 @@ function SidebarLinkWithActive({ link }: SidebarLinkWithActiveProps) {
       href={link.href}
       className={`flex items-center justify-start gap-2 group/sidebar py-2 px-3 rounded-lg transition-colors ${
         link.active 
-          ? 'bg-laha-gold/20 text-laha-gold border border-laha-gold/30' 
-          : 'text-white hover:bg-white/10'
+          ? 'bg-slate-800 text-white border border-slate-700' 
+          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
       }`}
     >
       {link.icon}

@@ -39,32 +39,45 @@ export default function ParentInvitationsPage() {
   return (
     <AuthGuard requiredRole="parent">
       <ParentSidebar>
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Invitations Parent → Enfant</h1>
-              <p className="text-laha-gold-light/70">Invitez votre enfant à lier son compte à votre profil.</p>
+        <div className="h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-heading mb-2">Invitations Parent → Enfant</h1>
+            <p className="text-slate-600 dark:text-slate-400">Invitez votre enfant à lier son compte à votre profil.</p>
+          </div>
+
+          <form onSubmit={createInvitation} className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm space-y-4 max-w-xl mb-8">
+            <div>
+              <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">Email de l'enfant</label>
+              <input 
+                type="email" 
+                value={childEmail} 
+                onChange={e => setChildEmail(e.target.value)} 
+                className="w-full rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:border-slate-500 focus:ring-2 focus:ring-slate-500 p-3 text-slate-800 dark:text-slate-100 outline-none" 
+                placeholder="ex: eleve@example.com" 
+              />
             </div>
+            <button 
+              disabled={loading || !childEmail} 
+              className="px-5 py-3 rounded-lg bg-slate-800 dark:bg-slate-700 text-white font-medium hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Création…' : 'Générer une invitation'}
+            </button>
+          </form>
 
-            <form onSubmit={createInvitation} className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20 space-y-4 max-w-xl">
-              <div>
-                <label className="block text-sm text-laha-gold-light/80 mb-1">Email de l'enfant</label>
-                <input type="email" value={childEmail} onChange={e => setChildEmail(e.target.value)} className="w-full rounded bg-white/10 border border-white/10 focus:border-laha-gold/60 p-3 text-white outline-none" placeholder="ex: eleve@example.com" />
-              </div>
-              <button disabled={loading || !childEmail} className="px-5 py-3 rounded bg-laha-gold text-laha-black font-medium hover:bg-laha-gold/90 disabled:opacity-50">{loading ? 'Création…' : 'Générer une invitation'}</button>
-            </form>
-
-            <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20">
-              <h2 className="text-lg font-semibold text-laha-gold-light mb-4">Invitations émises</h2>
-              <div className="space-y-3 text-sm text-laha-gold-light/80">
-                {invitations.length === 0 && <p>Aucune invitation</p>}
-                {invitations.map((inv: any) => (
-                  <div key={inv.id} className="flex items-center justify-between bg-laha-black-light/10 rounded-lg p-3">
-                    <div>
-                      <p className="text-laha-gold-light">Code: <span className="text-laha-gold">{inv.code}</span></p>
-                      <p className="text-laha-gold-light/60">Email: {inv.child_email} • Statut: {inv.status === 'pending' ? 'En attente' : inv.status}</p>
-                    </div>
-                    {inv.status === 'student_accepted' && (
-                      <div className="flex gap-2">
-                        <button onClick={async () => {
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Invitations émises</h2>
+            <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+              {invitations.length === 0 && <p>Aucune invitation</p>}
+              {invitations.map((inv: any) => (
+                <div key={inv.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+                  <div>
+                    <p className="text-slate-800 dark:text-slate-100">Code: <span className="text-slate-600 dark:text-slate-400 font-mono">{inv.code}</span></p>
+                    <p className="text-slate-600 dark:text-slate-400">Email: {inv.child_email} • Statut: {inv.status === 'pending' ? 'En attente' : inv.status}</p>
+                  </div>
+                  {inv.status === 'student_accepted' && (
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={async () => {
                           const res = await fetch(`/api/parents/invitations/${inv.id}/approve/`, { method: 'POST' })
                           const data = await res.json().catch(() => ({}))
                           if (res.ok) {
@@ -73,8 +86,13 @@ export default function ParentInvitationsPage() {
                           } else {
                             setToast(data?.error || 'Une erreur est survenue lors de l\'approbation')
                           }
-                        }} className="px-3 py-1 rounded bg-laha-gold text-laha-black">Approuver</button>
-                        <button onClick={async () => {
+                        }} 
+                        className="px-3 py-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                      >
+                        Approuver
+                      </button>
+                      <button 
+                        onClick={async () => {
                           const res = await fetch(`/api/parents/invitations/${inv.id}/reject/`, { method: 'POST' })
                           const data = await res.json().catch(() => ({}))
                           if (res.ok) {
@@ -83,14 +101,19 @@ export default function ParentInvitationsPage() {
                           } else {
                             setToast(data?.error || 'Une erreur est survenue lors du rejet')
                           }
-                        }} className="px-3 py-1 rounded bg-white/10 text-white">Rejeter</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {toast && <p className="mt-3 text-laha-gold-light/80">{toast}</p>}
+                        }} 
+                        className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      >
+                        Rejeter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
+            {toast && <p className="mt-3 text-slate-600 dark:text-slate-400">{toast}</p>}
+          </div>
+        </div>
       </ParentSidebar>
     </AuthGuard>
   )
