@@ -1,0 +1,9 @@
+# Ce fichier définit qui peut reviewer les changements sur la branche main
+# Syntaxe: chemin/vers/fichier @utilisateur1 @utilisateur2
+
+# Protection de la branche main - seuls les propriétaires peuvent merger
+/main @Curtis1706 @firinze
+
+# Tous les fichiers du projet
+* @Curtis1706 @firinze
+
