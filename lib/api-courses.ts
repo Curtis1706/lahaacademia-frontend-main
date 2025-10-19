@@ -1,21 +1,5 @@
 import { http } from './api'
 
-export interface Course {
-  id: string
-  title: string
-  description: string
-  subject: string
-  level: string
-  country: string
-  duration: number
-  price: number
-  difficulty_level: string
-  teachers: Teacher[]
-  available_spots: number
-  max_capacity: number
-  next_session: string | null
-}
-
 export interface Teacher {
   id: string
   name: string
@@ -30,6 +14,71 @@ export interface Teacher {
   bio: string
   specializations?: string[]
   certifications?: string[]
+}
+
+// Fonction utilitaire pour normaliser les données des professeurs
+const normalizeTeacherData = (teacher: any): Teacher => {
+  return {
+    ...teacher,
+    subjects: Array.isArray(teacher.subjects) 
+      ? teacher.subjects 
+      : typeof teacher.subjects === 'string' 
+        ? (() => {
+            try {
+              return JSON.parse(teacher.subjects)
+            } catch {
+              return [teacher.subjects]
+            }
+          })()
+        : [],
+    name: teacher.name || `${teacher.user?.first_name || ''} ${teacher.user?.last_name || ''}`.trim() || 'Professeur inconnu',
+    avatar: teacher.avatar || teacher.profile_photo || '/placeholder-user.jpg',
+    rating: teacher.rating || teacher.average_rating || 0,
+    experience: teacher.experience || `${teacher.experience_years || 0} ans d'expérience`,
+    hourly_rate: teacher.hourly_rate || 0,
+    country: teacher.country || 'Non spécifié',
+    total_students: teacher.total_students || 0,
+    total_sessions: teacher.total_sessions || 0,
+    bio: teacher.bio || '',
+    specializations: Array.isArray(teacher.specializations) 
+      ? teacher.specializations 
+      : typeof teacher.specializations === 'string' 
+        ? (() => {
+            try {
+              return JSON.parse(teacher.specializations)
+            } catch {
+              return [teacher.specializations]
+            }
+          })()
+        : [],
+    certifications: Array.isArray(teacher.certifications) 
+      ? teacher.certifications 
+      : typeof teacher.certifications === 'string' 
+        ? (() => {
+            try {
+              return JSON.parse(teacher.certifications)
+            } catch {
+              return [teacher.certifications]
+            }
+          })()
+        : []
+  }
+}
+
+export interface Course {
+  id: string
+  title: string
+  description: string
+  subject: string
+  level: string
+  country: string
+  duration: number
+  price: number
+  difficulty_level: string
+  teachers: Teacher[]
+  available_spots: number
+  max_capacity: number
+  next_session: string | null
 }
 
 export interface CourseFilters {
@@ -63,7 +112,7 @@ export const getCoursesWithTeachers = async (filters: CourseFilters = {}): Promi
     if (filters.country && filters.country !== 'all') params.append('country', filters.country)
     if (filters.search) params.append('search', filters.search)
     
-    const response = await http.get(`/courses/courses-with-teachers/?${params.toString()}`)
+    const response = await http.get(`courses/courses-with-teachers/?${params.toString()}`)
     // Django backend returns { courses: [], total: number, filters_applied: {} }
     // but we need { data: [], total: number, filters_applied: {} }
     return {
@@ -88,11 +137,14 @@ export const getAvailableTeachers = async (filters: TeacherFilters = {}): Promis
     if (filters.min_rating) params.append('min_rating', filters.min_rating.toString())
     if (filters.max_price) params.append('max_price', filters.max_price.toString())
     
-    const response = await http.get(`/teachers/available-for-booking/?${params.toString()}`)
+    const response = await http.get(`teachers/available-for-booking/?${params.toString()}`)
     // Django backend returns { teachers: [], total: number, filters_applied: {} }
     // but we need { data: [], total: number, filters_applied: {} }
+    const teachers = response.data.teachers || response.data || []
+    const normalizedTeachers = teachers.map((teacher: any) => normalizeTeacherData(teacher))
+    
     return {
-      data: response.data.teachers || response.data,
+      data: normalizedTeachers,
       total: response.data.total || 0,
       filters_applied: response.data.filters_applied || {}
     }
@@ -105,7 +157,7 @@ export const getAvailableTeachers = async (filters: TeacherFilters = {}): Promis
 // Récupérer les détails d'un cours spécifique
 export const getCourseDetails = async (courseId: string): Promise<Course> => {
   try {
-    const response = await http.get(`/courses/${courseId}/`)
+    const response = await http.get(`courses/${courseId}/`)
     return response.data
   } catch (error) {
     console.error('Erreur lors de la récupération des détails du cours:', error)
@@ -116,8 +168,8 @@ export const getCourseDetails = async (courseId: string): Promise<Course> => {
 // Récupérer les détails d'un professeur spécifique
 export const getTeacherDetails = async (teacherId: string): Promise<Teacher> => {
   try {
-    const response = await http.get(`/teachers/${teacherId}/`)
-    return response.data
+    const response = await http.get(`teachers/${teacherId}/`)
+    return normalizeTeacherData(response.data)
   } catch (error) {
     console.error('Erreur lors de la récupération des détails du professeur:', error)
     throw error

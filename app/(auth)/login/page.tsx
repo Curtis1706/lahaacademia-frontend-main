@@ -11,7 +11,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react"
 
 import BlurText from "@/components/ui/blur-text"
 import { GlowingEffect } from "@/components/ui/glowing-effect"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuth, type LoginResponse } from "@/hooks/use-auth"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -27,28 +27,28 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError("")
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
+      const result: LoginResponse = await login(formData.email, formData.password)
+      
+      if (result.success) {
         // Redirection basée sur le rôle réel renvoyé par le backend
-        const role = data.user?.role || 'student'
+        const role = result.user?.role || 'student'
+        console.log('Connexion réussie, rôle:', role)
+        
         if (role === 'admin' || role === 'super_admin') {
+          console.log('Redirection vers dashboard admin')
           router.push('/dashboard/admin')
         } else {
+          console.log('Redirection vers dashboard:', role)
           router.push(`/dashboard/${role}`)
         }
       } else {
-        setError(data.error || "Erreur de connexion")
+        setError(result.error || "Erreur de connexion")
       }
     } catch (error) {
+      console.error('Erreur lors de la connexion:', error)
       setError("Erreur interne du serveur")
     } finally {
       setIsLoading(false)

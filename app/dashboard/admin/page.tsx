@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { AuthGuard } from "@/components/auth-guard"
-import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
+import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { motion } from "framer-motion"
 import Image from "next/image"
-import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
 import {
   Users as UsersIcon,
   BookOpen,
@@ -36,77 +35,76 @@ import { RevenueTrendChart } from '@/components/charts/revenue-trend-chart'
 import { PerformanceRadarChart } from '@/components/charts/performance-radar-chart'
 import { getAvailableTeachers, getCoursesWithTeachers, Teacher, Course } from '@/lib/api-courses'
 
+// Fonction utilitaire pour afficher les subjects
+const displaySubjects = (subjects: any): string => {
+  if (Array.isArray(subjects)) {
+    const display = subjects.slice(0, 2).join(', ')
+    return subjects.length > 2 ? display + '...' : display
+  } else if (typeof subjects === 'string') {
+    return subjects.length > 50 ? subjects.substring(0, 50) + '...' : subjects
+  }
+  return 'Non spécifié'
+}
+
+// Fonction utilitaire pour normaliser les données des professeurs
+const normalizeTeacherData = (teachers: any[]): Teacher[] => {
+  return teachers.map(teacher => ({
+    ...teacher,
+    subjects: Array.isArray(teacher.subjects) 
+      ? teacher.subjects 
+      : typeof teacher.subjects === 'string' 
+        ? (() => {
+            try {
+              return JSON.parse(teacher.subjects)
+            } catch {
+              return [teacher.subjects]
+            }
+          })()
+        : [],
+    name: teacher.name || `${teacher.user?.first_name || ''} ${teacher.user?.last_name || ''}`.trim() || 'Professeur inconnu',
+    avatar: teacher.avatar || teacher.profile_photo || '/placeholder-user.jpg',
+    rating: teacher.rating || teacher.average_rating || 0,
+    experience: teacher.experience || `${teacher.experience_years || 0} ans d'expérience`,
+    hourly_rate: teacher.hourly_rate || 0,
+    country: teacher.country || 'Non spécifié',
+    total_students: teacher.total_students || 0,
+    total_sessions: teacher.total_sessions || 0,
+    bio: teacher.bio || '',
+    specializations: Array.isArray(teacher.specializations) 
+      ? teacher.specializations 
+      : typeof teacher.specializations === 'string' 
+        ? (() => {
+            try {
+              return JSON.parse(teacher.specializations)
+            } catch {
+              return [teacher.specializations]
+            }
+          })()
+        : [],
+    certifications: Array.isArray(teacher.certifications) 
+      ? teacher.certifications 
+      : typeof teacher.certifications === 'string' 
+        ? (() => {
+            try {
+              return JSON.parse(teacher.certifications)
+            } catch {
+              return [teacher.certifications]
+            }
+          })()
+        : []
+  }))
+}
+
 export default function AdminDashboard() {
-  const [open, setOpen] = useState(true)
-
-  const links = [
-    { label: "Aperçu", href: "#", icon: <Home className="h-5 w-5 shrink-0 text-white" /> },
-    { label: "Utilisateurs", href: "#users", icon: <UsersIcon className="h-5 w-5 shrink-0 text-white" /> },
-    { label: "Rôles & Permissions", href: "#roles", icon: <Shield className="h-5 w-5 shrink-0 text-white" /> },
-    { label: "Cours & Sessions", href: "#courses", icon: <BookOpen className="h-5 w-5 shrink-0 text-white" /> },
-    { label: "Notifications", href: "#notifications", icon: <Bell className="h-5 w-5 shrink-0 text-white" /> },
-    { label: "Rapports & Statistiques", href: "#reports", icon: <BarChart3 className="h-5 w-5 shrink-0 text-white" /> },
-    { label: "Paramètres", href: "#settings", icon: <Settings className="h-5 w-5 shrink-0 text-white" /> },
-  ]
-
   return (
     <AuthGuard requiredRoles={["admin", "super_admin"]}>
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full bg-laha-black dark:bg-laha-black">
-          <Sidebar open={open} setOpen={setOpen}>
-            <SidebarBody className="justify-between gap-10">
-              <div className="flex flex-1 flex-col overflow-x-hidden sidebar-scrollbar-hidden">
-                <Logo open={open} />
-                <div className="mt-8 flex flex-col gap-2">
-                  {links.map((link, idx) => (
-                    <SidebarLink key={idx} link={link} />
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-4">
-                {/* Bouton de thème */}
-                <div className="flex justify-center">
-                  <AnimatedThemeToggler />
-                </div>
-                
-                {/* Profil administrateur */}
-                <SidebarLink
-                  link={{
-                    label: "Administrateur",
-                    href: "#",
-                    icon: (
-                      <img
-                        src="/placeholder.svg?height=50&width=50&text=AD"
-                        className="h-7 w-7 shrink-0 rounded-full"
-                        width={50}
-                        height={50}
-                        alt="Avatar"
-                      />
-                    ),
-                  }}
-                />
-              </div>
-            </SidebarBody>
-          </Sidebar>
-          <AdminContent />
-        </div>
-      </SidebarProvider>
+      <AdminSidebar>
+        <AdminContent />
+      </AdminSidebar>
     </AuthGuard>
   )
 }
 
-function Logo({ open }: { open: boolean }) {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-      {open && (
-        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-medium whitespace-pre text-white font-heading">
-          Lahacademia Admin
-        </motion.span>
-      )}
-    </a>
-  )
-}
 
 function StatCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
   return (
@@ -149,7 +147,9 @@ function AdminContent() {
         getCoursesWithTeachers()
       ])
       
-      setTeachers(teachersResponse.data)
+      // Normaliser les données des professeurs
+      const normalizedTeachers = normalizeTeacherData(teachersResponse.data || [])
+      setTeachers(normalizedTeachers)
       setCourses(coursesResponse.data)
     } catch (err) {
       console.error('Erreur lors du chargement des données:', err)
@@ -393,8 +393,7 @@ function AdminContent() {
                         <div>
                           <div className="font-medium text-laha-text">{teacher.name}</div>
                           <div className="text-sm text-laha-text-secondary">
-                            {teacher.subjects.slice(0, 2).join(', ')}
-                            {teacher.subjects.length > 2 && '...'}
+                            {displaySubjects(teacher.subjects)}
                           </div>
                         </div>
                       </div>

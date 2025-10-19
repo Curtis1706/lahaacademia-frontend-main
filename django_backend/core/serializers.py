@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from . import models as m
 import uuid
+import json
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,10 +24,57 @@ class StudentSerializer(serializers.ModelSerializer):
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    
+    # Méthodes pour obtenir les URLs complètes des documents
+    diploma_file_url = serializers.SerializerMethodField()
+    criminal_record_file_url = serializers.SerializerMethodField()
+    identity_document_file_url = serializers.SerializerMethodField()
+    proof_of_address_file_url = serializers.SerializerMethodField()
+    profile_photo_url = serializers.SerializerMethodField()
+    cv_file_url = serializers.SerializerMethodField()
+    
+    def get_diploma_file_url(self, obj):
+        if obj.diploma_file:
+            return obj.diploma_file.url
+        return None
+    
+    def get_criminal_record_file_url(self, obj):
+        if obj.criminal_record_file:
+            return obj.criminal_record_file.url
+        return None
+    
+    def get_identity_document_file_url(self, obj):
+        if obj.identity_document_file:
+            return obj.identity_document_file.url
+        return None
+    
+    def get_proof_of_address_file_url(self, obj):
+        if obj.proof_of_address_file:
+            return obj.proof_of_address_file.url
+        return None
+    
+    def get_profile_photo_url(self, obj):
+        if obj.profile_photo:
+            return obj.profile_photo.url
+        return None
+    
+    def get_cv_file_url(self, obj):
+        if obj.cv_file:
+            return obj.cv_file.url
+        return None
 
     class Meta:
         model = m.Teacher
-        fields = '__all__'
+        fields = [
+            'id', 'user', 'diploma_file', 'criminal_record_file', 'identity_document_file',
+            'proof_of_address_file', 'profile_photo', 'cv_file', 'is_validated',
+            'validation_date', 'validated_by', 'subjects', 'experience_years',
+            'hourly_rate', 'bio', 'availability_schedule', 'max_students_per_session',
+            'total_sessions', 'total_students', 'average_rating', 'total_earnings',
+            'total_hours_taught', 'specializations', 'certifications',
+            'diploma_file_url', 'criminal_record_file_url', 'identity_document_file_url',
+            'proof_of_address_file_url', 'profile_photo_url', 'cv_file_url'
+        ]
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -281,10 +329,27 @@ class TeacherRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
+    subjects = serializers.CharField(write_only=True)  # Accepter comme chaîne
 
     class Meta:
         model = m.Teacher
-        fields = ['email', 'password', 'first_name', 'last_name', 'subjects', 'experience_years', 'hourly_rate', 'bio']
+        fields = [
+            'email', 'password', 'first_name', 'last_name', 
+            'subjects', 'experience_years', 'hourly_rate', 'bio',
+            'diploma_file', 'criminal_record_file', 'identity_document_file',
+            'proof_of_address_file', 'profile_photo', 'cv_file'
+        ]
+
+    def validate_subjects(self, value):
+        """Convertir la chaîne subjects en tableau JSON"""
+        if isinstance(value, str):
+            try:
+                # Essayer de parser comme JSON
+                return json.loads(value)
+            except json.JSONDecodeError:
+                # Si ce n'est pas du JSON, créer un tableau avec la valeur
+                return [value]
+        return value
 
     def create(self, validated_data):
         email = validated_data.pop('email')
@@ -364,6 +429,133 @@ class ParentRegistrationSerializer(serializers.ModelSerializer):
 
         parent = m.Parent.objects.create(user=user)
         return parent
+
+
+# =============================================================================
+# SÉRIALISEURS POUR LES NOUVELLES FONCTIONNALITÉS
+# =============================================================================
+
+class IncidentReportSerializer(serializers.ModelSerializer):
+    reporter_name = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
+    
+    def get_reporter_name(self, obj):
+        return f"{obj.reporter.first_name} {obj.reporter.last_name}"
+    
+    def get_teacher_name(self, obj):
+        return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+    
+    class Meta:
+        model = m.IncidentReport
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class PaymentConfigurationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = m.PaymentConfiguration
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class TeacherPayoutSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    
+    def get_teacher_name(self, obj):
+        return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+    
+    class Meta:
+        model = m.TeacherPayout
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class SecurityAlertSerializer(serializers.ModelSerializer):
+    user_email = serializers.SerializerMethodField()
+    
+    def get_user_email(self, obj):
+        return obj.user.email
+    
+    class Meta:
+        model = m.SecurityAlert
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class BannedUserSerializer(serializers.ModelSerializer):
+    user_email = serializers.SerializerMethodField()
+    banned_by_name = serializers.SerializerMethodField()
+    
+    def get_user_email(self, obj):
+        return obj.user.email
+    
+    def get_banned_by_name(self, obj):
+        return f"{obj.banned_by.first_name} {obj.banned_by.last_name}"
+    
+    class Meta:
+        model = m.BannedUser
+        fields = '__all__'
+        read_only_fields = ['id', 'banned_at']
+
+
+class TeacherRatingSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    student_name = serializers.SerializerMethodField()
+    
+    def get_teacher_name(self, obj):
+        return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+    
+    def get_student_name(self, obj):
+        return f"{obj.student.user.first_name} {obj.student.user.last_name}"
+    
+    class Meta:
+        model = m.TeacherRating
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class AdultStudentSerializer(serializers.ModelSerializer):
+    """Sérialiseur spécialisé pour les étudiants adultes"""
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = m.Student
+        fields = [
+            'id', 'user', 'date_of_birth', 'country', 'city', 'school_level',
+            'current_grade', 'school_name', 'is_adult', 'occupation', 
+            'education_level', 'professional_experience', 'learning_objectives',
+            'preferred_schedule', 'budget_range', 'certification_needed',
+            'preferred_subjects', 'learning_style', 'goals'
+        ]
+        read_only_fields = ['id']
+
+
+class EnhancedTeacherSerializer(serializers.ModelSerializer):
+    """Sérialiseur enrichi pour les enseignants avec toutes les nouvelles informations"""
+    user = UserSerializer(read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    total_ratings = serializers.SerializerMethodField()
+    
+    def get_average_rating(self, obj):
+        ratings = m.TeacherRating.objects.filter(teacher=obj)
+        if ratings.exists():
+            return round(sum(r.rating for r in ratings) / ratings.count(), 1)
+        return 0.0
+    
+    def get_total_ratings(self, obj):
+        return m.TeacherRating.objects.filter(teacher=obj).count()
+    
+    class Meta:
+        model = m.Teacher
+        fields = [
+            'id', 'user', 'profile_photo', 'is_validated', 'subjects', 
+            'experience_years', 'hourly_rate', 'bio', 'location', 
+            'languages_spoken', 'teaching_style', 'availability_for_adults',
+            'reliability_score', 'average_rating', 'total_ratings',
+            'total_sessions', 'total_students', 'total_hours_taught',
+            'specializations', 'certifications'
+        ]
+        read_only_fields = ['id', 'average_rating', 'total_ratings']
 
 
 

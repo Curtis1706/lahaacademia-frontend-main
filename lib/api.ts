@@ -62,7 +62,7 @@ export const studentApi = {
 
   // Obtenir la progression
   getProgress: async (studentId: string) => {
-    const { data } = await http.get(`/students/${studentId}/progress/`)
+    const { data } = await http.get(`students/${studentId}/progress/`)
     return data
   },
 };
@@ -109,13 +109,13 @@ export const teacherApi = {
 
   // Obtenir les sessions
   getSessions: async (teacherId: string) => {
-    const { data } = await http.get(`/teachers/${teacherId}/sessions/`)
+    const { data } = await http.get(`teachers/${teacherId}/sessions/`)
     return data
   },
 
   // Obtenir les revenus
   getEarnings: async (teacherId: string) => {
-    const { data } = await http.get(`/teachers/${teacherId}/earnings/`)
+    const { data } = await http.get(`teachers/${teacherId}/earnings/`)
     return data
   },
 };
@@ -130,7 +130,7 @@ export const authorApi = {
 
   // Obtenir le contenu
   getContent: async (authorId: string) => {
-    const { data } = await http.get(`/authors/${authorId}/content/`)
+    const { data } = await http.get(`authors/${authorId}/content/`)
     return data
   },
 };
@@ -145,7 +145,7 @@ export const parentApi = {
 
   // Obtenir la progression des enfants
   getChildrenProgress: async (parentId: string) => {
-    const { data } = await http.get(`/parents/${parentId}/children_progress/`)
+    const { data } = await http.get(`parents/${parentId}/children_progress/`)
     return data
   },
 
@@ -161,19 +161,19 @@ export const courseApi = {
   // Obtenir tous les cours
   getAll: async (filters?: any) => {
     const params = new URLSearchParams(filters)
-    const { data } = await http.get(`/courses/?${params}`)
+    const { data } = await http.get(`courses/?${params}`)
     return data
   },
 
   // Obtenir un cours
   getById: async (courseId: string) => {
-    const { data } = await http.get(`/courses/${courseId}/`)
+    const { data } = await http.get(`courses/${courseId}/`)
     return data
   },
 
   // Obtenir les inscriptions
   getEnrollments: async (courseId: string) => {
-    const { data } = await http.get(`/courses/${courseId}/enrollments/`)
+    const { data } = await http.get(`courses/${courseId}/enrollments/`)
     return data
   },
 };
@@ -194,7 +194,7 @@ export const sessionApi = {
 
   // Obtenir les participants
   getParticipants: async (sessionId: string) => {
-    const { data } = await http.get(`/sessions/${sessionId}/participants/`)
+    const { data } = await http.get(`sessions/${sessionId}/participants/`)
     return data
   },
 };

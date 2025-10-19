@@ -25,7 +25,7 @@ import { BookOpen, Plus, Edit, Trash2, Clock, Users as UsersIcon, DollarSign, Ca
 export default function TeacherCoursesPage() {
   const { user } = useAuth()
   const [teacherData, setTeacherData] = useState(null)
-  const [courses, setCourses] = useState([])
+  const [courses, setCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
 
@@ -137,9 +137,7 @@ export default function TeacherCoursesPage() {
               <div>
                 <SidebarLink
                   link={{
-                    label: teacherData ? 
-                      `${teacherData.user?.first_name || ''} ${teacherData.user?.last_name || ''}`.trim() || 'Mon profil' :
-                      (user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Mon profil' : 'Mon profil'),
+                    label: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Mon profil' : 'Mon profil',
                     href: "#",
                     icon: (
                       <img
@@ -745,7 +743,7 @@ const AvailabilityModal = ({ course, onClose }: { course: any, onClose: () => vo
     const normalized = savedAvailability && typeof savedAvailability === 'object' ? savedAvailability : null
         setAvailabilities(normalized ? [...availabilities, normalized] : availabilities)
         setShowAddForm(false)
-        setNewAvailability({ day_of_week: 0, start_time: '09:00', end_time: '10:00' })
+        setNewAvailability({ day_of_week: 0, start_time: '09:00', end_time: '10:00', specific_date: '' })
       }
     } catch (error) {
       console.error('Erreur lors de l\'ajout de la disponibilité:', error)

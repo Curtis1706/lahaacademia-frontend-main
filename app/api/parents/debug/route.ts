@@ -32,7 +32,21 @@ export async function GET() {
       }
     })
 
-    const debugInfo = {
+    const debugInfo: {
+      user: {
+        id: any;
+        email: string;
+        role: string;
+        hasToken: boolean;
+      };
+      api: {
+        baseUrl: string;
+        status: number;
+        statusText: string;
+        ok: boolean;
+      };
+      data: any;
+    } = {
       user: {
         id: user.id,
         email: user.email,
@@ -67,6 +81,9 @@ export async function GET() {
     return NextResponse.json(debugInfo)
   } catch (error) {
     console.error('Error in debug route:', error)
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Erreur serveur', 
+      details: error instanceof Error ? error.message : 'Erreur inconnue' 
+    }, { status: 500 })
   }
 }

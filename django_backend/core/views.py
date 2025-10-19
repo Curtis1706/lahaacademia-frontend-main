@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from django.contrib.auth import authenticate
 from django.utils import timezone as dj_timezone
 from datetime import timedelta
@@ -91,27 +91,27 @@ class TeacherViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def public_list(self, request):
-        """Liste publique des professeurs pour réservation"""
-        # Pour le développement, incluons tous les professeurs
+        """Liste publique des enseignants pour réservation"""
+        # Pour le développement, incluons tous les enseignants
         # En production, on filtrera par is_validated=True
         teachers = Teacher.objects.all()
         return Response(TeacherSerializer(teachers, many=True).data)
 
     @action(detail=False, methods=['get'])
     def me(self, request):
-        """Récupérer les informations du professeur connecté"""
+        """Récupérer les informations de l'enseignant connecté"""
         try:
             teacher = Teacher.objects.get(user=request.user)
             return Response(TeacherSerializer(teacher).data)
         except Teacher.DoesNotExist:
-            return Response({'error': 'Professeur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Enseignant non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['get'], url_path='available-for-booking', permission_classes=[AllowAny])
     def available_for_booking(self, request):
-        """Récupérer les professeurs disponibles pour la réservation"""
+        """Récupérer les enseignants disponibles pour la réservation"""
         from django.db import models
         
-        # Récupérer TOUS les professeurs actifs (temporairement sans validation)
+        # Récupérer TOUS les enseignants actifs (temporairement sans validation)
         teachers = Teacher.objects.filter(
             user__is_active=True
         )
@@ -221,6 +221,98 @@ class TeacherViewSet(viewsets.ModelViewSet):
             'total_earnings': teacher.total_earnings,
             'total_sessions': teacher.total_sessions,
             'average_rating': teacher.average_rating
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def validate(self, request, pk=None):
+        """Valider un professeur"""
+        teacher = self.get_object()
+        
+        if teacher.is_validated:
+            return Response(
+                {'error': 'Ce professeur est déjà validé'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        teacher.is_validated = True
+        teacher.validation_date = dj_timezone.now()
+        teacher.validated_by = request.user
+        teacher.save()
+        
+        # Créer notification
+        Notification.objects.create(
+            user=teacher.user,
+            title='Compte validé ✅',
+            message='Félicitations ! Votre compte professeur a été validé. Vous pouvez maintenant créer des cours et accepter des réservations.',
+            notification_type='validation',
+            priority='high'
+        )
+        
+        # Log de l'action
+        try:
+            from admin_panel.models import ActivityLog
+            ActivityLog.objects.create(
+                user=request.user,
+                action='validate_teacher',
+                entity_type='Teacher',
+                entity_id=teacher.id,
+                details={
+                    'teacher_name': f"{teacher.user.first_name} {teacher.user.last_name}",
+                    'teacher_email': teacher.user.email
+                }
+            )
+        except ImportError:
+            pass  # Si admin_panel n'est pas encore migré
+        
+        return Response({
+            'status': 'validated',
+            'teacher': TeacherSerializer(teacher).data
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def reject(self, request, pk=None):
+        """Rejeter un professeur"""
+        teacher = self.get_object()
+        reason = request.data.get('reason', 'Non spécifié')
+        
+        # Créer notification
+        Notification.objects.create(
+            user=teacher.user,
+            title='Compte rejeté',
+            message=f'Votre demande de compte professeur a été rejetée. Raison: {reason}',
+            notification_type='validation',
+            priority='high'
+        )
+        
+        # Log
+        try:
+            from admin_panel.models import ActivityLog
+            ActivityLog.objects.create(
+                user=request.user,
+                action='reject_teacher',
+                entity_type='Teacher',
+                entity_id=teacher.id,
+                details={
+                    'reason': reason,
+                    'teacher_email': teacher.user.email
+                }
+            )
+        except ImportError:
+            pass
+        
+        # Optionnel: désactiver le compte
+        teacher.user.is_active = False
+        teacher.user.save()
+        
+        return Response({'status': 'rejected'})
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
+    def pending(self, request):
+        """Liste des professeurs en attente de validation"""
+        teachers = Teacher.objects.filter(is_validated=False, user__is_active=True)
+        return Response({
+            'count': teachers.count(),
+            'teachers': TeacherSerializer(teachers, many=True).data
         })
 
 class AuthorViewSet(viewsets.ModelViewSet):
@@ -1156,9 +1248,194 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='schedule')
     def teacher_schedule(self, request, pk=None):
-        """Obtenir l'emploi du temps d'un professeur"""
+        """Obtenir l'emploi du temps d'un enseignant"""
         # Placeholder pour l'emploi du temps
         return Response({'message': 'Fonctionnalité à implémenter'})
+
+
+# =============================================================================
+# VUES POUR LES NOUVELLES FONCTIONNALITÉS
+# =============================================================================
+
+class IncidentReportViewSet(viewsets.ModelViewSet):
+    """Gestion des signalements d'incidents"""
+    queryset = IncidentReport.objects.all()
+    serializer_class = IncidentReportSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['admin', 'super_admin']:
+            return IncidentReport.objects.all()
+        else:
+            return IncidentReport.objects.filter(reporter=user)
+    
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def report_incident(self, request):
+        """Signaler un incident avec un enseignant"""
+        serializer = IncidentReportSerializer(data=request.data)
+        if serializer.is_valid():
+            incident = serializer.save(reporter=request.user)
+            return Response(IncidentReportSerializer(incident).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def assign_to_admin(self, request, pk=None):
+        """Assigner un incident à un administrateur"""
+        incident = self.get_object()
+        admin_id = request.data.get('admin_id')
+        if admin_id:
+            try:
+                admin = User.objects.get(id=admin_id, role__in=['admin', 'super_admin'])
+                incident.assigned_to = admin
+                incident.status = 'investigating'
+                incident.save()
+                return Response({'message': 'Incident assigné avec succès'})
+            except User.DoesNotExist:
+                return Response({'error': 'Administrateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'ID administrateur requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentConfigurationViewSet(viewsets.ModelViewSet):
+    """Configuration des paiements"""
+    queryset = PaymentConfiguration.objects.all()
+    serializer_class = PaymentConfigurationSerializer
+    permission_classes = [IsAdminUser]
+    
+    @action(detail=False, methods=['get'])
+    def current_config(self, request):
+        """Obtenir la configuration actuelle des paiements"""
+        config = PaymentConfiguration.objects.filter(is_active=True).first()
+        if config:
+            return Response(PaymentConfigurationSerializer(config).data)
+        return Response({'error': 'Aucune configuration active'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class TeacherPayoutViewSet(viewsets.ModelViewSet):
+    """Gestion des paiements aux enseignants"""
+    queryset = TeacherPayout.objects.all()
+    serializer_class = TeacherPayoutSerializer
+    permission_classes = [IsAdminUser]
+    
+    @action(detail=False, methods=['post'])
+    def process_payouts(self, request):
+        """Traiter les paiements des enseignants"""
+        period_start = request.data.get('period_start')
+        period_end = request.data.get('period_end')
+        
+        if not period_start or not period_end:
+            return Response({'error': 'Période requise'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Logique pour calculer et créer les paiements
+        # Cette fonctionnalité sera implémentée plus tard
+        return Response({'message': 'Traitement des paiements en cours'})
+
+
+class SecurityAlertViewSet(viewsets.ModelViewSet):
+    """Gestion des alertes de sécurité"""
+    queryset = SecurityAlert.objects.all()
+    serializer_class = SecurityAlertSerializer
+    permission_classes = [IsAdminUser]
+    
+    @action(detail=False, methods=['post'])
+    def create_alert(self, request):
+        """Créer une alerte de sécurité"""
+        serializer = SecurityAlertSerializer(data=request.data)
+        if serializer.is_valid():
+            alert = serializer.save()
+            return Response(SecurityAlertSerializer(alert).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherRatingViewSet(viewsets.ModelViewSet):
+    """Gestion des évaluations des enseignants"""
+    queryset = TeacherRating.objects.all()
+    serializer_class = TeacherRatingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @action(detail=False, methods=['post'])
+    def rate_teacher(self, request):
+        """Évaluer un enseignant"""
+        serializer = TeacherRatingSerializer(data=request.data)
+        if serializer.is_valid():
+            rating = serializer.save(student=request.user.student)
+            return Response(TeacherRatingSerializer(rating).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'])
+    def teacher_ratings(self, request):
+        """Obtenir les évaluations d'un enseignant"""
+        teacher_id = request.query_params.get('teacher_id')
+        if teacher_id:
+            ratings = TeacherRating.objects.filter(teacher_id=teacher_id)
+            return Response(TeacherRatingSerializer(ratings, many=True).data)
+        return Response({'error': 'ID enseignant requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdultStudentViewSet(viewsets.ModelViewSet):
+    """Gestion des étudiants adultes"""
+    queryset = Student.objects.filter(is_adult=True)
+    serializer_class = AdultStudentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @action(detail=False, methods=['post'])
+    def register_adult(self, request):
+        """Inscription d'un étudiant adulte"""
+        serializer = AdultStudentSerializer(data=request.data)
+        if serializer.is_valid():
+            student = serializer.save(is_adult=True, school_level='adult')
+            return Response(AdultStudentSerializer(student).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EnhancedTeacherViewSet(viewsets.ModelViewSet):
+    """Vue enrichie pour les enseignants avec toutes les informations"""
+    queryset = Teacher.objects.all()
+    serializer_class = EnhancedTeacherSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def public_profiles(self, request):
+        """Profils publics des enseignants pour consultation parentale"""
+        teachers = Teacher.objects.filter(
+            is_validated=True,
+            user__is_active=True
+        ).select_related('user')
+        
+        # Appliquer des filtres
+        subject = request.query_params.get('subject')
+        country = request.query_params.get('country')
+        location = request.query_params.get('location')
+        min_rating = request.query_params.get('min_rating')
+        availability_for_adults = request.query_params.get('availability_for_adults')
+        
+        if subject:
+            teachers = teachers.filter(subjects__contains=[subject])
+        if country:
+            teachers = teachers.filter(user__country__icontains=country)
+        if location:
+            teachers = teachers.filter(location__icontains=location)
+        if min_rating:
+            try:
+                min_rating = float(min_rating)
+                teachers = teachers.filter(average_rating__gte=min_rating)
+            except ValueError:
+                pass
+        if availability_for_adults == 'true':
+            teachers = teachers.filter(availability_for_adults=True)
+        
+        serializer = EnhancedTeacherSerializer(teachers, many=True, context={'request': request})
+        return Response({
+            'teachers': serializer.data,
+            'total': teachers.count(),
+            'filters_applied': {
+                'subject': subject,
+                'country': country,
+                'location': location,
+                'min_rating': min_rating,
+                'availability_for_adults': availability_for_adults
+            }
+        })
 
 
 

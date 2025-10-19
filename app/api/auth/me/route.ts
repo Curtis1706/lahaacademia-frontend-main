@@ -7,18 +7,23 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const cookie = request.cookies.get('user_session')
+    console.log('Cookie user_session:', cookie ? 'présent' : 'absent')
+    
     if (!cookie) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+      console.log('Aucun cookie user_session trouvé')
+      return NextResponse.json({ user: null }, { status: 200 })
     }
 
     try {
       const user = JSON.parse(cookie.value)
-      return NextResponse.json(user, { status: 200 })
-    } catch {
-      return NextResponse.json({ error: 'Session invalide' }, { status: 401 })
+      console.log('Utilisateur trouvé dans le cookie:', user.username, user.role)
+      return NextResponse.json({ user }, { status: 200 })
+    } catch (parseError) {
+      console.error('Erreur de parsing du cookie:', parseError)
+      return NextResponse.json({ user: null }, { status: 200 })
     }
   } catch (error) {
     console.error("/api/auth/me error", error)
-    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
+    return NextResponse.json({ user: null }, { status: 200 })
   }
 }

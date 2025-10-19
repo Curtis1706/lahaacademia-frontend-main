@@ -135,9 +135,7 @@ export default function TeacherDashboard() {
               {/* Profil professeur */}
               <SidebarLink
                 link={{
-                  label: teacherData ? 
-                    `${teacherData.user?.first_name || ''} ${teacherData.user?.last_name || ''}`.trim() || 'Mon profil' :
-                    (user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Mon profil' : 'Mon profil'),
+                  label: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Mon profil' : 'Mon profil',
                   href: "#",
                   icon: (
                     <img
@@ -184,6 +182,10 @@ const LogoIcon = () => {
 }
 
 const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: any, user: any, loading: boolean }) => {
+  // Si le professeur n'est pas validé, afficher la page d'attente
+  if (!loading && teacherData && !teacherData.is_validated) {
+    return <TeacherWaitingPage teacherData={teacherData} user={user} />
+  }
   const myCourses = [
     { title: "Mathématiques Terminale", students: 45, rating: 4.8, earnings: "2,500 FCFA" },
     { title: "Algèbre Première", students: 32, rating: 4.9, earnings: "1,800 FCFA" },
@@ -364,5 +366,117 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
   )
 }
 
+const TeacherWaitingPage = ({ teacherData, user }: { teacherData: any, user: any }) => {
+  return (
+    <div className="flex flex-1">
+      <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl bg-gradient-to-br from-laha-background via-laha-surface/50 to-laha-gold-light-new/20 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">
+            En attente de validation
+          </h1>
+          <p className="text-laha-text-secondary text-lg">
+            Votre compte professeur est en cours de validation
+          </p>
+        </div>
 
+        {/* Status Card */}
+        <div className="max-w-2xl mx-auto w-full">
+          <div className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-8 border border-laha-border text-center">
+            {/* Icon */}
+            <div className="mb-6">
+              <div className="w-20 h-20 mx-auto bg-laha-gold/20 rounded-full flex items-center justify-center">
+                <svg className="w-10 h-10 text-laha-gold animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Status Message */}
+            <h2 className="text-2xl font-bold text-laha-gold mb-4">
+              Compte en attente de validation
+            </h2>
+            
+            <p className="text-laha-text-secondary mb-6 leading-relaxed">
+              Bonjour <span className="font-semibold text-laha-gold">
+                {teacherData?.user?.first_name || user?.first_name || 'Professeur'}
+              </span> ! 
+              <br />
+              Votre demande d'inscription en tant que professeur a été reçue avec succès. 
+              Notre équipe examine actuellement votre dossier et vos documents.
+            </p>
+
+            {/* Process Steps */}
+            <div className="bg-laha-surface/10 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-semibold text-laha-text mb-4">
+                Processus de validation
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-laha-gold rounded-full flex items-center justify-center text-xs font-bold text-laha-black">
+                    ✓
+                  </div>
+                  <span className="text-laha-text-secondary">Inscription terminée</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-laha-gold rounded-full flex items-center justify-center text-xs font-bold text-laha-black">
+                    ✓
+                  </div>
+                  <span className="text-laha-text-secondary">Documents déposés</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-laha-gold/50 rounded-full flex items-center justify-center text-xs font-bold text-laha-text">
+                    ⏳
+                  </div>
+                  <span className="text-laha-text-secondary">Examen en cours par notre équipe</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-laha-surface border-2 border-laha-border rounded-full flex items-center justify-center text-xs font-bold text-laha-text-secondary">
+                    4
+                  </div>
+                  <span className="text-laha-text-secondary">Validation finale</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Expected Time */}
+            <div className="bg-laha-gold/10 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-center gap-2 text-laha-gold">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="font-semibold">Délai de traitement : 24-48 heures</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-4">
+              <p className="text-laha-text-secondary text-sm">
+                Vous recevrez une notification par email dès que votre compte sera validé. 
+                En attendant, vous pouvez :
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button className="bg-laha-gold/20 hover:bg-laha-gold/30 text-laha-gold px-6 py-3 rounded-lg font-medium transition-colors">
+                  Modifier mes documents
+                </button>
+                <button className="bg-laha-surface/20 hover:bg-laha-surface/30 text-laha-text px-6 py-3 rounded-lg font-medium transition-colors">
+                  Contacter le support
+                </button>
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            <div className="mt-8 pt-6 border-t border-laha-border">
+              <p className="text-laha-text-secondary text-sm">
+                <strong>Besoin d'aide ?</strong> Contactez notre équipe support à 
+                <span className="text-laha-gold"> support@lahaacademia.com</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 

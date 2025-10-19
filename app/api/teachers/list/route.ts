@@ -44,14 +44,14 @@ export async function GET() {
           if (coursesResponse.ok) {
             const courses = await coursesResponse.json()
             console.log(`✅ Courses trouvés pour teacher ${teacher.id}:`, courses.length)
-            console.log(`📚 Détails courses:`, courses.map(c => ({ id: c.id, title: c.title })))
+            console.log(`📚 Détails courses:`, courses.map((c: any) => ({ id: c.id, title: c.title })))
             enrichedTeachers.push({ ...teacher, courses })
           } else {
             console.log(`❌ Erreur response pour teacher ${teacher.id}:`, coursesResponse.status)
             enrichedTeachers.push({ ...teacher, courses: [] })
           }
         } catch (error) {
-          console.log('💥 Erreur récupération courses pour teacher', teacher.id, error.message)
+          console.log('💥 Erreur récupération courses pour teacher', teacher.id, error instanceof Error ? error.message : 'Erreur inconnue')
           enrichedTeachers.push({ ...teacher, courses: [] })
         }
       }

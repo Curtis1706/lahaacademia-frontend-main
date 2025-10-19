@@ -4,13 +4,28 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
+    // Transformer email en username pour le backend Django
+    // Pour le compte admin, utiliser directement le username 'admin'
+    // Pour les autres comptes, utiliser l'email comme username
+    const djangoBody = {
+      username: body.email === 'admin@lahaacademia.com' ? 'admin' : body.email,
+      password: body.password
+    }
+    
     // Rediriger vers le backend Django
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/users/login/`, {
+    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+    const endpoint = `${baseApi}/api/auth/login/`
+    
+    console.log('🔍 Connexion admin:')
+    console.log(`  Endpoint: ${endpoint}`)
+    console.log(`  Username: ${djangoBody.username}`)
+    
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(djangoBody),
     })
 
     const data = await response.json()
@@ -31,6 +46,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 jours
+      path: '/', // S'assurer que le cookie est disponible sur tout le site
     })
 
     return responseWithCookie

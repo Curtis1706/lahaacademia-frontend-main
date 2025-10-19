@@ -265,7 +265,7 @@ export function BookingModal({ isOpen, onClose, course, teacher }: BookingModalP
                 >
                   <div className="font-medium">{duration.label}</div>
                   <div className="text-sm text-gray-600">
-                    {((course?.price || teacher?.hourlyRate || 25) * parseInt(duration.value) / 60).toFixed(2)}€
+                    {((course?.price || teacher?.hourly_rate || 25) * parseInt(duration.value) / 60).toFixed(2)}€
                   </div>
                 </button>
               ))}

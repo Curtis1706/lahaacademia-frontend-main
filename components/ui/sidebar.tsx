@@ -4,6 +4,8 @@ import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { IconMenu2, IconX } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 interface SidebarContextProps {
   open: boolean
@@ -144,26 +146,37 @@ interface SidebarLinkProps {
 
 const SidebarLink: React.FC<SidebarLinkProps> = ({ link, className }) => {
   const { open, animate } = useSidebar()
+  const pathname = usePathname()
+  const isActive = pathname === link.href
 
   return (
-    <a
+    <Link
       href={link.href}
       className={cn(
         "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-lg hover:bg-white/10 transition-colors",
+        isActive && "bg-white/20 border-l-2 border-laha-gold",
         className,
       )}
     >
-      {link.icon}
+      <div className={cn(
+        "transition-colors",
+        isActive ? "text-laha-gold" : "text-white"
+      )}>
+        {link.icon}
+      </div>
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="text-white text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        className={cn(
+          "text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0",
+          isActive ? "text-laha-gold font-medium" : "text-white"
+        )}
       >
         {link.label}
       </motion.span>
-    </a>
+    </Link>
   )
 }
 

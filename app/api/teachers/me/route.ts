@@ -1,66 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const userSession = cookies().get('user_session')?.value
-    if (!userSession) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    // Récupérer le token depuis les cookies ou headers
+    const authHeader = request.headers.get('Authorization')
+    
+    // Essayer d'abord le header Authorization
+    let token = authHeader?.replace('Token ', '')
+    
+    // Si pas de token dans le header, essayer le cookie user_session
+    if (!token) {
+      const userSessionCookie = request.cookies.get('user_session')?.value
+      if (userSessionCookie) {
+        try {
+          const sessionData = JSON.parse(decodeURIComponent(userSessionCookie))
+          token = sessionData.token
+          console.log(`🍪 Token extrait du cookie: ${token ? token.substring(0, 10) + '...' : 'Aucun'}`)
+        } catch (e) {
+          console.log('❌ Erreur parsing cookie user_session:', e)
+        }
+      }
     }
 
-    const user = JSON.parse(userSession)
-    if (user.role !== 'teacher') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    console.log('🔍 Authentification professeur:')
+    console.log(`  Authorization header: ${authHeader ? 'Présent' : 'Absent'}`)
+    console.log(`  Cookie user_session: ${request.cookies.get('user_session')?.value ? 'Présent' : 'Absent'}`)
+    console.log(`  Token extrait: ${token ? token.substring(0, 10) + '...' : 'Aucun'}`)
+
+    if (!token) {
+      console.log('❌ Aucun token trouvé')
+      return NextResponse.json(
+        { error: 'Token d\'authentification requis' },
+        { status: 401 }
+      )
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
+    // Si baseApi contient déjà /api, ne pas l'ajouter
+    const endpoint = baseApi.includes('/api') 
+      ? `${baseApi}/teachers/me/`
+      : `${baseApi}/api/teachers/me/`
+
+    console.log('🔍 Récupération des informations du professeur:')
+    console.log(`  Endpoint: ${endpoint}`)
+    console.log(`  Token: ${token.substring(0, 10)}...`)
+
+    console.log(`📡 Envoi vers Django: ${endpoint}`)
+    console.log(`🔑 Token envoyé: ${token.substring(0, 10)}...`)
     
-    console.log('Récupération des données professeur pour:', user.email)
-    
-    const response = await fetch(`${apiBase}/teachers/me/`, {
+    const response = await fetch(endpoint, {
+      method: 'GET',
       headers: {
-        'Authorization': `Token ${user.token}`,
+        'Authorization': `Token ${token}`,
         'Content-Type': 'application/json'
       }
     })
+    
+    console.log(`📊 Réponse Django: ${response.status}`)
 
-    console.log('Réponse API teacher/me status:', response.status, response.statusText)
+    const data = await response.json()
 
-    if (response.ok) {
-      const data = await response.json()
-      console.log('Données professeur récupérées:', data)
-      return NextResponse.json(data)
+    if (!response.ok) {
+      console.error('Erreur API Django me:', response.status, data)
+      return NextResponse.json(
+        data || { error: 'Erreur lors de la récupération des informations du professeur' },
+        { status: response.status }
+      )
     }
 
-    // Fallback avec données de test si l'API Django n'est pas accessible
-    console.log('Erreur API, utilisation des données de fallback')
-    const fallbackTeacher = {
-      id: 1,
-      user: {
-        first_name: user.first_name || 'Professeur',
-        last_name: user.last_name || '',
-        email: user.email
-      },
-      subjects: ['Mathématiques'],
-      bio: 'Professeur expérimenté',
-      hourly_rate: 5000,
-      experience_years: 5
-    }
-
-    return NextResponse.json(fallbackTeacher)
+    console.log(`✅ Informations professeur récupérées: ${data.user?.email}`)
+    return NextResponse.json(data)
   } catch (error) {
-    console.error('Error fetching teacher data:', error)
-    
-    // En cas d'erreur, retourner des données minimales
-    const fallbackTeacher = {
-      id: 1,
-      user: {
-        first_name: 'Professeur',
-        last_name: '',
-        email: 'professeur@example.com'
-      }
-    }
-    
-    return NextResponse.json(fallbackTeacher)
+    console.error('Erreur API teachers/me:', error)
+    return NextResponse.json(
+      { error: 'Erreur interne du serveur' },
+      { status: 500 }
+    )
   }
 }

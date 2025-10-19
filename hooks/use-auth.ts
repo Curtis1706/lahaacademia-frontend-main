@@ -3,12 +3,12 @@
 import React, { useState, useEffect, createContext, useContext } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface User {
+export interface User {
   id: string
   email: string
   first_name: string
   last_name: string
-  role: 'student' | 'teacher' | 'parent' | 'author' | 'admin'
+  role: 'student' | 'teacher' | 'parent' | 'author' | 'admin' | 'super_admin'
   phone?: string
   is_verified: boolean
   is_active: boolean
@@ -17,11 +17,17 @@ interface User {
   badges: string[]
 }
 
+export interface LoginResponse {
+  success: boolean
+  user?: User
+  error?: string
+}
+
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  register: (userData: any) => Promise<{ success: boolean; error?: string }>
+  login: (email: string, password: string) => Promise<LoginResponse>
+  register: (userData: any) => Promise<LoginResponse>
   logout: () => Promise<void>
   updateUser: (userData: Partial<User>) => void
 }
@@ -39,12 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch('/api/auth/me', { cache: 'no-store', credentials: 'include' })
         if (response.ok) {
           const userData = await response.json()
-          setUser(userData)
+          setUser(userData.user || null)
         } else {
           setUser(null)
         }
       } catch (error) {
         console.error('Erreur lors de la vérification de l\'authentification:', error)
+        setUser(null)
       } finally {
         setLoading(false)
       }
@@ -100,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(data.user)
-      return { success: true }
+      return { success: true, user: data.user as User }
     } catch (error) {
       console.error('Erreur lors de l\'inscription:', error)
       return { success: false, error: 'Erreur interne du serveur' }
