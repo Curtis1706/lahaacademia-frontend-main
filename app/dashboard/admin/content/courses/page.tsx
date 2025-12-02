@@ -45,68 +45,44 @@ export default function CoursesPage() {
   const [selectedStatus, setSelectedStatus] = useState("")
   const [showFilters, setShowFilters] = useState(false)
 
-  // Données de test
+  // Charger les cours depuis l'API Next.js (qui proxie Django)
   useEffect(() => {
-    const mockCourses: Course[] = [
-      {
-        id: "1",
-        title: "Vitesse des corps en mouvement",
-        description: "Les élèves apprendront les règles liées aux corps en mouvement",
-        subject: "Physique",
-        class_level: "Terminale",
-        status: "published",
-        created_at: "2025-08-11",
-        teacher: {
-          first_name: "Jean",
-          last_name: "Dupont"
-        }
-      },
-      {
-        id: "2",
-        title: "Vecteurs et Forces",
-        description: "Les élèves apprendront des notions importantes pour la physique",
-        subject: "Physique",
-        class_level: "Première",
-        status: "draft",
-        created_at: "2025-08-11",
-        teacher: {
-          first_name: "Marie",
-          last_name: "Martin"
-        }
-      },
-      {
-        id: "3",
-        title: "Le complément d'objet",
-        description: "Les élèves apprendront la notion de complément d'objet direct ou indirect",
-        subject: "Français",
-        class_level: "Quatrième",
-        status: "published",
-        created_at: "2025-08-16",
-        teacher: {
-          first_name: "Pierre",
-          last_name: "Durand"
-        }
-      },
-      {
-        id: "4",
-        title: "Les cellules",
-        description: "Introduction à la biologie cellulaire",
-        subject: "SVT",
-        class_level: "Seconde",
-        status: "published",
-        created_at: "2025-08-21",
-        teacher: {
-          first_name: "Sophie",
-          last_name: "Leroy"
-        }
+    const load = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        if (selectedSubject) params.set('subject', selectedSubject)
+        if (selectedClass) params.set('class_level', selectedClass)
+        if (selectedStatus) params.set('status', selectedStatus)
+        if (searchTerm) params.set('search', searchTerm)
+
+        const url = `/api/admin/courses${params.toString() ? `?${params.toString()}` : ''}`
+        const res = await fetch(url, { method: 'GET', credentials: 'include' })
+        const data = await res.json()
+
+        const raw: any[] = Array.isArray(data) ? data : (data.results || data.courses || [])
+        const normalized: Course[] = raw.map((c: any) => ({
+          id: (c.id ?? c.pk ?? '').toString(),
+          title: c.title || c.name || 'Sans titre',
+          description: c.description || '',
+          subject: c.subject || c.category || 'N/A',
+          class_level: c.level || c.class_level || 'N/A',
+          status: c.status || (c.is_active === false ? 'archived' : 'published'),
+          created_at: c.created_at || c.date_created || '',
+          teacher: c.created_by ? { first_name: c.created_by.first_name || '', last_name: c.created_by.last_name || '' } : undefined,
+        }))
+
+        setCourses(normalized)
+      } catch (e) {
+        console.error('Erreur chargement cours:', e)
+        setCourses([])
+      } finally {
+        setLoading(false)
       }
-    ]
-    
-    setTimeout(() => {
-      setCourses(mockCourses)
-      setLoading(false)
-    }, 1000)
-  }, [])
+    }
+
+    load()
+  }, [selectedSubject, selectedClass, selectedStatus, searchTerm])
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -131,8 +107,8 @@ export default function CoursesPage() {
   return (
     <AuthGuard requiredRoles={['admin', 'super_admin']}>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto p-6">
-          <div className="container mx-auto">
+        <main className="flex-1 w-full overflow-auto">
+          <div className="w-full px-6 py-6">
               {/* Header */}
             <div className="mb-8">
               <div className="flex justify-between items-start">

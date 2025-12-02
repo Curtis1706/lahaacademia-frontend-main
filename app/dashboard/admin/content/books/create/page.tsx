@@ -77,9 +77,18 @@ export default function CreateBookPage() {
     tags: []
   })
 
-  const [currentTag, setCurrentTag] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("general")
+  const [uploadedFile, setUploadedFile] = useState<{
+    url: string
+    name: string
+    size: number
+    type: string
+  } | null>(null)
+  const [uploadedCover, setUploadedCover] = useState<{
+    url: string
+    name: string
+    size: number
+  } | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const addTag = () => {
     if (currentTag.trim() && !bookData.tags.includes(currentTag.trim())) {
@@ -98,15 +107,84 @@ export default function CreateBookPage() {
     })
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'content')
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de l\'upload')
+      }
+
+      const result = await response.json()
+      setUploadedFile({
+        url: result.file_url,
+        name: result.file_name,
+        size: result.file_size,
+        type: result.file_type
+      })
+
+      // Mettre à jour les données du livre
       setBookData({
         ...bookData,
         file: file,
         fileType: file.type.includes('pdf') ? 'pdf' : 
                  file.type.includes('epub') ? 'epub' : 'mobi'
       })
+
+    } catch (error) {
+      console.error('Erreur upload:', error)
+      alert('Erreur lors de l\'upload du fichier')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'thumbnail')
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de l\'upload')
+      }
+
+      const result = await response.json()
+      setUploadedCover({
+        url: result.file_url,
+        name: result.file_name,
+        size: result.file_size
+      })
+
+    } catch (error) {
+      console.error('Erreur upload:', error)
+      alert('Erreur lors de l\'upload de l\'image')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -119,9 +197,43 @@ export default function CreateBookPage() {
         return
       }
 
-      console.log("Sauvegarde du livre:", bookData)
-      // TODO: Appel API pour sauvegarder
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
+      const formData = new FormData()
+      formData.append('title', bookData.title)
+      formData.append('author', bookData.author)
+      formData.append('description', bookData.description)
+      formData.append('subject', bookData.subject)
+      formData.append('class_level', bookData.class_level)
+      formData.append('country', 'senegal')
+      formData.append('isbn', bookData.isbn)
+      formData.append('pages', bookData.pages.toString())
+      formData.append('language', bookData.language)
+      formData.append('publisher', bookData.publisher)
+      formData.append('publication_year', bookData.publicationYear.toString())
+      formData.append('price', bookData.price.toString())
+      formData.append('status', 'draft')
+      formData.append('tags', JSON.stringify(bookData.tags))
+      formData.append('allow_downloads', bookData.allowDownloads.toString())
+      formData.append('allow_preview', bookData.allowPreview.toString())
+      
+      if (uploadedFile?.url) {
+        // Pour les livres, on peut utiliser l'URL car c'est un fichier statique
+        formData.append('content_file_url', uploadedFile.url)
+      }
+      if (uploadedCover?.url) {
+        formData.append('thumbnail_url', uploadedCover.url)
+      }
+
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${res.status}`)
+      }
+
       alert("Livre sauvegardé avec succès !")
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error)
@@ -140,14 +252,43 @@ export default function CreateBookPage() {
     setIsLoading(true)
     try {
       // Validation complète
-      if (!bookData.title || !bookData.author || !bookData.subject || !bookData.class_level || !bookData.file) {
-        alert("Veuillez remplir tous les champs obligatoires et télécharger un fichier")
+      if (!bookData.title || !bookData.author || !bookData.subject || !bookData.class_level) {
+        alert("Veuillez remplir tous les champs obligatoires")
         return
       }
 
-      console.log("Publication du livre:", bookData)
-      // TODO: Appel API pour publier
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
+      const payload = {
+        title: bookData.title,
+        author: bookData.author,
+        description: bookData.description,
+        subject: bookData.subject,
+        class_level: bookData.class_level,
+        isbn: bookData.isbn,
+        pages: bookData.pages,
+        language: bookData.language,
+        publisher: bookData.publisher,
+        publication_year: bookData.publicationYear,
+        price: bookData.price,
+        status: 'published',
+        tags: bookData.tags,
+        allow_downloads: bookData.allowDownloads,
+        allow_preview: bookData.allowPreview,
+        content_file: uploadedFile?.url,
+        thumbnail: uploadedCover?.url,
+      }
+
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${res.status}`)
+      }
+
       alert("Livre publié avec succès !")
     } catch (error) {
       console.error("Erreur lors de la publication:", error)
@@ -173,8 +314,8 @@ export default function CreateBookPage() {
   return (
     <AuthGuard requiredRoles={['admin', 'super_admin']}>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto p-6">
-          <div className="container mx-auto max-w-4xl">
+        <main className="flex-1 w-full overflow-auto">
+          <div className="w-full px-6 py-6 max-w-4xl">
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center justify-between">
@@ -449,27 +590,35 @@ export default function CreateBookPage() {
                           onChange={handleFileUpload}
                           className="hidden"
                           id="file-upload"
+                          disabled={isUploading}
                         />
-                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black">
+                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black" disabled={isUploading}>
                           <label htmlFor="file-upload" className="cursor-pointer">
-                            <Upload className="h-4 w-4 mr-2" />
-                            Choisir un fichier
+                            {isUploading ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Upload className="h-4 w-4 mr-2" />
+                            )}
+                            {isUploading ? 'Upload en cours...' : 'Choisir un fichier'}
                           </label>
                         </Button>
                       </div>
                     </div>
 
-                    {bookData.file && (
+                    {uploadedFile && (
                       <div className="flex items-center gap-4 p-4 bg-laha-background rounded-lg border border-laha-border">
                         {getFileIcon(bookData.fileType)}
                         <div className="flex-1">
-                          <p className="text-laha-text font-medium">{bookData.file.name}</p>
+                          <p className="text-laha-text font-medium">{uploadedFile.name}</p>
                           <p className="text-laha-text-secondary text-sm">
-                            {(bookData.file.size / 1024 / 1024).toFixed(2)} MB
+                            {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
                         <Badge variant="outline" className="border-laha-border text-laha-text">
                           {bookData.fileType.toUpperCase()}
+                        </Badge>
+                        <Badge variant="outline" className="border-green-500/20 text-green-500">
+                          ✓ Uploadé
                         </Badge>
                       </div>
                     )}
@@ -492,17 +641,38 @@ export default function CreateBookPage() {
                         <input
                           type="file"
                           accept="image/*"
+                          onChange={handleCoverUpload}
                           className="hidden"
                           id="cover-upload"
+                          disabled={isUploading}
                         />
-                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black">
+                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black" disabled={isUploading}>
                           <label htmlFor="cover-upload" className="cursor-pointer">
-                            <Image className="h-4 w-4 mr-2" />
-                            Choisir une image
+                            {isUploading ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Image className="h-4 w-4 mr-2" />
+                            )}
+                            {isUploading ? 'Upload en cours...' : 'Choisir une image'}
                           </label>
                         </Button>
                       </div>
                     </div>
+
+                    {uploadedCover && (
+                      <div className="flex items-center gap-4 p-4 bg-laha-background rounded-lg border border-laha-border">
+                        <Image className="h-6 w-6 text-laha-gold" />
+                        <div className="flex-1">
+                          <p className="text-laha-text font-medium">{uploadedCover.name}</p>
+                          <p className="text-laha-text-secondary text-sm">
+                            {(uploadedCover.size / 1024).toFixed(2)} KB
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="border-green-500/20 text-green-500">
+                          ✓ Uploadé
+                        </Badge>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 

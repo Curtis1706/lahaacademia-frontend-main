@@ -1,57 +1,14 @@
 "use client"
 
 import { useState } from 'react'
-import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from '@/components/ui/sidebar'
-import {
-  IconArrowLeft,
-  IconBrandTabler,
-  IconSettings,
-  IconUserBolt,
-  IconBook,
-  IconCalendar,
-  IconTrophy,
-  IconUsers,
-  IconChartBar,
-  IconVideo,
-  IconBook2,
-  IconBarbell,
-  IconCalendarEvent,
-  IconRobot,
-  IconHeart,
-  IconBell,
-} from '@tabler/icons-react'
-import Image from 'next/image'
-import { useAuth } from '@/hooks/use-auth'
-import { AuthGuard } from '@/components/auth-guard'
+import { StudentSidebar } from '@/components/student/student-sidebar'
 
 export default function StudentLinkParentPage() {
-  const { user, logout } = useAuth()
-  const [open, setOpen] = useState(true)
   const [invitationCode, setInvitationCode] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState('')
-
-  const links = [
-    { label: 'Tableau de bord', href: '/dashboard/student', icon: <IconBrandTabler className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Cours', href: '#', icon: <IconBook className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Vidéos', href: '#', icon: <IconVideo className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Ouvrages', href: '#', icon: <IconBook2 className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Entraînements', href: '#', icon: <IconBarbell className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Réservation de cours', href: '#', icon: <IconCalendarEvent className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mon Enseignant IA', href: '#', icon: <IconRobot className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Favoris', href: '#', icon: <IconHeart className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Alertes', href: '#', icon: <IconBell className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Planning', href: '#', icon: <IconCalendar className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Mes Notes', href: '#', icon: <IconTrophy className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Communauté', href: '#', icon: <IconUsers className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Statistiques', href: '#', icon: <IconChartBar className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Liens parentals', href: '/dashboard/student/link-parent', icon: <IconUsers className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Profil', href: '#', icon: <IconUserBolt className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Paramètres', href: '#', icon: <IconSettings className="h-5 w-5 shrink-0 text-white" /> },
-    { label: 'Déconnexion', href: '#', icon: <IconArrowLeft className="h-5 w-5 shrink-0 text-white" />, onClick: logout },
-  ]
 
   const validateCode = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -104,57 +61,123 @@ export default function StudentLinkParentPage() {
   }
 
   return (
-    <AuthGuard requiredRole="student">
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full bg-laha-black">
-          <Sidebar open={open} setOpen={setOpen}>
-            <SidebarBody className="justify-between gap-10">
-              <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
-                {open ? <Logo /> : <LogoIcon />}
-                <div className="mt-8 flex flex-col gap-2">
-                  {links.map((link, idx) => (
-                    <SidebarLink key={idx} link={link} />
-                  ))}
+    <StudentSidebar>
+      <div className="p-6 bg-laha-background min-h-screen">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">
+              Liens Parentaux
+            </h1>
+            <p className="text-laha-text-secondary">
+              Connectez votre compte à celui de vos parents pour un suivi partagé.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Formulaire de liaison */}
+            <div className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-6 border border-laha-border">
+              <h2 className="text-xl font-semibold text-laha-text mb-4">
+                Lier votre compte
+              </h2>
+              
+              <form onSubmit={validateCode} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-laha-text-secondary mb-2">
+                    Code d'invitation parent
+                  </label>
+                  <input
+                    type="text"
+                    value={invitationCode}
+                    onChange={(e) => setInvitationCode(e.target.value)}
+                    placeholder="Entrez le code reçu de vos parents"
+                    className="w-full px-4 py-3 bg-laha-background border border-laha-border rounded-lg text-laha-text placeholder-laha-text-secondary focus:outline-none focus:ring-2 focus:ring-laha-gold focus:border-transparent"
+                    required
+                  />
                 </div>
-              </div>
-              <div>
-                <SidebarLink link={{ label: `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim(), href: '#', icon: <img src="/placeholder.svg?height=50&width=50&text=S" className="h-7 w-7 shrink-0 rounded-full" width={50} height={50} alt="Avatar" /> }} />
-              </div>
-            </SidebarBody>
-          </Sidebar>
-          <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl border border-laha-gold-dark/20 bg-gradient-to-br from-laha-black/50 to-laha-gold-dark/30 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Lier mon compte à un parent</h1>
-              <p className="text-laha-gold-light/70">Entrez le code d'invitation que vous avez reçu.</p>
+                
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-laha-gold hover:bg-laha-gold-warm text-laha-black font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Validation...' : 'Valider le code'}
+                </button>
+              </form>
+
+              {error && (
+                <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              {success && (
+                <div className="mt-4 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+                  <p className="text-green-400 text-sm">
+                    ✅ Compte lié avec succès ! Vos parents peuvent maintenant suivre votre progression.
+                  </p>
+                </div>
+              )}
+
+              {toast && (
+                <div className="fixed top-4 right-4 bg-laha-gold text-laha-black px-4 py-2 rounded-lg shadow-lg z-50">
+                  {toast}
+                </div>
+              )}
             </div>
-            <form onSubmit={validateCode} className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20 space-y-4 max-w-xl">
-              <div>
-                <label className="block text-sm text-laha-gold-light/80 mb-1">Code d'invitation</label>
-                <input value={invitationCode} onChange={e => setInvitationCode(e.target.value)} className="w-full rounded bg-white/10 border border-white/10 focus:border-laha-gold/60 p-3 text-white outline-none" placeholder="ex: A1B2C3D4" />
+
+            {/* Informations */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-6 border border-laha-border">
+                <h3 className="text-lg font-semibold text-laha-text mb-3">
+                  Comment ça marche ?
+                </h3>
+                <ul className="space-y-2 text-laha-text-secondary">
+                  <li className="flex items-start gap-2">
+                    <span className="text-laha-gold">1.</span>
+                    Demandez à vos parents de créer un compte parent
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-laha-gold">2.</span>
+                    Ils recevront un code d'invitation unique
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-laha-gold">3.</span>
+                    Entrez ce code ici pour lier les comptes
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-laha-gold">4.</span>
+                    Vos parents pourront suivre votre progression
+                  </li>
+                </ul>
               </div>
-              <button disabled={loading || !invitationCode} className="px-5 py-3 rounded bg-laha-gold text-laha-black font-medium hover:bg-laha-gold/90 disabled:opacity-50">{loading ? 'Validation…' : 'Valider le code'}</button>
-              {error && <p className="text-laha-gold-light/80">{error}</p>}
-              {success && <p className="text-laha-gold-light/80">{toast}</p>}
-            </form>
+
+              <div className="bg-gradient-to-br from-laha-surface/30 via-laha-surface/20 to-laha-gold/15 backdrop-blur-md rounded-xl p-6 border border-laha-border">
+                <h3 className="text-lg font-semibold text-laha-text mb-3">
+                  Avantages du lien parental
+                </h3>
+                <ul className="space-y-2 text-laha-text-secondary">
+                  <li className="flex items-center gap-2">
+                    <span className="text-laha-gold">📊</span>
+                    Suivi de votre progression en temps réel
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-laha-gold">📈</span>
+                    Rapports de performance détaillés
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-laha-gold">💬</span>
+                    Communication facilitée avec les enseignants
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-laha-gold">🎯</span>
+                    Objectifs d'apprentissage partagés
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
-      </SidebarProvider>
-    </AuthGuard>
+      </div>
+    </StudentSidebar>
   )
 }
-
-const Logo = () => (
-  <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-    <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-    <span className="font-medium whitespace-pre text-white font-heading">Lahacademia</span>
-  </a>
-)
-
-const LogoIcon = () => (
-  <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-    <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-  </a>
-)
-
-
-

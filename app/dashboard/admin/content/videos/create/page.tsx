@@ -55,6 +55,7 @@ interface VideoData {
   tags: string[]
   teacher?: string
   price: number
+  country: string
 }
 
 export default function CreateVideoPage() {
@@ -71,13 +72,25 @@ export default function CreateVideoPage() {
     allowComments: true,
     isPublished: false,
     tags: [],
-    price: 0
+    price: 0,
+    country: "senegal"
   })
 
-  const [currentTag, setCurrentTag] = useState("")
+  const [uploadedVideo, setUploadedVideo] = useState<{
+    url: string
+    name: string
+    size: number
+    type: string
+  } | null>(null)
+  const [uploadedThumbnail, setUploadedThumbnail] = useState<{
+    url: string
+    name: string
+    size: number
+  } | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [currentTag, setCurrentTag] = useState("")
   const [activeTab, setActiveTab] = useState("general")
-  const [uploadProgress, setUploadProgress] = useState(0)
 
   const addTag = () => {
     if (currentTag.trim() && !videoData.tags.includes(currentTag.trim())) {
@@ -96,9 +109,36 @@ export default function CreateVideoPage() {
     })
   }
 
-  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'video')
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de l\'upload')
+      }
+
+      const result = await response.json()
+      setUploadedVideo({
+        url: result.file_url,
+        name: result.file_name,
+        size: result.file_size,
+        type: result.file_type
+      })
+
+      // Mettre à jour les données de la vidéo
       setVideoData({
         ...videoData,
         file: file
@@ -114,16 +154,48 @@ export default function CreateVideoPage() {
         }))
       }
       video.src = URL.createObjectURL(file)
+
+    } catch (error) {
+      console.error('Erreur upload:', error)
+      alert('Erreur lors de l\'upload de la vidéo')
+    } finally {
+      setIsUploading(false)
     }
   }
 
-  const handleThumbnailUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThumbnailUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      setVideoData({
-        ...videoData,
-        thumbnail: file
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'thumbnail')
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de l\'upload')
+      }
+
+      const result = await response.json()
+      setUploadedThumbnail({
+        url: result.file_url,
+        name: result.file_name,
+        size: result.file_size
+      })
+
+    } catch (error) {
+      console.error('Erreur upload:', error)
+      alert('Erreur lors de l\'upload de la miniature')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -145,14 +217,39 @@ export default function CreateVideoPage() {
     setIsLoading(true)
     try {
       // Validation
-      if (!videoData.title || !videoData.subject || !videoData.class_level) {
-        alert("Veuillez remplir tous les champs obligatoires")
+      if (!videoData.title || !videoData.description || !videoData.subject || !videoData.class_level) {
+        alert("Veuillez remplir tous les champs obligatoires (titre, description, matière, classe)")
         return
       }
 
-      console.log("Sauvegarde de la vidéo:", videoData)
-      // TODO: Appel API pour sauvegarder
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
+      const payload = {
+        title: videoData.title,
+        description: videoData.description,
+        content_type: 'video',
+        subject: videoData.subject,
+        class_level: videoData.class_level,
+        country: videoData.country,
+        duration_minutes: videoData.duration,
+        status: 'draft',
+        tags: videoData.tags,
+        video_url: uploadedVideo?.url,
+        thumbnail: uploadedThumbnail?.url,
+      }
+
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error('Erreur détaillée Django:', err)
+        console.error('Payload envoyé:', payload)
+        throw new Error(err.error || err.detail || `HTTP ${res.status}: ${JSON.stringify(err)}`)
+      }
+
       alert("Vidéo sauvegardée avec succès !")
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error)
@@ -171,14 +268,39 @@ export default function CreateVideoPage() {
     setIsLoading(true)
     try {
       // Validation complète
-      if (!videoData.title || !videoData.subject || !videoData.class_level || !videoData.file) {
-        alert("Veuillez remplir tous les champs obligatoires et télécharger une vidéo")
+      if (!videoData.title || !videoData.description || !videoData.subject || !videoData.class_level) {
+        alert("Veuillez remplir tous les champs obligatoires (titre, description, matière, classe)")
         return
       }
 
-      console.log("Publication de la vidéo:", videoData)
-      // TODO: Appel API pour publier
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
+      const payload = {
+        title: videoData.title,
+        description: videoData.description,
+        content_type: 'video',
+        subject: videoData.subject,
+        class_level: videoData.class_level,
+        country: videoData.country,
+        duration_minutes: videoData.duration,
+        status: 'published',
+        tags: videoData.tags,
+        video_url: uploadedVideo?.url,
+        thumbnail: uploadedThumbnail?.url,
+      }
+
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error('Erreur détaillée Django:', err)
+        console.error('Payload envoyé:', payload)
+        throw new Error(err.error || err.detail || `HTTP ${res.status}: ${JSON.stringify(err)}`)
+      }
+
       alert("Vidéo publiée avec succès !")
     } catch (error) {
       console.error("Erreur lors de la publication:", error)
@@ -191,8 +313,8 @@ export default function CreateVideoPage() {
   return (
     <AuthGuard requiredRoles={['admin', 'super_admin']}>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto p-6">
-          <div className="container mx-auto max-w-4xl">
+        <main className="flex-1 w-full overflow-auto">
+          <div className="w-full px-6 py-6 max-w-4xl">
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center justify-between">
@@ -286,12 +408,18 @@ export default function CreateVideoPage() {
                             <SelectValue placeholder="Sélectionner une matière" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="mathematiques">Mathématiques</SelectItem>
-                            <SelectItem value="physique">Physique</SelectItem>
-                            <SelectItem value="francais">Français</SelectItem>
-                            <SelectItem value="svt">SVT</SelectItem>
-                            <SelectItem value="histoire">Histoire</SelectItem>
-                            <SelectItem value="anglais">Anglais</SelectItem>
+                            <SelectItem value="mathematics">Mathématiques</SelectItem>
+                            <SelectItem value="physics">Physique</SelectItem>
+                            <SelectItem value="chemistry">Chimie</SelectItem>
+                            <SelectItem value="biology">Biologie</SelectItem>
+                            <SelectItem value="french">Français</SelectItem>
+                            <SelectItem value="english">Anglais</SelectItem>
+                            <SelectItem value="history">Histoire</SelectItem>
+                            <SelectItem value="geography">Géographie</SelectItem>
+                            <SelectItem value="philosophy">Philosophie</SelectItem>
+                            <SelectItem value="computer_science">Informatique</SelectItem>
+                            <SelectItem value="economics">Économie</SelectItem>
+                            <SelectItem value="sports">Éducation Physique</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -305,11 +433,14 @@ export default function CreateVideoPage() {
                             <SelectValue placeholder="Sélectionner une classe" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="quatrieme">Quatrième</SelectItem>
-                            <SelectItem value="troisieme">Troisième</SelectItem>
-                            <SelectItem value="seconde">Seconde</SelectItem>
-                            <SelectItem value="premiere">Première</SelectItem>
+                            <SelectItem value="6eme">6ème</SelectItem>
+                            <SelectItem value="5eme">5ème</SelectItem>
+                            <SelectItem value="4eme">4ème</SelectItem>
+                            <SelectItem value="3eme">3ème</SelectItem>
+                            <SelectItem value="2nde">2nde</SelectItem>
+                            <SelectItem value="1ere">1ère</SelectItem>
                             <SelectItem value="terminale">Terminale</SelectItem>
+                            <SelectItem value="university">Université</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -418,43 +549,37 @@ export default function CreateVideoPage() {
                           onChange={handleVideoUpload}
                           className="hidden"
                           id="video-upload"
+                          disabled={isUploading}
                         />
-                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black">
+                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black" disabled={isUploading}>
                           <label htmlFor="video-upload" className="cursor-pointer">
-                            <Upload className="h-4 w-4 mr-2" />
-                            Choisir une vidéo
+                            {isUploading ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Upload className="h-4 w-4 mr-2" />
+                            )}
+                            {isUploading ? 'Upload en cours...' : 'Choisir une vidéo'}
                           </label>
                         </Button>
                       </div>
                     </div>
 
-                    {videoData.file && (
+                    {uploadedVideo && (
                       <div className="space-y-4">
                         <div className="flex items-center gap-4 p-4 bg-laha-background rounded-lg border border-laha-border">
                           <Play className="h-6 w-6 text-laha-gold" />
                           <div className="flex-1">
-                            <p className="text-laha-text font-medium">{videoData.file.name}</p>
+                            <p className="text-laha-text font-medium">{uploadedVideo.name}</p>
                             <p className="text-laha-text-secondary text-sm">
-                              {(videoData.file.size / 1024 / 1024).toFixed(2)} MB
+                              {(uploadedVideo.size / 1024 / 1024).toFixed(2)} MB
                             </p>
                           </div>
                           <Badge variant="outline" className="border-laha-border text-laha-text">
                             {videoData.quality}
                           </Badge>
-                        </div>
-
-                        {/* Barre de progression simulée */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm text-laha-text-secondary">
-                            <span>Upload en cours...</span>
-                            <span>{uploadProgress}%</span>
-                          </div>
-                          <div className="w-full bg-laha-background rounded-full h-2">
-                            <div 
-                              className="bg-laha-gold h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            />
-                          </div>
+                          <Badge variant="outline" className="border-green-500/20 text-green-500">
+                            ✓ Uploadé
+                          </Badge>
                         </div>
                       </div>
                     )}
@@ -480,25 +605,33 @@ export default function CreateVideoPage() {
                           onChange={handleThumbnailUpload}
                           className="hidden"
                           id="thumbnail-upload"
+                          disabled={isUploading}
                         />
-                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black">
+                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black" disabled={isUploading}>
                           <label htmlFor="thumbnail-upload" className="cursor-pointer">
-                            <Image className="h-4 w-4 mr-2" />
-                            Choisir une image
+                            {isUploading ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Image className="h-4 w-4 mr-2" />
+                            )}
+                            {isUploading ? 'Upload en cours...' : 'Choisir une image'}
                           </label>
                         </Button>
                       </div>
                     </div>
 
-                    {videoData.thumbnail && (
+                    {uploadedThumbnail && (
                       <div className="flex items-center gap-4 p-4 bg-laha-background rounded-lg border border-laha-border">
                         <Image className="h-6 w-6 text-laha-gold" />
                         <div className="flex-1">
-                          <p className="text-laha-text font-medium">{videoData.thumbnail.name}</p>
+                          <p className="text-laha-text font-medium">{uploadedThumbnail.name}</p>
                           <p className="text-laha-text-secondary text-sm">
-                            {(videoData.thumbnail.size / 1024).toFixed(2)} KB
+                            {(uploadedThumbnail.size / 1024).toFixed(2)} KB
                           </p>
                         </div>
+                        <Badge variant="outline" className="border-green-500/20 text-green-500">
+                          ✓ Uploadé
+                        </Badge>
                       </div>
                     )}
                   </CardContent>

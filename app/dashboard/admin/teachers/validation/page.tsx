@@ -293,8 +293,8 @@ export default function TeacherValidationPage() {
   return (
     <AuthGuard requiredRoles={["admin", "super_admin"]}>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto bg-laha-surface">
-            <div className="container mx-auto p-6">
+        <main className="flex-1 w-full overflow-auto bg-laha-surface">
+            <div className="w-full px-6 py-6">
               {/* Header */}
               <div className="mb-8">
                 <div className="flex justify-between items-start">

@@ -40,13 +40,22 @@ export async function POST(request: NextRequest) {
     // Créer une session ou un cookie pour maintenir la connexion
     const responseWithCookie = NextResponse.json(data, { status: 200 })
     
-    // Stocker les informations utilisateur dans un cookie sécurisé
+    // Stocker les informations utilisateur dans un cookie sécurisé (httpOnly pour la sécurité)
     responseWithCookie.cookies.set('user_session', JSON.stringify({ ...data.user, token: data.token }), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 jours
       path: '/', // S'assurer que le cookie est disponible sur tout le site
+    })
+
+    // Créer aussi un cookie non-httpOnly pour le côté client
+    responseWithCookie.cookies.set('user_session_client', JSON.stringify({ ...data.user, token: data.token }), {
+      httpOnly: false, // Accessible par JavaScript
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 jours
+      path: '/',
     })
 
     return responseWithCookie

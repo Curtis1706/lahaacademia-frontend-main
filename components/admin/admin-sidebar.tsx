@@ -121,12 +121,12 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-laha-background">
+      <div className="flex h-screen w-full bg-laha-background">
         {/* Sidebar */}
         <Sidebar 
           open={sidebarOpen} 
           setOpen={setSidebarOpen} 
-          className="bg-gradient-to-b from-slate-900 to-blue-900 border-r border-white/10"
+          className="bg-gradient-to-b from-slate-900 to-blue-900 border-r border-white/10 flex-shrink-0"
         >
           <div className="flex h-full flex-col">
             {/* Logo */}
@@ -176,7 +176,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
         </Sidebar>
         
         {/* Main content */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 w-full overflow-auto">
           {children}
         </div>
       </div>

@@ -42,6 +42,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Solution temporaire : lire directement depuis le cookie
+        console.log('🔍 Vérification de l\'authentification...')
+        
+        // Essayer de lire le cookie user_session_client directement
+        const cookies = document.cookie.split(';')
+        const userSessionCookie = cookies.find(cookie => cookie.trim().startsWith('user_session_client='))
+        
+        if (userSessionCookie) {
+          try {
+            const sessionValue = userSessionCookie.split('=')[1]
+            const userData = JSON.parse(decodeURIComponent(sessionValue))
+            console.log('✅ Session trouvée dans le cookie client:', userData)
+            setUser(userData)
+          } catch (parseError) {
+            console.log('❌ Erreur parsing cookie client:', parseError)
+            setUser(null)
+          }
+        } else {
+          console.log('❌ Pas de cookie user_session_client trouvé')
+          setUser(null)
+        }
+        
+        // Code original commenté temporairement
+        /*
         const response = await fetch('/api/auth/me', { cache: 'no-store', credentials: 'include' })
         if (response.ok) {
           const userData = await response.json()
@@ -49,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null)
         }
+        */
       } catch (error) {
         console.error('Erreur lors de la vérification de l\'authentification:', error)
         setUser(null)

@@ -1,264 +1,363 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import Image from "next/image"
+import { useState, useEffect } from "react"
+import { AuthGuard } from "@/components/auth-guard"
+import { 
+  Play,
+  Clock,
+  Users,
+  Star,
+  BookOpen,
+  Filter,
+  Search,
+  ChevronDown,
+  Lock,
+  Unlock,
+  Trophy,
+  Target,
+  BarChart3
+} from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Progress } from "@/components/ui/progress"
+import { VideoAccessControl } from "@/components/video/VideoAccessControl"
 import Link from "next/link"
-import { ArrowLeft, Search, Play, BookOpen, Clock, Star, Users } from "lucide-react"
-import BlurText from "@/components/ui/blur-text"
-import { GlowingEffect } from "@/components/ui/glowing-effect"
+
+interface VideoContent {
+  id: string
+  title: string
+  description: string
+  subject: string
+  class_level: string
+  duration: number
+  views: number
+  rating: number
+  thumbnail: string
+  is_free: boolean
+  price?: number
+  progress?: number
+  qcm_available: boolean
+  qcm_completed: boolean
+  created_at: string
+}
+
+interface UserProgress {
+  video_id: string
+  progress_percentage: number
+  completed: boolean
+  qcm_score?: number
+  qcm_completed: boolean
+}
 
 export default function CoursesPage() {
+  const [videos, setVideos] = useState<VideoContent[]>([])
+  const [userProgress, setUserProgress] = useState<UserProgress[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedSubject, setSelectedSubject] = useState("all")
+  const [selectedLevel, setSelectedLevel] = useState("all")
+  const [sortBy, setSortBy] = useState("newest")
 
-  const categories = [
-    { id: "all", name: "Tous les cours" },
-    { id: "math", name: "Mathématiques" },
-    { id: "physics", name: "Physique" },
-    { id: "french", name: "Français" },
-    { id: "history", name: "Histoire" },
-    { id: "chemistry", name: "Chimie" },
-  ]
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        
+        // Charger les vidéos publiques
+        const videosResponse = await fetch('/api/public/videos', {
+          credentials: 'include',
+        })
+        
+        if (!videosResponse.ok) {
+          throw new Error('Erreur lors du chargement des vidéos')
+        }
+        
+        const videosData = await videosResponse.json()
+        
+        // Normaliser les données des vidéos
+        const normalizedVideos = videosData.map((video: any) => ({
+          id: video.id,
+          title: video.title,
+          description: video.description,
+          subject: video.subject,
+          class_level: video.class_level,
+          duration: video.duration || 0,
+          views: video.views || 0,
+          rating: video.rating || 0,
+          thumbnail: video.thumbnail,
+          is_free: video.is_free || false,
+          price: video.price,
+          qcm_available: video.qcm_available || false,
+          qcm_completed: false,
+          created_at: video.created_at,
+        }))
 
-  const courses = [
-    {
-      id: 1,
-      title: "Mathématiques - Terminale S",
-      description: "Cours complet de mathématiques pour la classe de Terminale S",
-      instructor: "Dr. Aminata Diallo",
-      category: "math",
-      level: "Terminale",
-      duration: "45h",
-      students: 156,
-      rating: 4.9,
-      progress: 75,
-      thumbnail: "/placeholder.svg?height=200&width=300&text=Math",
-      price: "Gratuit",
-      status: "enrolled",
-    },
-    {
-      id: 2,
-      title: "Physique - Première S",
-      description: "Découvrez les lois fondamentales de la physique",
-      instructor: "Prof. Jean-Baptiste Kouame",
-      category: "physics",
-      level: "Première",
-      duration: "38h",
-      students: 124,
-      rating: 4.7,
-      progress: 60,
-      thumbnail: "/placeholder.svg?height=200&width=300&text=Physics",
-      price: "5,000 FCFA",
-      status: "enrolled",
-    },
-    {
-      id: 3,
-      title: "Français - Seconde",
-      description: "Maîtrisez la langue française et la littérature",
-      instructor: "Dr. Fatou Ndiaye",
-      category: "french",
-      level: "Seconde",
-      duration: "32h",
-      students: 89,
-      rating: 4.8,
-      progress: 0,
-      thumbnail: "/placeholder.svg?height=200&width=300&text=French",
-      price: "3,000 FCFA",
-      status: "available",
-    },
-    {
-      id: 4,
-      title: "Histoire de l'Afrique",
-      description: "Explorez l'histoire riche du continent africain",
-      instructor: "Prof. Kwame Asante",
-      category: "history",
-      level: "Première",
-      duration: "28h",
-      students: 67,
-      rating: 4.6,
-      progress: 0,
-      thumbnail: "/placeholder.svg?height=200&width=300&text=History",
-      price: "4,000 FCFA",
-      status: "available",
-    },
-  ]
+        // Charger la progression utilisateur
+        const progressResponse = await fetch('/api/user/progress', {
+          credentials: 'include',
+        })
+        
+        let progressData: UserProgress[] = []
+        if (progressResponse.ok) {
+          progressData = await progressResponse.json()
+        }
 
-  const filteredCourses = courses.filter((course) => {
-    const matchesSearch =
-      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.instructor.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+        // Merger avec les données de progression
+        const progressMap = new Map(progressData.map((p: any) => [p.video_id, p]))
+        const videosWithProgress = normalizedVideos.map(video => {
+          const progress = progressMap.get(video.id)
+          return {
+            ...video,
+            progress: progress?.progress_percentage || 0,
+            qcm_completed: progress?.qcm_completed || false,
+          }
+        })
+
+        setVideos(videosWithProgress)
+        setUserProgress(progressData)
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error)
+        setVideos([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Fonction pour gérer l'accès accordé à une vidéo
+    const handleVideoAccessGranted = (videoData: any) => {
+      if (videoData) {
+        // Rediriger vers la page de lecture de la vidéo
+        window.location.href = `/courses/${videoData.id}`
+      }
+    }
+
+    // Fonction pour gérer l'accès refusé à une vidéo
+    const handleVideoAccessDenied = (reason: string, message: string) => {
+      console.log('Accès refusé:', reason, message)
+      // Ici on pourrait afficher une notification ou un modal
+    }
+
+    loadData()
+  }, [])
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    if (hours > 0) {
+      return `${hours}h ${mins}min`
+    }
+    return `${mins}min`
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR')
+  }
+
+  // Filtrage et tri des vidéos
+  const filteredVideos = videos
+    .filter(video => {
+      const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           video.description.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSubject = selectedSubject === "all" || video.subject === selectedSubject
+      const matchesLevel = selectedLevel === "all" || video.class_level === selectedLevel
+      
+      return matchesSearch && matchesSubject && matchesLevel
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        case "duration":
+          return b.duration - a.duration
+        case "rating":
+          return b.rating - a.rating
+        case "views":
+          return b.views - a.views
+        default:
+          return 0
+      }
+    })
+
+  const subjects = Array.from(new Set(videos.map(v => v.subject)))
+  const levels = Array.from(new Set(videos.map(v => v.class_level)))
+
+  const stats = {
+    totalVideos: videos.length,
+    completedVideos: videos.filter(v => v.progress === 100).length,
+    inProgressVideos: videos.filter(v => v.progress > 0 && v.progress < 100).length,
+    averageProgress: videos.length > 0 ? videos.reduce((sum, v) => sum + (v.progress || 0), 0) / videos.length : 0
+  }
+
+  if (loading) {
+    return (
+      <AuthGuard>
+        <div className="min-h-screen bg-laha-background flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-laha-primary mx-auto mb-4"></div>
+            <p className="text-laha-text-secondary">Chargement des cours...</p>
+          </div>
+        </div>
+      </AuthGuard>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-white/10 p-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/student" className="text-white/70 hover:text-white transition-colors">
-              <ArrowLeft className="h-6 w-6" />
-            </Link>
-            <div className="flex items-center space-x-3">
-              <Image src="/logo.png" alt="LAHA Editions" width={40} height={40} className="rounded-lg" />
-              <BlurText
-                text="Mes Cours"
-                delay={100}
-                animateBy="words"
-                direction="top"
-                className="font-heading text-2xl font-bold text-white"
-              />
+    <AuthGuard>
+      <div className="min-h-screen bg-laha-background">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-laha-primary to-laha-gold text-white py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold mb-4">Mes Cours</h1>
+              <p className="text-xl opacity-90">
+                Continuez votre apprentissage avec nos vidéos éducatives
+              </p>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Search and Filters */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/50" />
-            <input
-              type="text"
-              placeholder="Rechercher un cours..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
-                  selectedCategory === category.id
-                    ? "bg-gradient-to-r from-blue-500 to-orange-500 text-white"
-                    : "bg-white/10 text-white/70 hover:bg-white/20"
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Courses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course, index) => (
-            <motion.div
-              key={course.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="relative"
-            >
-              <div className="relative bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 hover:border-white/30 transition-colors">
-                <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} />
-
-                <div className="relative z-10">
-                  {/* Course Thumbnail */}
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={course.thumbnail || "/placeholder.svg"}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-                    {/* Status Badge */}
-                    <div className="absolute top-3 right-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          course.status === "enrolled"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-blue-500/20 text-blue-400"
-                        }`}
-                      >
-                        {course.status === "enrolled" ? "Inscrit" : "Disponible"}
-                      </span>
-                    </div>
-
-                    {/* Play Button */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <button className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
-                        <Play className="h-8 w-8 text-white ml-1" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Course Info */}
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-blue-400 text-sm font-medium">{course.level}</span>
-                      <span className="text-orange-400 text-sm font-medium">{course.price}</span>
-                    </div>
-
-                    <h3 className="text-white font-semibold text-lg mb-2">{course.title}</h3>
-                    <p className="text-white/70 text-sm mb-4 line-clamp-2">{course.description}</p>
-
-                    <div className="flex items-center gap-4 text-sm text-white/60 mb-4">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {course.duration}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {course.students}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-400" />
-                        {course.rating}
-                      </span>
-                    </div>
-
-                    <p className="text-white/80 text-sm mb-4">Par {course.instructor}</p>
-
-                    {/* Progress Bar (if enrolled) */}
-                    {course.status === "enrolled" && course.progress > 0 && (
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-white/70 text-sm">Progression</span>
-                          <span className="text-blue-400 text-sm">{course.progress}%</span>
-                        </div>
-                        <div className="w-full bg-white/10 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-blue-500 to-orange-500 h-2 rounded-full"
-                            style={{ width: `${course.progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Action Button */}
-                    <button
-                      className={`w-full py-3 rounded-lg font-medium transition-all ${
-                        course.status === "enrolled"
-                          ? "bg-gradient-to-r from-blue-500 to-orange-500 text-white hover:from-blue-600 hover:to-orange-600"
-                          : "bg-white/10 text-white hover:bg-white/20"
-                      }`}
-                    >
-                      {course.status === "enrolled" ? "Continuer le cours" : "S'inscrire"}
-                    </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Statistiques */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-laha-card border-laha-border">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <BookOpen className="h-8 w-8 text-laha-primary mr-4" />
+                  <div>
+                    <p className="text-sm text-laha-text-secondary">Total des cours</p>
+                    <p className="text-2xl font-bold text-laha-heading">{stats.totalVideos}</p>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </CardContent>
+            </Card>
 
-        {/* Empty State */}
-        {filteredCourses.length === 0 && (
-          <div className="text-center py-12">
-            <BookOpen className="h-16 w-16 text-white/30 mx-auto mb-4" />
-            <h3 className="text-white text-xl font-semibold mb-2">Aucun cours trouvé</h3>
-            <p className="text-white/70">Essayez de modifier vos critères de recherche</p>
+            <Card className="bg-laha-card border-laha-border">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Trophy className="h-8 w-8 text-green-500 mr-4" />
+                  <div>
+                    <p className="text-sm text-laha-text-secondary">Terminés</p>
+                    <p className="text-2xl font-bold text-laha-heading">{stats.completedVideos}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-laha-card border-laha-border">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Play className="h-8 w-8 text-blue-500 mr-4" />
+                  <div>
+                    <p className="text-sm text-laha-text-secondary">En cours</p>
+                    <p className="text-2xl font-bold text-laha-heading">{stats.inProgressVideos}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-laha-card border-laha-border">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <BarChart3 className="h-8 w-8 text-laha-gold mr-4" />
+                  <div>
+                    <p className="text-sm text-laha-text-secondary">Progression moyenne</p>
+                    <p className="text-2xl font-bold text-laha-heading">{stats.averageProgress.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        )}
+
+          {/* Filtres et recherche */}
+          <Card className="bg-laha-card border-laha-border mb-8">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-text-secondary" />
+                    <Input
+                      placeholder="Rechercher un cours..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 bg-laha-background border-laha-border"
+                    />
+                  </div>
+                </div>
+                
+                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                  <SelectTrigger className="w-full lg:w-48 bg-laha-background border-laha-border">
+                    <SelectValue placeholder="Matière" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les matières</SelectItem>
+                    {subjects.map(subject => (
+                      <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                  <SelectTrigger className="w-full lg:w-48 bg-laha-background border-laha-border">
+                    <SelectValue placeholder="Niveau" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les niveaux</SelectItem>
+                    {levels.map(level => (
+                      <SelectItem key={level} value={level}>{level}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full lg:w-48 bg-laha-background border-laha-border">
+                    <SelectValue placeholder="Trier par" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Plus récent</SelectItem>
+                    <SelectItem value="oldest">Plus ancien</SelectItem>
+                    <SelectItem value="duration">Durée</SelectItem>
+                    <SelectItem value="rating">Note</SelectItem>
+                    <SelectItem value="views">Vues</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Liste des vidéos */}
+          <div>
+            {filteredVideos.length === 0 ? (
+              <Card className="bg-laha-card border-laha-border">
+                <CardContent className="p-12 text-center">
+                  <BookOpen className="h-12 w-12 text-laha-text-secondary mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-laha-text mb-2">Aucun cours trouvé</h3>
+                  <p className="text-laha-text-secondary">Essayez de modifier vos critères de recherche</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {filteredVideos.map((video) => (
+                  <VideoAccessControl
+                    key={video.id}
+                    videoId={video.id}
+                    videoTitle={video.title}
+                    videoDescription={video.description}
+                    thumbnail={video.thumbnail}
+                    duration={video.duration}
+                    onAccessGranted={handleVideoAccessGranted}
+                    onAccessDenied={handleVideoAccessDenied}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   )
 }

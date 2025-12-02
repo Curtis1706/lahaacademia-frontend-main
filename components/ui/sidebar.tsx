@@ -97,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children, open, setOpen, className })
 
       {/* Mobile Sidebar */}
       <div className="md:hidden">
-        <div className="h-16 px-4 py-4 flex flex-row items-center justify-between bg-gradient-to-r from-slate-900 to-blue-900 w-full">
+        <div className="h-16 px-4 py-4 flex flex-row items-center justify-between bg-white/5 dark:bg-black/10 backdrop-blur-xl border-b border-white/10 dark:border-white/5 w-full">
           <div className="flex justify-end z-20 w-full">
             <IconMenu2 className="text-white cursor-pointer" onClick={() => setOpen(!open)} />
           </div>
@@ -112,9 +112,9 @@ const Sidebar: React.FC<SidebarProps> = ({ children, open, setOpen, className })
                 duration: 0.3,
                 ease: "easeInOut",
               }}
-              className="fixed h-full w-full inset-0 bg-gradient-to-b from-slate-900 to-blue-900 p-10 z-[100] flex flex-col justify-between"
+              className="fixed h-full w-full inset-0 bg-white/10 dark:bg-black/20 backdrop-blur-2xl border-r border-white/20 dark:border-white/10 shadow-2xl p-10 z-[100] flex flex-col justify-between"
             >
-              <div className="absolute right-10 top-10 z-50 text-white cursor-pointer" onClick={() => setOpen(!open)}>
+              <div className="absolute right-10 top-10 z-50 text-white cursor-pointer bg-white/10 dark:bg-black/20 backdrop-blur-sm rounded-full p-2 border border-white/20 dark:border-white/10" onClick={() => setOpen(!open)}>
                 <IconX />
               </div>
               {children}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { AuthGuard } from "@/components/auth-guard"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { PreviewModal } from "@/components/admin/PreviewModal"
 import { 
   Plus,
   Search,
@@ -24,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 
 interface Document {
@@ -52,97 +54,79 @@ export default function DocumentsPage() {
   const [selectedStatus, setSelectedStatus] = useState("")
   const [selectedType, setSelectedType] = useState("")
   const [showFilters, setShowFilters] = useState(false)
+  const [previewContent, setPreviewContent] = useState<any>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null)
 
-  // Données de test
-  useEffect(() => {
-    const mockDocuments: Document[] = [
-      {
-        id: "1",
-        title: "Exercices de mathématiques - Terminale",
-        description: "Série d'exercices corrigés pour la terminale scientifique",
-        subject: "Mathématiques",
-        class_level: "Terminale",
-        status: "published",
-        type: "pdf",
-        size: 2.5,
-        downloads: 850,
-        created_at: "2025-08-10",
-        teacher: {
-          first_name: "Jean",
-          last_name: "Dupont"
-        }
-      },
-      {
-        id: "2",
-        title: "Fiche de révision - Physique",
-        description: "Résumé des formules importantes en physique",
-        subject: "Physique",
-        class_level: "Première",
-        status: "published",
-        type: "pdf",
-        size: 1.2,
-        downloads: 1200,
-        created_at: "2025-08-12",
-        teacher: {
-          first_name: "Marie",
-          last_name: "Martin"
-        }
-      },
-      {
-        id: "3",
-        title: "Tableau de conjugaison",
-        description: "Tableau récapitulatif des temps de conjugaison",
-        subject: "Français",
-        class_level: "Quatrième",
-        status: "draft",
-        type: "image",
-        size: 0.8,
-        downloads: 0,
-        created_at: "2025-08-15",
-        teacher: {
-          first_name: "Pierre",
-          last_name: "Durand"
-        }
-      },
-      {
-        id: "4",
-        title: "Schéma de la cellule",
-        description: "Schéma annoté de la structure cellulaire",
-        subject: "SVT",
-        class_level: "Seconde",
-        status: "published",
-        type: "image",
-        size: 1.5,
-        downloads: 650,
-        created_at: "2025-08-18",
-        teacher: {
-          first_name: "Sophie",
-          last_name: "Leroy"
-        }
-      },
-      {
-        id: "5",
-        title: "Tableau périodique interactif",
-        description: "Tableau périodique avec informations détaillées",
-        subject: "Chimie",
-        class_level: "Seconde",
-        status: "published",
-        type: "spreadsheet",
-        size: 3.2,
-        downloads: 950,
-        created_at: "2025-08-20",
-        teacher: {
-          first_name: "Marc",
-          last_name: "Bernard"
-        }
+  // Fonction pour supprimer un document
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      setDeletingDocumentId(documentId)
+      console.log('🗑️ Suppression du document:', documentId)
+      
+      const response = await fetch(`/api/admin/documents/${documentId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        throw new Error(errorData.error || 'Erreur lors de la suppression')
       }
-    ]
-    
-    setTimeout(() => {
-      setDocuments(mockDocuments)
-      setLoading(false)
-    }, 1000)
-  }, [])
+      
+      // Supprimer le document de la liste locale
+      setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== documentId))
+      
+      console.log('✅ Document supprimé avec succès')
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error)
+      alert(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+    } finally {
+      setDeletingDocumentId(null)
+    }
+  }
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        if (selectedSubject) params.set('subject', selectedSubject)
+        if (selectedClass) params.set('class_level', selectedClass)
+        if (selectedStatus) params.set('status', selectedStatus)
+        if (selectedType) params.set('type', selectedType)
+        if (searchTerm) params.set('search', searchTerm)
+
+        params.set('content_type', 'document')
+        const url = `/api/admin/content${params.toString() ? `?${params.toString()}` : ''}`
+        const res = await fetch(url, { method: 'GET', credentials: 'include' })
+        const data = await res.json()
+
+        const raw: any[] = Array.isArray(data) ? data : (data.results || data.documents || [])
+        const normalized: Document[] = raw.map((d: any) => ({
+          id: (d.id ?? d.pk ?? '').toString(),
+          title: d.title || d.name || 'Sans titre',
+          description: d.description || '',
+          subject: d.subject || d.category || 'N/A',
+          class_level: d.class_level || d.level || 'N/A',
+          status: d.status || (d.is_active === false ? 'archived' : 'published'),
+          type: d.type || d.file_type || 'file',
+          size: Number(d.size_mb ?? d.size ?? 0),
+          downloads: Number(d.downloads || 0),
+          created_at: d.created_at || d.date_created || '',
+          teacher: d.created_by ? { first_name: d.created_by.first_name || '', last_name: d.created_by.last_name || '' } : undefined,
+        }))
+
+        setDocuments(normalized)
+      } catch (e) {
+        console.error('Erreur chargement documents:', e)
+        setDocuments([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
+  }, [selectedSubject, selectedClass, selectedStatus, selectedType, searchTerm])
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -188,8 +172,8 @@ export default function DocumentsPage() {
   return (
     <AuthGuard requiredRoles={['admin', 'super_admin']}>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto p-6">
-          <div className="container mx-auto">
+        <main className="flex-1 w-full overflow-auto">
+          <div className="w-full px-6 py-6">
             {/* Header */}
             <div className="mb-8">
               <div className="flex justify-between items-start">
@@ -347,7 +331,26 @@ export default function DocumentsPage() {
                         
                         {/* Actions */}
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-laha-border text-laha-text hover:bg-laha-surface"
+                            onClick={() => {
+                              setPreviewContent({
+                                ...document,
+                                type: 'document',
+                                fileUrl: document.file_url,
+                                thumbnailUrl: document.thumbnail_url,
+                                fileType: document.file_format,
+                                fileSize: document.file_size_mb ? document.file_size_mb * 1024 * 1024 : 0,
+                                pageCount: document.page_count,
+                                language: document.language,
+                                allowDownloads: document.allow_downloads,
+                                allowPreview: document.allow_preview
+                              })
+                              setIsPreviewOpen(true)
+                            }}
+                          >
                             <Eye className="h-4 w-4 mr-1" />
                             Voir
                           </Button>
@@ -355,18 +358,47 @@ export default function DocumentsPage() {
                             <Download className="h-4 w-4 mr-1" />
                             Télécharger
                           </Button>
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                          <Button asChild variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                            <Link href={`/dashboard/admin/content/documents/edit/${document.id}`}>
                             <Edit className="h-4 w-4 mr-1" />
                             Modifier
+                            </Link>
                           </Button>
                           <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
                             <Copy className="h-4 w-4 mr-1" />
                             Dupliquer
                           </Button>
-                          <Button variant="outline" size="sm" className="border-red-500/20 text-red-500 hover:bg-red-500/10">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="border-red-500/20 text-red-500 hover:bg-red-500/10"
+                                disabled={deletingDocumentId === document.id}
+                              >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            Supprimer
+                                {deletingDocumentId === document.id ? 'Suppression...' : 'Supprimer'}
                           </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Êtes-vous sûr de vouloir supprimer le document "{document.title}" ? 
+                                  Cette action est irréversible et supprimera définitivement le document et tous ses fichiers associés.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteDocument(document.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Supprimer définitivement
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     </CardContent>
@@ -377,6 +409,13 @@ export default function DocumentsPage() {
           </div>
         </main>
       </AdminSidebar>
+      
+      {/* Modal de prévisualisation */}
+      <PreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        content={previewContent}
+      />
     </AuthGuard>
   )
 }

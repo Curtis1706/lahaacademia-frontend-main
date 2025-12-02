@@ -15,6 +15,8 @@ export default function Navigation({ currentPage }: NavigationProps) {
   const { theme } = useTheme();
 
   const navigationItems = [
+    { href: "/courses", label: "Cours" },
+    { href: "/profile", label: "Mon Profil" },
     { href: "/qui-sommes-nous", label: "Qui-sommes nous ?" },
     { href: "/devenir-enseignant", label: "Devenir Enseignant" },
     { href: "/nos-ouvrages", label: "Nos ouvrages" },
@@ -28,7 +30,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
   const activeColor = theme === "dark" ? "text-white" : "text-laha-gold";
 
   return (
-    <header className="relative bg-card/50 backdrop-blur-sm">
+    <header className="relative bg-white/5 dark:bg-black/10 backdrop-blur-xl border-b border-white/10 dark:border-white/5 shadow-lg">
       <nav className="flex items-center px-6 py-4 max-w-8xl mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-3 flex-shrink-0">
@@ -90,16 +92,16 @@ export default function Navigation({ currentPage }: NavigationProps) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 bg-card/95 backdrop-blur-md z-50">
+        <div className="lg:hidden absolute top-full left-0 right-0 bg-white/10 dark:bg-black/20 backdrop-blur-xl border-t border-white/20 dark:border-white/10 shadow-2xl z-50">
           <div className="px-6 py-6 space-y-5">
             {navigationItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`block py-3 px-4 rounded-lg transition-all ${
+                className={`block py-3 px-4 rounded-xl transition-all duration-300 backdrop-blur-sm ${
                   currentPage === item.href
-                    ? "text-laha-gold font-semibold bg-laha-gold/10"
-                    : `${textColor} ${hoverColor} hover:bg-muted/50`
+                    ? "text-laha-gold font-semibold bg-laha-gold/20 dark:bg-laha-gold/30 border border-laha-gold/30 shadow-lg"
+                    : `${textColor} ${hoverColor} hover:bg-white/20 dark:hover:bg-white/10 hover:shadow-md border border-transparent hover:border-white/20`
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -108,21 +110,23 @@ export default function Navigation({ currentPage }: NavigationProps) {
             ))}
             <div className="pt-6 space-y-4">
               <div className="flex justify-center">
-                <AnimatedThemeToggler />
+                <div className="bg-white/10 dark:bg-black/20 backdrop-blur-sm rounded-xl p-3 border border-white/20 dark:border-white/10">
+                  <AnimatedThemeToggler />
+                </div>
               </div>
               <div className={`text-center text-sm ${textColor} mb-4`}>
                 Changer de thème
               </div>
               <Link
                 href="/login"
-                className={`block py-3 px-4 ${textColor} ${hoverColor} hover:bg-muted/50 rounded-lg transition-all`}
+                className={`block py-3 px-4 ${textColor} ${hoverColor} hover:bg-white/20 dark:hover:bg-white/10 rounded-xl transition-all duration-300 backdrop-blur-sm border border-transparent hover:border-white/20 hover:shadow-md`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Connexion
               </Link>
               <Link
                 href="/account-type"
-                className="block w-full px-6 py-4 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-medium rounded-lg hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-center transform hover:scale-105"
+                className="block w-full px-6 py-4 bg-gradient-to-r from-laha-gold to-laha-gold-warm text-laha-black font-medium rounded-xl hover:from-laha-gold-warm hover:to-laha-gold-dark transition-all text-center transform hover:scale-105 shadow-lg hover:shadow-xl backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 S'inscrire

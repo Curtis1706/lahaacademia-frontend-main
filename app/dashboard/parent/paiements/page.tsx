@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { AuthGuard } from "@/components/auth-guard"
+import { ParentSidebar } from "@/components/parent/parent-sidebar"
+import { useAuth } from "@/hooks/use-auth"
 import { 
   DollarSign,
   CreditCard,
@@ -26,7 +28,9 @@ import {
   MapPin,
   Globe,
   Shield,
-  Lock
+  Lock,
+  Edit,
+  Trash2
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -34,11 +38,6 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
-import { useAuth } from "@/hooks/use-auth"
-import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
-import Image from "next/image"
-import Link from "next/link"
 
 interface PaymentMethod {
   id: string
@@ -110,8 +109,8 @@ export default function ParentPaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedStatus, setSelectedStatus] = useState("")
-  const [selectedPeriod, setSelectedPeriod] = useState("")
+  const [selectedStatus, setSelectedStatus] = useState("all")
+  const [selectedPeriod, setSelectedPeriod] = useState("all")
 
   // Données de test
   useEffect(() => {
@@ -415,47 +414,12 @@ export default function ParentPaymentsPage() {
     },
   ]
 
-  const [open, setOpen] = useState(false)
 
   return (
     <AuthGuard requiredRole="parent">
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full bg-laha-black dark:bg-laha-black">
-          <Sidebar open={open} setOpen={setOpen}>
-            <SidebarBody className="justify-between gap-10">
-              <div className="flex flex-1 flex-col overflow-x-hidden sidebar-scrollbar-hidden">
-                {open ? <Logo /> : <LogoIcon />}
-                <div className="mt-8 flex flex-col gap-2">
-                  {links.map((link, idx) => (
-                    <SidebarLink key={idx} link={link} />
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-center">
-                  <AnimatedThemeToggler />
-                </div>
-                <SidebarLink
-                  link={{
-                    label: `${user?.first_name} ${user?.last_name}`,
-                    href: "#",
-                    icon: (
-                      <img
-                        src="/placeholder.svg?height=50&width=50&text=KA"
-                        className="h-7 w-7 shrink-0 rounded-full"
-                        width={50}
-                        height={50}
-                        alt="Avatar"
-                      />
-                    ),
-                  }}
-                />
-              </div>
-            </SidebarBody>
-          </Sidebar>
-          
-          <main className="flex-1 overflow-auto p-6">
-            <div className="container mx-auto">
+      <ParentSidebar>
+        <div className="w-full h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="w-full px-6 py-6">
               {/* Header */}
               <div className="mb-8">
                 <h1 className="text-3xl font-bold text-laha-gold mb-2">
@@ -640,7 +604,7 @@ export default function ParentPaymentsPage() {
                           onChange={(e) => setSelectedStatus(e.target.value)}
                           className="px-3 py-2 bg-laha-background border border-laha-border rounded-md text-laha-text"
                         >
-                          <option value="">Tous les statuts</option>
+                          <option value="all">Tous les statuts</option>
                           <option value="completed">Terminé</option>
                           <option value="pending">En attente</option>
                           <option value="failed">Échoué</option>
@@ -651,7 +615,7 @@ export default function ParentPaymentsPage() {
                           onChange={(e) => setSelectedPeriod(e.target.value)}
                           className="px-3 py-2 bg-laha-background border border-laha-border rounded-md text-laha-text"
                         >
-                          <option value="">Toutes les périodes</option>
+                          <option value="all">Toutes les périodes</option>
                           <option value="today">Aujourd'hui</option>
                           <option value="week">Cette semaine</option>
                           <option value="month">Ce mois</option>
@@ -728,7 +692,7 @@ export default function ParentPaymentsPage() {
                           onChange={(e) => setSelectedStatus(e.target.value)}
                           className="px-3 py-2 bg-laha-background border border-laha-border rounded-md text-laha-text"
                         >
-                          <option value="">Tous les statuts</option>
+                          <option value="all">Tous les statuts</option>
                           <option value="paid">Payé</option>
                           <option value="pending">En attente</option>
                           <option value="overdue">En retard</option>
@@ -739,7 +703,7 @@ export default function ParentPaymentsPage() {
                           onChange={(e) => setSelectedPeriod(e.target.value)}
                           className="px-3 py-2 bg-laha-background border border-laha-border rounded-md text-laha-text"
                         >
-                          <option value="">Toutes les périodes</option>
+                          <option value="all">Toutes les périodes</option>
                           <option value="today">Aujourd'hui</option>
                           <option value="week">Cette semaine</option>
                           <option value="month">Ce mois</option>
@@ -873,29 +837,10 @@ export default function ParentPaymentsPage() {
                   </Card>
                 </TabsContent>
               </Tabs>
-            </div>
-          </main>
+          </div>
         </div>
-      </SidebarProvider>
+      </ParentSidebar>
     </AuthGuard>
   )
 }
 
-const Logo = () => {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-      <span className="font-medium whitespace-pre text-white font-heading">
-        Lahacademia
-      </span>
-    </a>
-  )
-}
-
-const LogoIcon = () => {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-    </a>
-  )
-}

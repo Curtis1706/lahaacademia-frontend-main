@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { AuthGuard } from "@/components/auth-guard"
+import { ParentSidebar } from "@/components/parent/parent-sidebar"
+import { useAuth } from "@/hooks/use-auth"
 import { 
   GraduationCap,
   TrendingUp,
@@ -31,11 +33,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
-import { useAuth } from "@/hooks/use-auth"
-import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
-import Image from "next/image"
-import Link from "next/link"
 
 interface Child {
   id: string
@@ -349,47 +346,12 @@ export default function ParentProgressPage() {
     },
   ]
 
-  const [open, setOpen] = useState(false)
 
   return (
     <AuthGuard requiredRole="parent">
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full bg-laha-black dark:bg-laha-black">
-          <Sidebar open={open} setOpen={setOpen}>
-            <SidebarBody className="justify-between gap-10">
-              <div className="flex flex-1 flex-col overflow-x-hidden sidebar-scrollbar-hidden">
-                {open ? <Logo /> : <LogoIcon />}
-                <div className="mt-8 flex flex-col gap-2">
-                  {links.map((link, idx) => (
-                    <SidebarLink key={idx} link={link} />
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-center">
-                  <AnimatedThemeToggler />
-                </div>
-                <SidebarLink
-                  link={{
-                    label: `${user?.first_name} ${user?.last_name}`,
-                    href: "#",
-                    icon: (
-                      <img
-                        src="/placeholder.svg?height=50&width=50&text=KA"
-                        className="h-7 w-7 shrink-0 rounded-full"
-                        width={50}
-                        height={50}
-                        alt="Avatar"
-                      />
-                    ),
-                  }}
-                />
-              </div>
-            </SidebarBody>
-          </Sidebar>
-          
-          <main className="flex-1 overflow-auto p-6">
-            <div className="container mx-auto">
+      <ParentSidebar>
+        <div className="w-full h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="w-full px-6 py-6">
               {/* Header */}
               <div className="mb-8">
                 <h1 className="text-3xl font-bold text-laha-gold mb-2">
@@ -723,8 +685,8 @@ export default function ParentProgressPage() {
                                     {record.notes && (
                                       <p className="text-xs text-laha-text-secondary mt-1">{record.notes}</p>
                                     )}
-                                  </div>
-                                </div>
+                    </div>
+                  </div>
                                 <Badge variant="outline" className={
                                   record.status === "present" ? "border-green-500 text-green-500" :
                                   record.status === "absent" ? "border-red-500 text-red-500" :
@@ -743,28 +705,8 @@ export default function ParentProgressPage() {
                 </>
               )}
       </div>
-          </main>
     </div>
-      </SidebarProvider>
+      </ParentSidebar>
     </AuthGuard>
-  )
-}
-
-const Logo = () => {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-      <span className="font-medium whitespace-pre text-white font-heading">
-        Lahacademia
-      </span>
-    </a>
-  )
-}
-
-const LogoIcon = () => {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-    </a>
   )
 }

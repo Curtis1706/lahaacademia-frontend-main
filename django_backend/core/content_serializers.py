@@ -90,7 +90,7 @@ class EducationalContentCreateSerializer(serializers.ModelSerializer):
             'title', 'description', 'content_type', 'subject', 'class_level', 'country',
             'difficulty_level', 'duration_minutes', 'content_file', 'video_url',
             'thumbnail', 'is_featured', 'is_free', 'price', 'tags', 'keywords',
-            'learning_objectives', 'prerequisites'
+            'learning_objectives', 'prerequisites', 'status'
         ]
     
     def create(self, validated_data):
@@ -233,5 +233,5 @@ class EducationalContentListSerializer(serializers.ModelSerializer):
             'country', 'country_display', 'status', 'status_display',
             'created_by_name', 'is_featured', 'is_free', 'price',
             'view_count', 'rating_average', 'rating_count', 'created_at',
-            'thumbnail_url'
+            'thumbnail_url', 'video_url', 'duration_minutes'
         ]

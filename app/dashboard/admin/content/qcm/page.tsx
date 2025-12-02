@@ -13,281 +13,306 @@ import {
   Trash2,
   Calendar,
   Users,
-  HelpCircle,
+  BookOpen,
   ChevronDown,
-  Clock
+  Clock,
+  Target,
+  BarChart3,
+  CheckCircle,
+  XCircle
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 
 interface QCM {
   id: string
   title: string
   description: string
-  subject: string
-  class_level: string
-  status: string
-  questions_count: number
-  duration: number
+  content_title: string
+  time_limit_minutes?: number
+  max_attempts: number
+  passing_score: number
+  total_attempts: number
+  average_score: number
+  completion_rate: number
+  is_active: boolean
   created_at: string
-  teacher?: {
-    first_name: string
-    last_name: string
-  }
+  questions_count: number
 }
 
 export default function QCMPage() {
   const [qcms, setQcms] = useState<QCM[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedSubject, setSelectedSubject] = useState("")
-  const [selectedClass, setSelectedClass] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("")
   const [showFilters, setShowFilters] = useState(false)
+  const [deletingQCMId, setDeletingQCMId] = useState<string | null>(null)
 
-  // Données de test
-  useEffect(() => {
-    const mockQCMs: QCM[] = [
-      {
-        id: "1",
-        title: "Quiz sur les équations du second degré",
-        description: "Évaluation des connaissances sur la résolution des équations quadratiques",
-        subject: "Mathématiques",
-        class_level: "Première",
-        status: "published",
-        questions_count: 15,
-        duration: 30,
-        created_at: "2025-08-10",
-        teacher: {
-          first_name: "Jean",
-          last_name: "Dupont"
-        }
-      },
-      {
-        id: "2",
-        title: "Test de compréhension en physique",
-        description: "Questions sur les lois de Newton et la mécanique",
-        subject: "Physique",
-        class_level: "Terminale",
-        status: "draft",
-        questions_count: 20,
-        duration: 45,
-        created_at: "2025-08-12",
-        teacher: {
-          first_name: "Marie",
-          last_name: "Martin"
-        }
-      },
-      {
-        id: "3",
-        title: "Évaluation de grammaire française",
-        description: "Test sur les règles de grammaire et la conjugaison",
-        subject: "Français",
-        class_level: "Quatrième",
-        status: "published",
-        questions_count: 25,
-        duration: 35,
-        created_at: "2025-08-15",
-        teacher: {
-          first_name: "Pierre",
-          last_name: "Durand"
-        }
-      },
-      {
-        id: "4",
-        title: "Quiz biologie cellulaire",
-        description: "Questions sur la structure et le fonctionnement des cellules",
-        subject: "SVT",
-        class_level: "Seconde",
-        status: "published",
-        questions_count: 18,
-        duration: 25,
-        created_at: "2025-08-18",
-        teacher: {
-          first_name: "Sophie",
-          last_name: "Leroy"
-        }
+  // Fonction pour supprimer un QCM
+  const handleDeleteQCM = async (qcmId: string) => {
+    try {
+      setDeletingQCMId(qcmId)
+      console.log('🗑️ Suppression du QCM:', qcmId)
+      
+      const response = await fetch(`/api/admin/qcm/${qcmId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        throw new Error(errorData.error || 'Erreur lors de la suppression')
       }
-    ]
-    
-    setTimeout(() => {
-      setQcms(mockQCMs)
-      setLoading(false)
-    }, 1000)
-  }, [])
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      published: "bg-green-500/10 text-green-500 border-green-500/20",
-      draft: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-      archived: "bg-gray-500/10 text-gray-500 border-gray-500/20"
+      
+      // Supprimer le QCM de la liste locale
+      setQcms(prevQcms => prevQcms.filter(qcm => qcm.id !== qcmId))
+      
+      console.log('✅ QCM supprimé avec succès')
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error)
+      alert(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+    } finally {
+      setDeletingQCMId(null)
     }
-
-    return variants[status as keyof typeof variants] || variants.draft
   }
 
-  const filteredQCMs = qcms.filter(qcm => {
-    const matchesSearch = qcm.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         qcm.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesSubject = !selectedSubject || qcm.subject === selectedSubject
-    const matchesClass = !selectedClass || qcm.class_level === selectedClass
-    const matchesStatus = !selectedStatus || qcm.status === selectedStatus
+  // Charger les QCM depuis l'API
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        if (selectedStatus) params.set('is_active', selectedStatus)
+        if (searchTerm) params.set('search', searchTerm)
 
-    return matchesSearch && matchesSubject && matchesClass && matchesStatus
-  })
+        const url = `/api/admin/qcm${params.toString() ? `?${params.toString()}` : ''}`
+        const res = await fetch(url, { method: 'GET', credentials: 'include' })
+        const data = await res.json()
+
+        const raw: any[] = Array.isArray(data) ? data : (data.results || [])
+        const normalized: QCM[] = raw.map((q: any) => ({
+          id: (q.id ?? q.pk ?? '').toString(),
+          title: q.title || 'Sans titre',
+          description: q.description || '',
+          content_title: q.content?.title || 'Contenu supprimé',
+          time_limit_minutes: q.time_limit_minutes,
+          max_attempts: q.max_attempts || 3,
+          passing_score: q.passing_score || 70,
+          total_attempts: q.total_attempts || 0,
+          average_score: q.average_score || 0,
+          completion_rate: q.completion_rate || 0,
+          is_active: q.is_active !== false,
+          created_at: q.created_at || '',
+          questions_count: q.questions?.length || 0,
+        }))
+        setQcms(normalized)
+      } catch (e) {
+        console.error('Erreur chargement QCM:', e)
+        setQcms([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [selectedStatus, searchTerm])
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const getDifficultyColor = (score: number) => {
+    if (score >= 80) return 'bg-green-500'
+    if (score >= 60) return 'bg-yellow-500'
+    return 'bg-red-500'
+  }
 
   return (
-    <AuthGuard requiredRoles={['admin', 'super_admin']}>
+    <AuthGuard>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto p-6">
-          <div className="container mx-auto">
-              {/* Header */}
-            <div className="mb-8">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h1 className="text-3xl font-bold text-laha-gold mb-2">
-                    Gestion des QCM
-                  </h1>
-                  <p className="text-laha-text-secondary">
-                    Créez et gérez les questionnaires à choix multiples
-                  </p>
-                </div>
-                <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black">
-                  <Link href="/dashboard/admin/content/qcm/create">
-                    <Plus className="h-4 w-4 mr-2" />
+        <main className="flex-1 p-6 bg-laha-background">
+          <div className="max-w-7xl mx-auto">
+            {/* En-tête */}
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-3xl font-bold text-laha-heading">Gestion des QCM</h1>
+                <p className="text-laha-text-secondary mt-2">Créez et gérez vos questionnaires à choix multiples</p>
+              </div>
+              <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black">
+                <Link href="/dashboard/admin/content/qcm/create">
+                  <Plus className="h-4 w-4 mr-2" />
                   Créer un QCM
-                  </Link>
-                </Button>
-              </div>
-              </div>
+                </Link>
+              </Button>
+            </div>
 
-            {/* Filters */}
-            <Card className="mb-6 bg-laha-surface/50 border-laha-border">
-                <CardHeader>
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 text-laha-text hover:text-laha-gold"
-                >
-                  <Filter className="h-4 w-4" />
-                    Filtres
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-                </Button>
-                </CardHeader>
-              {showFilters && (
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-text-secondary" />
-                        <Input
-                          placeholder="Rechercher un QCM..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-laha-background border-laha-border text-laha-text"
-                      />
-                    </div>
-                    <select
-                      value={selectedSubject}
-                      onChange={(e) => setSelectedSubject(e.target.value)}
-                      className="px-3 py-2 bg-laha-background border border-laha-border rounded-md text-laha-text"
-                    >
-                      <option value="">Toutes les matières</option>
-                      <option value="Mathématiques">Mathématiques</option>
-                      <option value="Physique">Physique</option>
-                      <option value="Français">Français</option>
-                      <option value="SVT">SVT</option>
-                    </select>
-                    <select
-                      value={selectedClass}
-                      onChange={(e) => setSelectedClass(e.target.value)}
-                      className="px-3 py-2 bg-laha-background border border-laha-border rounded-md text-laha-text"
-                    >
-                      <option value="">Toutes les classes</option>
-                      <option value="Quatrième">Quatrième</option>
-                      <option value="Seconde">Seconde</option>
-                      <option value="Première">Première</option>
-                      <option value="Terminale">Terminale</option>
-                    </select>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="px-3 py-2 bg-laha-background border border-laha-border rounded-md text-laha-text"
-                    >
-                      <option value="">Tous les statuts</option>
-                      <option value="published">Publié</option>
-                      <option value="draft">Brouillon</option>
-                      <option value="archived">Archivé</option>
-                    </select>
+            {/* Filtres et recherche */}
+            <div className="bg-laha-card p-4 rounded-lg border border-laha-border mb-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-laha-text-secondary h-4 w-4" />
+                    <Input
+                      placeholder="Rechercher un QCM..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 bg-laha-background border-laha-border text-laha-text"
+                    />
                   </div>
-                </CardContent>
-              )}
-              </Card>
-
-            {/* QCM List */}
-              {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-laha-gold"></div>
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="px-3 py-2 bg-laha-background border border-laha-border rounded-md text-laha-text"
+                  >
+                    <option value="">Tous les statuts</option>
+                    <option value="true">Actifs</option>
+                    <option value="false">Inactifs</option>
+                  </select>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="border-laha-border text-laha-text hover:bg-laha-surface"
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtres
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredQCMs.map((qcm) => (
-                  <Card key={qcm.id} className="bg-laha-surface/50 border-laha-border hover:bg-laha-surface/70 transition-colors">
+            </div>
+
+            {/* Liste des QCM */}
+            <div className="space-y-4">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-laha-primary mx-auto"></div>
+                  <p className="text-laha-text-secondary mt-2">Chargement des QCM...</p>
+                </div>
+              ) : qcms.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-laha-text-secondary mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-laha-text mb-2">Aucun QCM trouvé</h3>
+                  <p className="text-laha-text-secondary mb-4">Commencez par créer votre premier questionnaire</p>
+                  <Button asChild className="bg-laha-primary hover:bg-laha-primary/90 text-laha-primary-foreground">
+                    <Link href="/dashboard/admin/content/qcm/create">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Créer un QCM
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {qcms.map((qcm) => (
+                    <Card key={qcm.id} className="bg-laha-card border-laha-border hover:shadow-lg transition-shadow">
                       <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
+                        <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-semibold text-laha-text">{qcm.title}</h3>
-                              <Badge className={getStatusBadge(qcm.status)}>
-                              {qcm.status === 'published' ? 'Publié' : 
-                               qcm.status === 'draft' ? 'Brouillon' : 'Archivé'}
+                              <h3 className="text-xl font-semibold text-laha-heading">{qcm.title}</h3>
+                              <Badge variant={qcm.is_active ? "default" : "secondary"} className={qcm.is_active ? "bg-green-500" : ""}>
+                                {qcm.is_active ? "Actif" : "Inactif"}
                               </Badge>
-                          </div>
-                          <p className="text-laha-text-secondary mb-3">{qcm.description}</p>
-                          <div className="flex items-center gap-4 text-sm text-laha-text-secondary">
-                            <div className="flex items-center gap-1">
-                              <HelpCircle className="h-4 w-4" />
-                              {qcm.questions_count} questions
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              {qcm.duration} min
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="h-4 w-4" />
-                              {qcm.class_level}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              {qcm.created_at}
-                            </div>
-                            {qcm.teacher && (
+                            <p className="text-laha-text-secondary mb-3">{qcm.description}</p>
+                            <p className="text-sm text-laha-text-secondary mb-4">
+                              Contenu associé: <span className="font-medium text-laha-text">{qcm.content_title}</span>
+                            </p>
+                            
+                            <div className="flex flex-wrap gap-4 text-sm text-laha-text-secondary mb-4">
+                              <div className="flex items-center gap-1">
+                                <BookOpen className="h-4 w-4" />
+                                {qcm.questions_count} questions
+                              </div>
+                              {qcm.time_limit_minutes && (
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  {qcm.time_limit_minutes} min
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1">
+                                <Target className="h-4 w-4" />
+                                {qcm.passing_score}% pour réussir
+                              </div>
                               <div className="flex items-center gap-1">
                                 <Users className="h-4 w-4" />
-                                {qcm.teacher.first_name} {qcm.teacher.last_name}
+                                {qcm.total_attempts} tentatives
                               </div>
-                            )}
+                            </div>
+
+                            <div className="flex items-center gap-4 text-sm">
+                              <div className="flex items-center gap-2">
+                                <BarChart3 className="h-4 w-4 text-laha-text-secondary" />
+                                <span className="text-laha-text-secondary">Score moyen:</span>
+                                <span className={`px-2 py-1 rounded text-white text-xs font-medium ${getDifficultyColor(qcm.average_score)}`}>
+                                  {qcm.average_score.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-laha-text-secondary" />
+                                <span className="text-laha-text-secondary">Réussite:</span>
+                                <span className="font-medium text-laha-text">{qcm.completion_rate.toFixed(1)}%</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-laha-text-secondary" />
+                                <span className="text-laha-text-secondary">Créé le:</span>
+                                <span className="font-medium text-laha-text">{formatDate(qcm.created_at)}</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
-                            <Eye className="h-4 w-4 mr-1" />
+                          
+                          <div className="flex flex-col gap-2 ml-4">
+                            <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                              <Eye className="h-4 w-4 mr-1" />
                               Voir
                             </Button>
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
-                            <Edit className="h-4 w-4 mr-1" />
+                            <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                              <Edit className="h-4 w-4 mr-1" />
                               Modifier
                             </Button>
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
-                            <Copy className="h-4 w-4 mr-1" />
+                            <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                              <Copy className="h-4 w-4 mr-1" />
                               Dupliquer
                             </Button>
-                          <Button variant="outline" size="sm" className="border-red-500/20 text-red-500 hover:bg-red-500/10">
-                            <Trash2 className="h-4 w-4 mr-1" />
-                              Supprimer
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="border-red-500/20 text-red-500 hover:bg-red-500/10"
+                                  disabled={deletingQCMId === qcm.id}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  {deletingQCMId === qcm.id ? 'Suppression...' : 'Supprimer'}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Êtes-vous sûr de vouloir supprimer le QCM "{qcm.title}" ? 
+                                    Cette action est irréversible et supprimera définitivement le QCM et toutes ses questions.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteQCM(qcm.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Supprimer définitivement
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                       </CardContent>
@@ -296,7 +321,8 @@ export default function QCMPage() {
                 </div>
               )}
             </div>
-          </main>
+          </div>
+        </main>
       </AdminSidebar>
     </AuthGuard>
   )

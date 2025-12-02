@@ -8,6 +8,10 @@ from .views import (
 )
 from .content_views import EducationalContentViewSet, QCMViewSet, QCMQuestionViewSet, ContentRatingViewSet, ContentTagViewSet
 from .auth_views import login_view, logout_view, me_view
+from .upload_views import upload_file
+from .video_views import serve_video
+from .public_video_views import serve_public_video
+from .public_content_views import public_videos_list
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -37,5 +41,9 @@ urlpatterns = [
     path('api/auth/login/', login_view, name='login'),
     path('api/auth/logout/', logout_view, name='logout'),
     path('api/auth/me/', me_view, name='me'),
+    path('api/upload/', upload_file, name='upload'),
+    path('api/video/<path:video_path>', serve_video, name='serve_video'),
+    path('public/video/<path:video_path>', serve_public_video, name='serve_public_video'),
+    path('public/videos/', public_videos_list, name='public_videos_list'),
 ]
 

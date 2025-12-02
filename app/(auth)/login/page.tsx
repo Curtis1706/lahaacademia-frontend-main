@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react"
@@ -22,7 +22,16 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login } = useAuth()
+
+  // Gérer les messages d'erreur depuis l'URL
+  useEffect(() => {
+    const message = searchParams.get('message')
+    if (message) {
+      setError(message)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,7 +46,12 @@ export default function LoginPage() {
         const role = result.user?.role || 'student'
         console.log('Connexion réussie, rôle:', role)
         
-        if (role === 'admin' || role === 'super_admin') {
+        // Vérifier s'il y a une redirection spécifique demandée
+        const redirectTo = searchParams.get('redirect')
+        if (redirectTo) {
+          console.log('Redirection vers:', redirectTo)
+          router.push(redirectTo)
+        } else if (role === 'admin' || role === 'super_admin') {
           console.log('Redirection vers dashboard admin')
           router.push('/dashboard/admin')
         } else {

@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       school_level: body.school_level,
       current_grade: body.current_grade,
       ...(body.school_name ? { school_name: body.school_name } : {}),
+      ...(body.phone ? { phone: body.phone } : {}),
     }
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'

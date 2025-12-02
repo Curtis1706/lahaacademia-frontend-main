@@ -295,11 +295,12 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
+    phone = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = m.Student
         fields = [
-            'email', 'password', 'first_name', 'last_name',
+            'email', 'password', 'first_name', 'last_name', 'phone',
             'date_of_birth', 'country', 'city', 'school_level', 'current_grade', 'school_name'
         ]
 
@@ -308,6 +309,7 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         first_name = validated_data.pop('first_name')
         last_name = validated_data.pop('last_name')
+        phone = validated_data.pop('phone', None)
 
         user = m.User.objects.create(
             email=email,
@@ -317,6 +319,8 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             role='student',
             referral_code=str(uuid.uuid4())[:8].upper(),
         )
+        if phone:
+            user.phone = phone
         user.set_password(password)
         user.save()
 

@@ -1,197 +1,17 @@
 "use client"
 
-import { useState } from "react"
-import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
-import {
-  IconArrowLeft,
-  IconBrandTabler,
-  IconSettings,
-  IconUserBolt,
-  IconBook,
-  IconCalendar,
-  IconTrophy,
-  IconUsers,
-  IconChartBar,
-  IconVideo,
-  IconBook2,
-  IconBarbell,
-  IconCalendarEvent,
-  IconRobot,
-  IconHeart,
-  IconBell,
-} from "@tabler/icons-react"
-import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
-import Image from "next/image"
 import { BookOpen, Clock, Star, TrendingUp, Award, Play, Calendar, MessageSquare } from "lucide-react"
-import { AuthGuard } from "@/components/auth-guard"
-import { useAuth } from "@/hooks/use-auth"
-import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
+import { StudentSidebar } from "@/components/student/student-sidebar"
 
 export default function StudentDashboard() {
-  const { user, logout } = useAuth()
-  
-  const links = [
-    {
-      label: "Tableau de bord",
-      href: "#",
-      icon: <IconBrandTabler className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Mes Cours",
-      href: "#",
-      icon: <IconBook className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Mes Vidéos",
-      href: "#",
-      icon: <IconVideo className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Mes Ouvrages",
-      href: "#",
-      icon: <IconBook2 className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Mes Entraînements",
-      href: "#",
-      icon: <IconBarbell className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Réservation de cours",
-      href: "/dashboard/student/course-booking",
-      icon: <IconCalendarEvent className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Mon Enseignant IA",
-      href: "#",
-      icon: <IconRobot className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Mes Favoris",
-      href: "#",
-      icon: <IconHeart className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Mes Alertes",
-      href: "#",
-      icon: <IconBell className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Planning",
-      href: "#",
-      icon: <IconCalendar className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Liens parentals",
-      href: "/dashboard/student/link-parent",
-      icon: <IconUsers className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Mes Notes",
-      href: "#",
-      icon: <IconTrophy className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Communauté",
-      href: "#",
-      icon: <IconUsers className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Statistiques",
-      href: "#",
-      icon: <IconChartBar className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Profil",
-      href: "#",
-      icon: <IconUserBolt className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Paramètres",
-      href: "#",
-      icon: <IconSettings className="h-5 w-5 shrink-0 text-white" />,
-    },
-    {
-      label: "Déconnexion",
-      href: "#",
-      icon: <IconArrowLeft className="h-5 w-5 shrink-0 text-white" />,
-      onClick: logout,
-    },
-  ]
-
-  const [open, setOpen] = useState(false)
-
   return (
-    <AuthGuard requiredRole="student">
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full bg-laha-black dark:bg-laha-black">
-          <Sidebar open={open} setOpen={setOpen}>
-            <SidebarBody className="justify-between gap-10">
-              <div className="flex flex-1 flex-col overflow-x-hidden sidebar-scrollbar-hidden">
-                {open ? <Logo /> : <LogoIcon />}
-                <div className="mt-8 flex flex-col gap-2">
-                  {links.map((link, idx) => (
-                    <SidebarLink key={idx} link={link} />
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-4">
-                {/* Bouton de thème */}
-                <div className="flex justify-center">
-                  <AnimatedThemeToggler />
-                </div>
-                
-                {/* Profil étudiant */}
-                <SidebarLink
-                  link={{
-                    label: `${user?.first_name} ${user?.last_name}`,
-                    href: "#",
-                    icon: (
-                      <img
-                        src="/placeholder.svg?height=50&width=50&text=KA"
-                        className="h-7 w-7 shrink-0 rounded-full"
-                        width={50}
-                        height={50}
-                        alt="Avatar"
-                      />
-                    ),
-                  }}
-                />
-              </div>
-            </SidebarBody>
-          </Sidebar>
-          <StudentDashboardContent user={user} />
-        </div>
-      </SidebarProvider>
-    </AuthGuard>
+    <StudentSidebar>
+      <StudentDashboardContent />
+    </StudentSidebar>
   )
 }
 
-const Logo = () => {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="font-medium whitespace-pre text-white font-heading"
-      >
-        Lahacademia
-      </motion.span>
-    </a>
-  )
-}
-
-const LogoIcon = () => {
-  return (
-    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-white">
-      <Image src="/logo.png" alt="LAHA Editions" width={24} height={24} className="rounded" />
-    </a>
-  )
-}
-
-const StudentDashboardContent = ({ user }: { user: any }) => {
+const StudentDashboardContent = () => {
   const recentCourses = [
     { title: "Mathématiques - Terminale", progress: 75, nextLesson: "Dérivées" },
     { title: "Physique - Terminale", progress: 60, nextLesson: "Électricité" },
@@ -218,7 +38,7 @@ const StudentDashboardContent = ({ user }: { user: any }) => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Tableau de bord Élève</h1>
           <p className="text-laha-text-secondary">
-            Bienvenue, {user?.first_name} {user?.last_name} ! Continuez votre parcours d'excellence.
+            Bienvenue, Spéro ASHANTE ! Continuez votre parcours d'excellence.
           </p>
         </div>
 

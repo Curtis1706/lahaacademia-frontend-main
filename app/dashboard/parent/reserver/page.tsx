@@ -1,606 +1,527 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
-import { AuthGuard } from '@/components/auth-guard'
-import { ParentSidebar } from '@/components/parent-sidebar'
-import { Users, UserCheck, Calendar, Clock, BookOpen, User, GraduationCap } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from "react"
+import { AuthGuard } from "@/components/auth-guard"
+import { ParentSidebar } from "@/components/parent/parent-sidebar"
+import { useTeachersAndCourses } from "@/hooks/use-teachers-and-courses"
+import { 
+  Calendar,
+  Clock,
+  MapPin,
+  Star,
+  GraduationCap,
+  Award,
+  Globe,
+  Users,
+  BookOpen,
+  CheckCircle,
+  Filter,
+  Search
+} from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 
-type TeacherItem = {
-  id: number
-  user: { first_name: string; last_name: string; email: string }
-  subjects?: string[]
-  bio?: string
-  hourly_rate?: number
-  courses?: CourseItem[]
+interface Teacher {
+  id: string
+  name: string
+  avatar?: string
+  location: string
+  country: string
+  languages: string[]
+  rating: number
+  students_count: number
+  hourly_rate: number
+  subjects: string[]
+  class_levels: string[]
+  bio: string
+  experience: number
+  education: string
+  certifications: string[]
 }
 
-type CourseItem = {
-  id: number
+interface Child {
+  id: string
+  name: string
+  class_level: string
+}
+
+interface Course {
+  id: string
   title: string
-  description: string
   subject: string
-  level: string
   duration: number
   price: number
-  course_type: string
-  max_students?: number
+  available_slots: string[]
+  teacher_id: string
+  class_level: string
+  country: string
+  language: string
 }
 
-type ChildItem = {
-  id: string
-  user: { first_name: string; last_name: string; email: string }
-  school_level?: string
-  school_name?: string
-}
-
-export default function ParentReservePage() {
-  const router = useRouter()
+export default function ParentBookingPage() {
+  const [selectedChild, setSelectedChild] = useState<string>("")
+  const [selectedTeacher, setSelectedTeacher] = useState<string>("")
+  const [selectedCourse, setSelectedCourse] = useState<string>("")
+  const [selectedDate, setSelectedDate] = useState<string>("")
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("")
+  const [children, setChildren] = useState<Child[]>([])
+  const [parent, setParent] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   
-  // Récupérer l'ID de l'enfant depuis l'URL si présent
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const childId = urlParams.get('child_id')
-    if (childId) {
-      setStudentId(childId)
-    }
-  }, [])
+  // Utiliser le hook pour récupérer les données des enseignants et cours
+  const { teachers, courses, isLoading: dataLoading, error: dataError } = useTeachersAndCourses()
+  
+  // Filtres
+  const [filters, setFilters] = useState({
+    subject: "all",
+    class: "all",
+    country: "all",
+    language: "all",
+    priceRange: "all"
+  })
 
-  const [teachers, setTeachers] = useState<TeacherItem[]>([])
-  const [teacherId, setTeacherId] = useState<string>('')
-  const [children, setChildren] = useState<ChildItem[]>([])
-  const [studentId, setStudentId] = useState<string>('')
-  const [courseId, setCourseId] = useState<string>('')
-  const [date, setDate] = useState<string>('')
-  const [timeSlots, setTimeSlots] = useState<any[]>([])
-  const [selectedSlot, setSelectedSlot] = useState<string>('')
-  const [submitting, setSubmitting] = useState(false)
-  const [message, setMessage] = useState<string>('')
-
+  // Charger les données depuis le cookie
   useEffect(() => {
-    const loadData = async () => {
+    const loadDataFromCookie = () => {
       try {
-        // Charger les enseignants
-        const teachersRes = await fetch('/api/teachers/list')
-        if (teachersRes.ok) {
-          const teachersData = await teachersRes.json()
-          setTeachers(Array.isArray(teachersData) ? teachersData : [])
+        console.log('🔄 Chargement des données pour la réservation...')
+        
+        // Vérifier si le cookie existe
+        const cookies = document.cookie.split(';')
+        const userSessionCookie = cookies.find(cookie => 
+          cookie.trim().startsWith('user_session_client=')
+        )
+
+        if (!userSessionCookie) {
+          console.error('❌ Pas de cookie user_session_client trouvé')
+          setLoading(false)
+          return
         }
 
-        // Charger les enfants (avec cache-busting)
-        const childrenRes = await fetch('/api/parents/children?t=' + Date.now())
-        if (childrenRes.ok) {
-          const childrenData = await childrenRes.json()
-          console.log('Données enfants récupérées:', childrenData)
-          const childrenArray = Array.isArray(childrenData) ? childrenData : []
-          setChildren(childrenArray)
-          
-          // Auto-sélectionner le premier enfant disponible
-          if (childrenArray.length > 0) {
-            const firstChildId = String(childrenArray[0].id)
-            console.log('Auto-sélection du premier enfant:', firstChildId)
-            setStudentId(firstChildId)
-          }
-        } else {
-          console.error('Erreur lors du chargement des enfants:', childrenRes.status, childrenRes.statusText)
-          // Utiliser Curtis Ahtd si l'API échoue
-          const curtisData = [
-            {
-              id: "1",
-              user: {
-                first_name: "Curtis",
-                last_name: "Ahtd",
-                email: "curtis.ahtd@example.com"
-              }
-            }
-          ]
-          setChildren(curtisData)
-          setStudentId("1") // Auto-sélectionner Curtis
-        }
-      } catch (err) {
-        console.error('Erreur lors du chargement des données:', err)
-        // En cas d'erreur, utiliser Curtis Ahtd
-        const curtisData = [
+        // Parser les données du cookie
+        const sessionValue = userSessionCookie.split('=')[1]
+        const userData = JSON.parse(decodeURIComponent(sessionValue))
+        console.log('✅ Données utilisateur du cookie:', userData)
+
+        // Utiliser les données mockées avec les vraies informations de Serge
+        const mockChildren: Child[] = [
           {
             id: "1",
-            user: {
-              first_name: "Curtis",
-              last_name: "Ahtd",
-              email: "curtis.ahtd@example.com"
-            }
+            name: "Spero",
+            class_level: "Seconde"
           }
         ]
-        setChildren(curtisData)
+
+        setChildren(mockChildren)
+        setParent({
+          id: userData.id || "1",
+          name: `${userData.first_name || 'Serge'} ${userData.last_name || 'ALOHOUTADE'}`,
+          email: userData.email || "serge10@gmail.com"
+        })
+        
+        // Sélectionner automatiquement le premier enfant
+        if (mockChildren.length > 0) {
+          setSelectedChild(mockChildren[0].id)
+        }
+        
+        console.log('✅ Données chargées pour la réservation:', { children: mockChildren, parent: userData })
+        setLoading(false)
+        
+      } catch (err) {
+        console.error('❌ Erreur lors du chargement des données:', err)
+        setLoading(false)
       }
     }
-    loadData()
+
+    loadDataFromCookie()
   }, [])
 
-  // Cours disponibles pour le professeur sélectionné
-  const availableCourses = useMemo(() => {
-    const selectedTeacher = teachers.find(t => t.id.toString() === teacherId)
-    return selectedTeacher?.courses || []
-  }, [teachers, teacherId])
+  const selectedTeacherData = teachers.find(t => t.id === selectedTeacher)
+  const selectedCourseData = courses.find(c => c.id === selectedCourse)
 
-  // Informations du cours sélectionné
-  const selectedCourse = useMemo(() => {
-    return availableCourses.find(c => c.id.toString() === courseId)
-  }, [availableCourses, courseId])
-
-  // Réinitialiser la sélection de cours quand on change de professeur
-  useEffect(() => {
-    setCourseId('')
-  }, [teacherId])
+  // Logique de filtrage des cours
+  const filteredCourses = courses.filter(course => {
+    const matchesSubject = filters.subject === "all" || course.subject === filters.subject
+    const matchesClass = filters.class === "all" || course.class_level === filters.class
+    const matchesCountry = filters.country === "all" || course.country === filters.country
+    const matchesLanguage = filters.language === "all" || course.language === filters.language
     
-  useEffect(() => {
-    const computeBackendDayIndex = (yyyyMmDd: string): number => {
-      if (!yyyyMmDd) return -1
-      const [y, m, d] = yyyyMmDd.split('-').map((v) => parseInt(v, 10))
-      const jsDay = new Date(y, (m || 1) - 1, d || 1).getDay() // 0=dimanche..6=samedi
-      return (jsDay + 6) % 7 // 0=lundi..6=dimanche
-    }
+    return matchesSubject && matchesClass && matchesCountry && matchesLanguage
+  })
 
-    const toSlotString = (time: string) => {
-      if (!time) return '00:00'
-      return time.slice(0, 5) // 'HH:MM:SS' -> 'HH:MM'
-    }
+  // Logique de filtrage des enseignants basée sur les cours filtrés
+  const filteredTeachers = teachers.filter(teacher => 
+    filteredCourses.some(course => course.teacher_id === teacher.id)
+  )
 
-    const loadSlots = async () => {
-      setTimeSlots([])
-      setSelectedSlot('')
-      if (!teacherId || !courseId || !date) return
-      try {
-        const res = await fetch(`/api/courses/${courseId}/availabilities?date=${date}`, { 
-          cache: 'no-store',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        if (!res.ok) {
-          throw new Error(`Erreur ${res.status}: ${res.statusText}`)
-        }
-        
-        const data = await res.json()
-        const list: any[] = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : [])
+  // Fonction pour mettre à jour les filtres
+  const updateFilter = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+    // Réinitialiser les sélections quand les filtres changent
+    setSelectedTeacher("")
+    setSelectedCourse("")
+    setSelectedDate("")
+    setSelectedTimeSlot("")
+  }
 
-        const dayIndex = computeBackendDayIndex(date)
-        const slots = list
-          .filter((a) => {
-            // Vérification plus robuste
-            if (!a || typeof a !== 'object') return false
-            
-            const matchesSpecific = a.specific_date && 
-              typeof a.specific_date === 'string' && 
-              a.specific_date.startsWith(date)
-              
-            const matchesDay = !a.specific_date && a.day_of_week === dayIndex
-            
-            const withinRange = (() => {
-              const fromOk = !a.valid_from || a.valid_from <= date
-              const untilOk = !a.valid_until || date <= a.valid_until
-              return fromOk && untilOk
-            })()
-            
-            return (matchesSpecific || matchesDay) && withinRange && a.is_active !== false
-          })
-          .map((a, idx) => ({
-            id: a.id || idx,
-            slot: `${toSlotString(a.start_time)}-${toSlotString(a.end_time)}`,
-            available: true,
-            availability_id: a.id // Garder l'ID original pour référence
-          }))
+  // Fonction pour obtenir les options uniques pour chaque filtre
+  const getUniqueSubjects = () => {
+    const subjects = courses.map(course => course.subject)
+    return Array.from(new Set(subjects))
+  }
 
-        console.log('Créneaux chargés:', slots)
-        setTimeSlots(slots)
-      } catch (e) {
-        console.error('Erreur chargement disponibilités cours:', e)
-        setTimeSlots([])
-        // Optionnel: afficher un message d'erreur à l'utilisateur
-        setMessage('Impossible de charger les créneaux disponibles')
-      }
-    }
+  const getUniqueClasses = () => {
+    const classes = courses.map(course => course.class_level)
+    return Array.from(new Set(classes))
+  }
 
-    loadSlots()
-  }, [teacherId, courseId, date])
+  const getUniqueCountries = () => {
+    const countries = courses.map(course => course.country)
+    return Array.from(new Set(countries))
+  }
 
-  const selectedTeacher = useMemo(() => {
-    return teachers.find(t => t.id.toString() === teacherId)
-  }, [teachers, teacherId])
+  const getUniqueLanguages = () => {
+    const languages = courses.map(course => course.language)
+    return Array.from(new Set(languages))
+  }
 
-  const subjects = useMemo(() => {
-    if (!selectedTeacher?.subjects) return []
-    return selectedTeacher.subjects
-  }, [selectedTeacher])
+  if (loading || dataLoading) {
+    return (
+      <AuthGuard requiredRole="parent">
+        <ParentSidebar>
+          <div className="w-full h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+            <div className="w-full px-6 py-6">
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-laha-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-laha-text">Chargement des données...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ParentSidebar>
+      </AuthGuard>
+    )
+  }
 
-  // CORRECTION 7: Validation supplémentaire avant soumission
-  const canSubmit = useMemo(() => {
-    return !submitting && 
-           selectedSlot && 
-           teacherId && 
-           studentId && 
-           courseId && 
-           date &&
-           timeSlots.length > 0
-  }, [submitting, selectedSlot, teacherId, studentId, courseId, date, timeSlots])
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedSlot || !teacherId || !studentId || !courseId) return
-
-    setSubmitting(true)
-    setMessage('')
-
-    try {
-      const [startRaw, endRaw] = selectedSlot.split('-')
-      const start = (startRaw || '').trim()
-      const end = (endRaw || '').trim()
-      
-      // CORRECTION 1: Format des heures plus robuste
-      const formatTime = (time: string) => {
-        if (!time) return '00:00'
-        // Si déjà au format HH:MM, on garde
-        if (time.includes(':') && time.length >= 5) {
-          return time.substring(0, 5) // Assurer HH:MM
-        }
-        // Sinon, ajouter :00
-        return `${time}:00`
-      }
-      
-      const startFormatted = formatTime(start)
-      const endFormatted = formatTime(end)
-      
-      // CORRECTION 2: Construction des dates ISO avec timezone locale ou UTC
-      // Option 1: Sans timezone (recommandé si votre backend attend du local time)
-      const startDateTime = `${date}T${startFormatted}:00`
-      const endDateTime = `${date}T${endFormatted}:00`
-      
-      // Option 2: Avec timezone UTC (si votre backend attend de l'UTC)
-      // const startDateTime = `${date}T${startFormatted}:00Z`
-      // const endDateTime = `${date}T${endFormatted}:00Z`
-      
-      console.log('📅 Données de réservation:', {
-        teacher_id: parseInt(teacherId),
-        course_id: courseId, // Garder en string si c'est un UUID
-        start_time: startDateTime,
-        end_time: endDateTime,
-        student_id: parseInt(studentId),
-        date: date,
-        slot: selectedSlot
-      })
-      
-      // CORRECTION 3: Structure de données plus claire
-      const body = {
-        teacher_id: parseInt(teacherId, 10),
-        course_id: courseId, // Si c'est un UUID, rester en string
-        start_time: startDateTime,
-        end_time: endDateTime,
-        student_id: parseInt(studentId, 10),
-      }
-      
-      // CORRECTION 4: Validation des données avant envoi
-      if (!body.teacher_id || !body.course_id || !body.student_id) {
-        throw new Error('Données manquantes pour la réservation')
-      }
-      
-      const res = await fetch('/api/bookings/reserve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      
-      // CORRECTION 5: Meilleure gestion des erreurs
-      const data = await res.json().catch(() => ({}))
-      
-      if (!res.ok) {
-        // Log de l'erreur complète pour debugging
-        console.error('Erreur API:', {
-          status: res.status,
-          statusText: res.statusText,
-          data: data
-        })
-        throw new Error(data?.error || data?.message || `Erreur ${res.status}: ${res.statusText}`)
-      }
-      
-      // Sauvegarder les données de réservation pour la page de confirmation
-      const bookingId = data.id || data.booking_id || Date.now().toString()
-      if (data && Object.keys(data).length > 0) {
-        sessionStorage.setItem(`booking_${bookingId}`, JSON.stringify(data))
-      }
-      
-      // Redirection vers la page de confirmation avec l'ID de réservation
-      router.push(`/dashboard/parent/confirmation?booking_id=${bookingId}`)
-      return
-      
-    } catch (err: any) {
-      console.error('Erreur lors de la réservation:', err)
-      setMessage(err?.message || 'Erreur lors de la réservation')
-    } finally {
-      setSubmitting(false)
-    }
+  if (dataError) {
+    return (
+      <AuthGuard requiredRole="parent">
+        <ParentSidebar>
+          <div className="w-full h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+            <div className="w-full px-6 py-6">
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <div className="text-red-500 text-6xl mb-4">⚠️</div>
+                  <p className="text-red-500 mb-2">Erreur lors du chargement des données</p>
+                  <p className="text-laha-text/70 text-sm">{dataError}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ParentSidebar>
+      </AuthGuard>
+    )
   }
 
   return (
     <AuthGuard requiredRole="parent">
       <ParentSidebar>
-        <div className="h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <div className="w-full h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="w-full px-6 py-6">
+          {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 font-heading mb-2">Réserver un cours</h1>
-            <p className="text-slate-600 dark:text-slate-400">Choisissez un professeur, une date et un créneau.</p>
+            <h1 className="text-3xl font-bold text-laha-gold mb-2">Réserver un cours</h1>
+            <p className="text-laha-text">Réservez des cours personnalisés pour vos enfants</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Colonne gauche: formulaire */}
-            <form onSubmit={submit} className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
-            
-            {/* Sélection de l'enfant */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Sélectionner un enfant
-                </label>
-              </div>
-              {children.length === 0 ? (
-                <div className="w-full rounded-lg bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 p-4 text-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-slate-600 dark:text-slate-400" />
-                    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Formulaire de réservation */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-laha-text">Formulaire de réservation</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Sélectionner un enfant */}
                     <div>
-                      <p className="text-slate-800 dark:text-slate-100 font-medium">Aucun enfant associé</p>
-                      <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Invitez votre enfant pour commencer</p>
-                    </div>
-                    <a
-                      href="/dashboard/parent/invitations"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors text-sm font-medium"
-                    >
-                      <Users className="h-4 w-4" />
-                      Inviter un enfant
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="relative">
-                  <select
-                    value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
-                    className="w-full rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-4 py-3 pl-10 text-slate-800 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all appearance-none"
-                    required
-                  >
-                    <option value="" className="bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100">-- Choisir un enfant --</option>
+                    <Label htmlFor="child">Sélectionner un enfant</Label>
+                    <Select value={selectedChild} onValueChange={setSelectedChild}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisir un enfant" />
+                      </SelectTrigger>
+                      <SelectContent>
                     {children.map((child) => (
-                      <option key={child.id} value={child.id} className="bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100">
-                        {child.user.first_name} {child.user.last_name}
-                      </option>
-                    ))}
-                  </select>
-                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-slate-400" />
-                </div>
-              )}
-            </div>
-
-            {/* Sélection du professeur */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Choisir un professeur
-                </label>
-              </div>
-              <div className="relative">
-                <select
-                  value={teacherId}
-                  onChange={(e) => setTeacherId(e.target.value)}
-                  className="w-full rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-4 py-3 pl-10 text-slate-800 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all appearance-none"
-                  required
-                >
-                  <option value="" className="bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100">-- Sélectionner un professeur --</option>
-                  {teachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id.toString()} className="bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100">
-                      {teacher.user.first_name} {teacher.user.last_name}
-                      {teacher.subjects && teacher.subjects.length > 0 && ` (${teacher.subjects[0]})`}
-                    </option>
-                  ))}
-                </select>
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-slate-400" />
-              </div>
-            </div>
-
-            {/* Sélection du cours */}
-            {teacherId && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Cours disponibles
-                  </label>
-                </div>
-                
-                {availableCourses.length === 0 ? (
-                  <div className="p-4 bg-orange-500/20 rounded-lg border border-orange-500/30">
-                    <p className="text-orange-300 text-sm">
-                      Aucun cours disponible pour ce professeur. Veuillez contacter le professeur pour qu'il ajoute ses cours.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <select
-                        value={courseId}
-                        onChange={(e) => setCourseId(e.target.value)}
-                        className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all appearance-none backdrop-blur-sm"
-                        required
-                      >
-                        <option value="" className="bg-laha-black text-laha-gold-light">-- Choisir un cours --</option>
-                        {availableCourses.map((course) => (
-                          <option key={course.id} value={course.id.toString()} className="bg-laha-black text-laha-gold-light">
-                            {course.title} - {course.duration}min - {course.price} FCFA
-                          </option>
+                          <SelectItem key={child.id} value={child.id}>
+                            {child.name} - {child.class_level}
+                          </SelectItem>
                         ))}
-                      </select>
-                      <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Filtres */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Filter className="h-4 w-4 text-laha-gold" />
+                      <Label className="text-laha-text font-medium">Filtres avancés</Label>
                     </div>
                     
-                    {/* Affichage des détails du cours sélectionné */}
-                    {selectedCourse && (
-                      <div className="bg-laha-black/40 rounded-lg p-4 border border-laha-gold-dark/20">
-                        <h4 className="text-laha-gold-light font-medium mb-2">{selectedCourse.title}</h4>
-                        <p className="text-laha-gold-light/70 text-sm mb-3">{selectedCourse.description}</p>
-                        <div className="grid grid-cols-2 gap-4 text-xs">
-                          <div className="flex items-center gap-1">
-                            <GraduationCap className="h-3 w-3 text-laha-gold" />
-                            <span className="text-laha-gold-light/70">{selectedCourse.level}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-laha-gold-warm" />
-                            <span className="text-laha-gold-light/70">{selectedCourse.duration} minutes</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-laha-gold text-sm font-medium">{selectedCourse.price} FCFA</span>
-                          </div>
-                          <div className="text-laha-gold-light/70">
-                            {selectedCourse.course_type === 'individual' ? 'Cours individuel' : `Groupe (max ${selectedCourse.max_students})`}
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="subject">Matière</Label>
+                        <Select value={filters.subject} onValueChange={(value) => updateFilter('subject', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Toutes les matières" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes les matières</SelectItem>
+                            {getUniqueSubjects().map(subject => (
+                              <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    )}
-                  </div>
-                )}
-                </div>
-            )}
-
-            {/* Sélection de la date */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-laha-gold" />
-                <label className="text-sm font-medium text-laha-gold-light">
-                  Date du cours
-                </label>
-              </div>
-              <div className="relative">
-                    <input
-                      type="date"
-                      value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full rounded-lg bg-laha-black/60 border border-laha-gold-dark/30 px-4 py-3 pl-10 text-laha-gold-light placeholder:text-laha-gold-light/50 focus:outline-none focus:ring-2 focus:ring-laha-gold/50 focus:border-laha-gold focus:bg-laha-black/80 transition-all backdrop-blur-sm [color-scheme:dark]"
-                  required
-                />
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-laha-gold-light/50" />
-                  </div>
-                  </div>
-
-            {/* Sélection du créneau */}
-            {timeSlots.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-laha-gold" />
-                  <label className="text-sm font-medium text-laha-gold-light">
-                    Créneaux disponibles
-                  </label>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {timeSlots.map((slot) => (
-                  <button
-                      key={slot.slot}
-                      type="button"
-                      onClick={() => setSelectedSlot(slot.slot)}
-                      className={`group p-4 rounded-lg border text-sm font-medium transition-all ${
-                        selectedSlot === slot.slot
-                          ? 'bg-laha-gold text-laha-black border-laha-gold shadow-lg scale-105'
-                          : 'bg-laha-black-light/30 border-laha-gold-dark/30 text-laha-gold-light hover:bg-laha-gold/10 hover:border-laha-gold/50 hover:scale-102'
-                      }`}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <Clock className={`h-4 w-4 ${selectedSlot === slot.slot ? 'text-laha-black' : 'text-laha-gold'}`} />
-                        <span>{slot.slot.replace('-', ' - ')}</span>
+                      
+                      <div>
+                        <Label htmlFor="class">Classe</Label>
+                        <Select value={filters.class} onValueChange={(value) => updateFilter('class', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Toutes les classes" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes les classes</SelectItem>
+                            {getUniqueClasses().map(classLevel => (
+                              <SelectItem key={classLevel} value={classLevel}>{classLevel}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </button>
+                      
+                      <div>
+                        <Label htmlFor="country">Pays</Label>
+                        <Select value={filters.country} onValueChange={(value) => updateFilter('country', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Tous les pays" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tous les pays</SelectItem>
+                            {getUniqueCountries().map(country => (
+                              <SelectItem key={country} value={country}>{country}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="language">Langue</Label>
+                        <Select value={filters.language} onValueChange={(value) => updateFilter('language', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Toutes les langues" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes les langues</SelectItem>
+                            {getUniqueLanguages().map(language => (
+                              <SelectItem key={language} value={language}>{language}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Choisir un professeur */}
+                  <div>
+                    <Label htmlFor="teacher">Choisir un professeur</Label>
+                    <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un professeur" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredTeachers.map((teacher) => (
+                          <SelectItem key={teacher.id} value={teacher.id}>
+                            <div className="flex items-center space-x-2">
+                              <span>{teacher.name}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {teacher.subjects.join(", ")}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Cours disponibles */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label htmlFor="course">Cours disponibles</Label>
+                      <Badge variant="outline" className="text-xs">
+                        {filteredCourses.length} cours trouvé{filteredCourses.length > 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                    <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un cours" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredCourses.map((course) => (
+                          <SelectItem key={course.id} value={course.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{course.title}</span>
+                              <span className="text-sm text-laha-text/70 ml-2">
+                                {course.price.toLocaleString()} FCFA
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Date du cours */}
+                  <div>
+                    <Label htmlFor="date">Date du cours</Label>
+                    <Input 
+                      id="date"
+                      type="date" 
+                      value={selectedDate} 
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Créneaux horaires */}
+                  {selectedCourseData && (
+                    <div>
+                      <Label>Creneaux horaires disponibles</Label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {selectedCourseData.available_slots.map((slot) => (
+                          <Button
+                            key={slot}
+                            variant={selectedTimeSlot === slot ? "default" : "outline"}
+                            className={selectedTimeSlot === slot ? "bg-laha-gold text-laha-black" : "border-laha-border text-laha-text"}
+                            onClick={() => setSelectedTimeSlot(slot)}
+                          >
+                            <Clock className="h-4 w-4 mr-1" />
+                            {slot}
+                          </Button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Bouton de soumission */}
-            <div className="pt-4 border-t border-laha-gold-dark/30">
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="w-full bg-gradient-to-r from-laha-gold to-laha-gold-dark hover:from-laha-gold-dark hover:to-laha-gold text-laha-black font-semibold py-4 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100"
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-laha-black"></div>
-                    Réservation en cours...
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="h-5 w-5" />
+                  {/* Bouton de confirmation */}
+                  <Button 
+                    className="w-full bg-laha-gold hover:bg-laha-gold/90 text-laha-black"
+                    disabled={!selectedChild || !selectedTeacher || !selectedCourse || !selectedDate || !selectedTimeSlot}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
                     Confirmer la réservation
-                  </>
-                )}
-                  </button>
+                  </Button>
+                </CardContent>
+              </Card>
                 </div>
 
-                {message && (
-              <div className={`text-center p-4 rounded-lg border ${
-                message.includes('confirmée') 
-                  ? 'bg-green-500/10 border-green-500/30 text-green-400' 
-                  : 'bg-red-500/10 border-red-500/30 text-red-400'
-              }`}>
-                <div className="flex items-center justify-center gap-2">
-                  {message.includes('confirmée') ? (
-                    <UserCheck className="h-5 w-5" />
-                  ) : (
-                    <Clock className="h-5 w-5" />
-                  )}
-                    {message}
+            {/* Profil du professeur sélectionné */}
+            <div>
+              {selectedTeacherData ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-laha-text">Profil du professeur</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-16 h-16 bg-laha-gold rounded-full flex items-center justify-center text-laha-black font-bold text-lg">
+                        {selectedTeacherData.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-laha-text">{selectedTeacherData.name}</h3>
+                        <div className="flex items-center space-x-2">
+                          <Star className="h-4 w-4 text-laha-gold fill-current" />
+                          <span className="text-laha-text">{selectedTeacherData.rating}/5</span>
+                          <span className="text-laha-text/70">({selectedTeacherData.students_count} élèves)</span>
+                        </div>
                 </div>
                   </div>
-                )}
-              </form>
 
-          {/* Colonne droite: détails du professeur */}
-                <div className="bg-laha-black-light/20 backdrop-blur-md rounded-xl p-6 border border-laha-gold-dark/20">
-            {selectedTeacher ? (
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-laha-gold">
-                  {selectedTeacher.user.first_name} {selectedTeacher.user.last_name}
-                </h3>
-                
-                {selectedTeacher.bio && (
+                    <Separator />
+
                     <div>
-                    <h4 className="text-sm font-medium text-laha-gold-light/80 mb-2">Biographie</h4>
-                    <p className="text-laha-gold-light/70 text-sm">{selectedTeacher.bio}</p>
+                      <h4 className="font-semibold text-laha-text mb-2">Biographie</h4>
+                      <p className="text-laha-text/70 text-sm">{selectedTeacherData.bio}</p>
                   </div>
-                )}
                 
-                {selectedTeacher.subjects && selectedTeacher.subjects.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-laha-gold-light/80 mb-2">Matières enseignées</h4>
-                            <div className="flex flex-wrap gap-2">
-                      {selectedTeacher.subjects.map((subj) => (
-                        <span key={subj} className="px-2 py-1 bg-laha-gold/20 text-laha-gold text-xs rounded">
-                          {subj}
-                        </span>
+                        <h4 className="font-semibold text-laha-text mb-2">Matières enseignées</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedTeacherData.subjects.map((subject, index) => (
+                            <Badge key={index} variant="outline" className="text-xs border-laha-gold text-laha-gold">
+                              {subject}
+                            </Badge>
                       ))}
                     </div>
                   </div>
-                )}
                 
-                {selectedTeacher.hourly_rate && (
                   <div>
-                    <h4 className="text-sm font-medium text-laha-gold-light/80 mb-2">Tarif</h4>
-                    <p className="text-laha-gold font-medium">{selectedTeacher.hourly_rate}FCFA/heure</p>
+                        <h4 className="font-semibold text-laha-text mb-2">Classes</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedTeacherData.class_levels.map((level, index) => (
+                            <Badge key={index} variant="outline" className="text-xs border-laha-gold text-laha-gold">
+                              {level}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  )}
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-laha-gold" />
+                        <span className="text-sm text-laha-text">{selectedTeacherData.location}, {selectedTeacherData.country}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Globe className="h-4 w-4 text-laha-gold" />
+                        <span className="text-sm text-laha-text">{selectedTeacherData.languages.join(", ")}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <GraduationCap className="h-4 w-4 text-laha-gold" />
+                        <span className="text-sm text-laha-text">{selectedTeacherData.education}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Award className="h-4 w-4 text-laha-gold" />
+                        <span className="text-sm text-laha-text">{selectedTeacherData.experience} ans d'expérience</span>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-laha-gold">
+                        {selectedTeacherData.hourly_rate.toLocaleString()} FCFA/h
+                      </div>
+                      <p className="text-sm text-laha-text/70">Tarif horaire</p>
                 </div>
-            ) : (
-              <div className="text-center text-laha-gold-light/60">
-                <p>Sélectionnez un professeur pour voir ses détails</p>
-              </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <Users className="h-12 w-12 text-laha-text/30 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-laha-text mb-2">Sélectionnez un professeur</h3>
+                    <p className="text-laha-text/70">Choisissez un professeur pour voir son profil détaillé</p>
+                  </CardContent>
+                </Card>
             )}
+          </div>
           </div>
         </div>
         </div>

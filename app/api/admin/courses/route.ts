@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     params.append('page', page)
     params.append('page_size', page_size)
     
-    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
+    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
     const endpoint = baseApi.includes('/api') 
       ? `${baseApi}/courses/?${params.toString()}`
       : `${baseApi}/api/courses/?${params.toString()}`
@@ -32,15 +32,26 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Récupération des cours:')
     console.log(`  Endpoint: ${endpoint}`)
     
-    // Utiliser le token admin
-    const adminToken = 'cee5456080015db2299344035fecdb5936469663'
+    // Extraire un token éventuel depuis le cookie côté client
+    let authHeader: Record<string, string> = {}
+    try {
+      // @ts-ignore - NextRequest not typed here
+      const raw = (request as any)?.cookies?.get?.('user_session_client')?.value || ''
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed?.token) authHeader = { 'Authorization': `Token ${parsed.token}` }
+      }
+    } catch {}
     
     const response = await fetch(endpoint, {
       method: 'GET',
       headers: {
-        'Authorization': `Token ${adminToken}`,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        // @ts-ignore - NextRequest headers access
+        'Cookie': (request as any)?.headers?.get?.('cookie') || '',
+        ...authHeader,
+      },
+      cache: 'no-store',
     })
     
     const data = await response.json()
@@ -79,21 +90,30 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Création d\'un nouveau cours:')
     console.log(`  Données: ${JSON.stringify(body, null, 2)}`)
     
-    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
+    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
     const endpoint = baseApi.includes('/api') 
       ? `${baseApi}/courses/`
       : `${baseApi}/api/courses/`
     
     console.log(`  Endpoint: ${endpoint}`)
     
-    // Utiliser le token admin
-    const adminToken = 'cee5456080015db2299344035fecdb5936469663'
+    let authHeader: Record<string, string> = {}
+    try {
+      // @ts-ignore
+      const raw = (request as any)?.cookies?.get?.('user_session_client')?.value || ''
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed?.token) authHeader = { 'Authorization': `Token ${parsed.token}` }
+      }
+    } catch {}
     
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${adminToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // @ts-ignore
+        'Cookie': (request as any)?.headers?.get?.('cookie') || '',
+        ...authHeader,
       },
       body: JSON.stringify(body)
     })
@@ -119,6 +139,7 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
 
 
 

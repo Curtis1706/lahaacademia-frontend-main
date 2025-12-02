@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { AuthGuard } from "@/components/auth-guard"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { PreviewModal } from "@/components/admin/PreviewModal"
 import { 
   Plus,
   Search,
@@ -24,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 
 interface VideoContent {
@@ -42,6 +44,16 @@ interface VideoContent {
     first_name: string
     last_name: string
   }
+  // ✅ CHAMPS VIDÉO AJOUTÉS
+  file_url?: string
+  video_url?: string
+  thumbnail_url?: string
+  duration_minutes?: number
+  file_size_mb?: number
+  quality?: string
+  language?: string
+  allow_downloads?: boolean
+  allow_preview?: boolean
 }
 
 export default function VideosPage() {
@@ -52,85 +64,91 @@ export default function VideosPage() {
   const [selectedClass, setSelectedClass] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("")
   const [showFilters, setShowFilters] = useState(false)
+  const [previewContent, setPreviewContent] = useState<any>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null)
 
-  // Données de test
-  useEffect(() => {
-    const mockVideos: VideoContent[] = [
-      {
-        id: "1",
-        title: "Introduction à la physique quantique",
-        description: "Cours d'introduction aux concepts fondamentaux de la physique quantique",
-        subject: "Physique",
-        class_level: "Terminale",
-        status: "published",
-        duration: 45,
-        views: 2500,
-        rating: 4.7,
-        created_at: "2025-08-10",
-        thumbnail: "/placeholder-video.jpg",
-        teacher: {
-          first_name: "Jean",
-          last_name: "Dupont"
-        }
-      },
-      {
-        id: "2",
-        title: "Résolution d'équations du second degré",
-        description: "Méthodes et techniques pour résoudre les équations quadratiques",
-        subject: "Mathématiques",
-        class_level: "Première",
-        status: "published",
-        duration: 35,
-        views: 1800,
-        rating: 4.5,
-        created_at: "2025-08-12",
-        thumbnail: "/placeholder-video.jpg",
-        teacher: {
-          first_name: "Marie",
-          last_name: "Martin"
-        }
-      },
-      {
-        id: "3",
-        title: "Grammaire française - Les temps",
-        description: "Révision des temps de conjugaison en français",
-        subject: "Français",
-        class_level: "Quatrième",
-        status: "draft",
-        duration: 25,
-        views: 0,
-        rating: 0,
-        created_at: "2025-08-15",
-        thumbnail: "/placeholder-video.jpg",
-        teacher: {
-          first_name: "Pierre",
-          last_name: "Durand"
-        }
-      },
-      {
-        id: "4",
-        title: "Biologie cellulaire - Structure",
-        description: "Étude de la structure et du fonctionnement des cellules",
-        subject: "SVT",
-        class_level: "Seconde",
-        status: "published",
-        duration: 40,
-        views: 3200,
-        rating: 4.8,
-        created_at: "2025-08-18",
-        thumbnail: "/placeholder-video.jpg",
-        teacher: {
-          first_name: "Sophie",
-          last_name: "Leroy"
-        }
+  // Fonction pour supprimer une vidéo
+  const handleDeleteVideo = async (videoId: string) => {
+    try {
+      setDeletingVideoId(videoId)
+      console.log('🗑️ Suppression de la vidéo:', videoId)
+      
+      const response = await fetch(`/api/admin/videos/${videoId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        throw new Error(errorData.error || 'Erreur lors de la suppression')
       }
-    ]
-    
-    setTimeout(() => {
-      setVideos(mockVideos)
-      setLoading(false)
-    }, 1000)
-  }, [])
+      
+      // Supprimer la vidéo de la liste locale
+      setVideos(prevVideos => prevVideos.filter(video => video.id !== videoId))
+      
+      console.log('✅ Vidéo supprimée avec succès')
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error)
+      alert(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+    } finally {
+      setDeletingVideoId(null)
+    }
+  }
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        if (selectedSubject) params.set('subject', selectedSubject)
+        if (selectedClass) params.set('class_level', selectedClass)
+        if (selectedStatus) params.set('status', selectedStatus)
+        if (searchTerm) params.set('search', searchTerm)
+
+        params.set('content_type', 'video')
+        const url = `/api/admin/content${params.toString() ? `?${params.toString()}` : ''}`
+        const res = await fetch(url, { method: 'GET', credentials: 'include' })
+        const data = await res.json()
+
+        const raw: any[] = Array.isArray(data) ? data : (data.results || data.videos || [])
+        console.log('📊 Données brutes de l\'API:', raw[0]) // Debug
+        
+        const normalized: VideoContent[] = raw.map((v: any) => ({
+          id: (v.id ?? v.pk ?? '').toString(),
+          title: v.title || v.name || 'Sans titre',
+          description: v.description || '',
+          subject: v.subject || v.category || 'N/A',
+          class_level: v.class_level || v.level || 'N/A',
+          status: v.status || (v.is_active === false ? 'archived' : 'published'),
+          duration: Number(v.duration_minutes || v.duration || 0),
+          views: Number(v.view_count || v.views || 0),
+          rating: Number(v.rating_average || v.rating || 0),
+          created_at: v.created_at || v.date_created || '',
+          thumbnail: v.thumbnail_url || v.thumbnail || null,
+          teacher: v.created_by ? { first_name: v.created_by.first_name || '', last_name: v.created_by.last_name || '' } : undefined,
+          // ✅ AJOUT DES CHAMPS VIDÉO MANQUANTS
+          file_url: v.video_url || v.content_file_url || null,
+          video_url: v.video_url || v.content_file_url || null,
+          thumbnail_url: v.thumbnail_url || v.thumbnail || null,
+          duration_minutes: Number(v.duration_minutes || v.duration || 0),
+          file_size_mb: Number(v.file_size_mb || 0),
+          quality: v.quality || null,
+          language: v.language || null,
+          allow_downloads: v.allow_downloads || false,
+          allow_preview: v.allow_preview || true,
+        }))
+
+        setVideos(normalized)
+      } catch (e) {
+        console.error('Erreur chargement vidéos:', e)
+        setVideos([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
+  }, [selectedSubject, selectedClass, selectedStatus, searchTerm])
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -161,8 +179,8 @@ export default function VideosPage() {
   return (
     <AuthGuard requiredRoles={['admin', 'super_admin']}>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto p-6">
-          <div className="container mx-auto">
+        <main className="flex-1 w-full overflow-auto">
+          <div className="w-full px-6 py-6">
             {/* Header */}
             <div className="mb-8">
               <div className="flex justify-between items-start">
@@ -286,7 +304,7 @@ export default function VideosPage() {
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
-                              {formatDuration(video.duration)}
+                              {video.duration_minutes ? `${video.duration_minutes}min` : 'Durée inconnue'}
                             </div>
                             <div className="flex items-center gap-1">
                               <Star className="h-4 w-4" />
@@ -316,22 +334,77 @@ export default function VideosPage() {
                         
                         {/* Actions */}
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-laha-border text-laha-text hover:bg-laha-surface"
+                            onClick={() => {
+                              // Utiliser l'URL originale directement
+                              const videoUrl = video.file_url || video.video_url
+                              
+                              console.log('🎥 Ouverture de la vidéo:', video.title)
+                              console.log('🔗 URL vidéo:', videoUrl)
+                              console.log('📁 Données vidéo complètes:', video)
+                              
+                              setPreviewContent({
+                                ...video,
+                                type: 'video',
+                                fileUrl: videoUrl, // Le composant RobustVideoPlayer gérera les fallbacks
+                                thumbnailUrl: video.thumbnail_url?.replace('http://localhost:8000/media/', '/api/media/'),
+                                duration: video.duration_minutes ? video.duration_minutes * 60 : 0,
+                                fileSize: video.file_size_mb ? video.file_size_mb * 1024 * 1024 : 0,
+                                quality: video.quality,
+                                language: video.language,
+                                allowDownloads: video.allow_downloads,
+                                allowPreview: video.allow_preview
+                              })
+                              setIsPreviewOpen(true)
+                            }}
+                          >
                             <Play className="h-4 w-4 mr-1" />
                             Lire
                           </Button>
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                          <Button asChild variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                            <Link href={`/dashboard/admin/content/videos/edit/${video.id}`}>
                             <Edit className="h-4 w-4 mr-1" />
                             Modifier
+                            </Link>
                           </Button>
                           <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
                             <Copy className="h-4 w-4 mr-1" />
                             Dupliquer
                           </Button>
-                          <Button variant="outline" size="sm" className="border-red-500/20 text-red-500 hover:bg-red-500/10">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="border-red-500/20 text-red-500 hover:bg-red-500/10"
+                                disabled={deletingVideoId === video.id}
+                              >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            Supprimer
+                                {deletingVideoId === video.id ? 'Suppression...' : 'Supprimer'}
                           </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Êtes-vous sûr de vouloir supprimer la vidéo "{video.title}" ? 
+                                  Cette action est irréversible et supprimera définitivement la vidéo et tous ses fichiers associés.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteVideo(video.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Supprimer définitivement
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     </CardContent>
@@ -342,6 +415,13 @@ export default function VideosPage() {
           </div>
         </main>
       </AdminSidebar>
+      
+      {/* Modal de prévisualisation */}
+      <PreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        content={previewContent}
+      />
     </AuthGuard>
   )
 }

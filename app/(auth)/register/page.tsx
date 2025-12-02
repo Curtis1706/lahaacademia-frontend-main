@@ -21,6 +21,7 @@ export default function RegisterPage() {
     city: '',
     school_level: '',
     current_grade: '',
+    school_name: '',
     referral_code: ''
   })
   const [loading, setLoading] = useState(false)
@@ -32,6 +33,10 @@ export default function RegisterPage() {
     if (!formData.first_name || !formData.last_name) return 'Veuillez renseigner votre prénom et votre nom.'
     if (!formData.email) return "Veuillez renseigner votre adresse email."
     if (!formData.phone) return "Veuillez renseigner votre numéro de téléphone."
+    if (!formData.date_of_birth) return "Veuillez renseigner votre date de naissance."
+    if (!formData.country) return "Veuillez renseigner votre pays."
+    if (!formData.city) return "Veuillez renseigner votre ville."
+    if (!formData.school_level) return "Veuillez sélectionner votre niveau scolaire."
     if (!formData.password || !formData.confirm_password) return 'Veuillez renseigner et confirmer votre mot de passe.'
     if (formData.password !== formData.confirm_password) return 'Les mots de passe ne correspondent pas.'
     if (!termsAccepted) return "Veuillez accepter les conditions d'utilisation."

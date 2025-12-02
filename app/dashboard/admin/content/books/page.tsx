@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { AuthGuard } from "@/components/auth-guard"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { PreviewModal } from "@/components/admin/PreviewModal"
 import { 
   Plus,
   Search,
@@ -23,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 
 interface Book {
@@ -48,73 +50,79 @@ export default function BooksPage() {
   const [selectedClass, setSelectedClass] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("")
   const [showFilters, setShowFilters] = useState(false)
+  const [previewContent, setPreviewContent] = useState<any>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [deletingBookId, setDeletingBookId] = useState<string | null>(null)
 
-  // Données de test
-  useEffect(() => {
-    const mockBooks: Book[] = [
-      {
-        id: "1",
-        title: "Mathématiques Terminale S",
-        author: "Jean Dupont",
-        description: "Manuel complet de mathématiques pour la terminale scientifique",
-        subject: "Mathématiques",
-        class_level: "Terminale",
-        status: "published",
-        pages: 450,
-        rating: 4.5,
-        downloads: 1250,
-        created_at: "2025-08-10",
-        cover_image: "/placeholder-book.jpg"
-      },
-      {
-        id: "2",
-        title: "Physique-Chimie Première",
-        author: "Marie Martin",
-        description: "Cours et exercices de physique-chimie pour la première",
-        subject: "Physique",
-        class_level: "Première",
-        status: "published",
-        pages: 380,
-        rating: 4.2,
-        downloads: 980,
-        created_at: "2025-08-12",
-        cover_image: "/placeholder-book.jpg"
-      },
-      {
-        id: "3",
-        title: "Français Quatrième",
-        author: "Pierre Durand",
-        description: "Grammaire et littérature française pour la quatrième",
-        subject: "Français",
-        class_level: "Quatrième",
-        status: "draft",
-        pages: 320,
-        rating: 4.0,
-        downloads: 750,
-        created_at: "2025-08-15",
-        cover_image: "/placeholder-book.jpg"
-      },
-      {
-        id: "4",
-        title: "SVT Seconde",
-        author: "Sophie Leroy",
-        description: "Sciences de la vie et de la terre pour la seconde",
-        subject: "SVT",
-        class_level: "Seconde",
-        status: "published",
-        pages: 400,
-        rating: 4.3,
-        downloads: 1100,
-        created_at: "2025-08-18",
-        cover_image: "/placeholder-book.jpg"
+  // Fonction pour supprimer un livre
+  const handleDeleteBook = async (bookId: string) => {
+    try {
+      setDeletingBookId(bookId)
+      console.log('🗑️ Suppression du livre:', bookId)
+      
+      const response = await fetch(`/api/admin/books/${bookId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        throw new Error(errorData.error || 'Erreur lors de la suppression')
       }
-    ]
-    
-    setTimeout(() => {
-      setBooks(mockBooks)
-      setLoading(false)
-    }, 1000)
-  }, [])
+      
+      // Supprimer le livre de la liste locale
+      setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId))
+      
+      console.log('✅ Livre supprimé avec succès')
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error)
+      alert(`Erreur lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+    } finally {
+      setDeletingBookId(null)
+    }
+  }
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        if (selectedSubject) params.set('subject', selectedSubject)
+        if (selectedClass) params.set('class_level', selectedClass)
+        if (selectedStatus) params.set('status', selectedStatus)
+        if (searchTerm) params.set('search', searchTerm)
+
+        params.set('content_type', 'book')
+        const url = `/api/admin/content${params.toString() ? `?${params.toString()}` : ''}`
+        const res = await fetch(url, { method: 'GET', credentials: 'include' })
+        const data = await res.json()
+
+        const raw: any[] = Array.isArray(data) ? data : (data.results || data.books || [])
+        const normalized: Book[] = raw.map((b: any) => ({
+          id: (b.id ?? b.pk ?? '').toString(),
+          title: b.title || b.name || 'Sans titre',
+          author: b.author || b.created_by?.full_name || `${b.created_by?.first_name || ''} ${b.created_by?.last_name || ''}`.trim(),
+          description: b.description || '',
+          subject: b.subject || b.category || 'N/A',
+          class_level: b.class_level || b.level || 'N/A',
+          status: b.status || (b.is_active === false ? 'archived' : 'published'),
+          pages: Number(b.pages || 0),
+          rating: Number(b.rating || 0),
+          downloads: Number(b.downloads || 0),
+          created_at: b.created_at || b.date_created || '',
+          cover_image: b.cover_image || null,
+        }))
+
+        setBooks(normalized)
+      } catch (e) {
+        console.error('Erreur chargement livres:', e)
+        setBooks([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
+  }, [selectedSubject, selectedClass, selectedStatus, searchTerm])
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -140,8 +148,8 @@ export default function BooksPage() {
   return (
     <AuthGuard requiredRoles={['admin', 'super_admin']}>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto p-6">
-          <div className="container mx-auto">
+        <main className="flex-1 w-full overflow-auto">
+          <div className="w-full px-6 py-6">
             {/* Header */}
             <div className="mb-8">
               <div className="flex justify-between items-start">
@@ -287,22 +295,70 @@ export default function BooksPage() {
                         
                         {/* Actions */}
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-laha-border text-laha-text hover:bg-laha-surface"
+                            onClick={() => {
+                              setPreviewContent({
+                                ...book,
+                                type: 'book',
+                                fileUrl: book.file_url,
+                                thumbnailUrl: book.cover_image,
+                                fileType: book.file_format,
+                                fileSize: book.file_size_mb ? book.file_size_mb * 1024 * 1024 : 0,
+                                pageCount: book.pages,
+                                author: book.author,
+                                allowDownloads: book.allow_downloads,
+                                allowPreview: book.allow_preview
+                              })
+                              setIsPreviewOpen(true)
+                            }}
+                          >
                             <Eye className="h-4 w-4 mr-1" />
                             Voir
                           </Button>
-                          <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                          <Button asChild variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
+                            <Link href={`/dashboard/admin/content/books/edit/${book.id}`}>
                             <Edit className="h-4 w-4 mr-1" />
                             Modifier
+                            </Link>
                           </Button>
                           <Button variant="outline" size="sm" className="border-laha-border text-laha-text hover:bg-laha-surface">
                             <Copy className="h-4 w-4 mr-1" />
                             Dupliquer
                           </Button>
-                          <Button variant="outline" size="sm" className="border-red-500/20 text-red-500 hover:bg-red-500/10">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="border-red-500/20 text-red-500 hover:bg-red-500/10"
+                                disabled={deletingBookId === book.id}
+                              >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            Supprimer
+                                {deletingBookId === book.id ? 'Suppression...' : 'Supprimer'}
                           </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Êtes-vous sûr de vouloir supprimer le livre "{book.title}" ? 
+                                  Cette action est irréversible et supprimera définitivement le livre et tous ses fichiers associés.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteBook(book.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Supprimer définitivement
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     </CardContent>
@@ -313,6 +369,13 @@ export default function BooksPage() {
           </div>
         </main>
       </AdminSidebar>
+      
+      {/* Modal de prévisualisation */}
+      <PreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        content={previewContent}
+      />
     </AuthGuard>
   )
 }

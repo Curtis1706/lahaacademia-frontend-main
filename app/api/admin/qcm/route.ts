@@ -1,124 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+
+const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+
+async function getAuthHeaders() {
+  let authHeader: Record<string, string> = {}
+  try {
+    const cookieStore = cookies()
+    const userSessionCookie = cookieStore.get('user_session_client')
+    
+    if (userSessionCookie?.value) {
+      const parsed = JSON.parse(userSessionCookie.value)
+      if (parsed?.token) {
+        authHeader = { 'Authorization': `Token ${parsed.token}` }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to parse user_session_client cookie:", e)
+  }
+  return authHeader
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    
-    // Construire les paramètres de requête
-    const params = new URLSearchParams()
-    
-    // Filtres
-    const subject = searchParams.get('subject')
-    const class_level = searchParams.get('class_level')
-    const status = searchParams.get('status')
-    const search = searchParams.get('search')
-    
-    if (subject && subject !== 'all') params.append('subject', subject)
-    if (class_level && class_level !== 'all') params.append('class_level', class_level)
-    if (status && status !== 'all') params.append('status', status)
-    if (search) params.append('search', search)
-    
-    // Pagination
+    const searchParams = request.nextUrl.searchParams
+    const params = new URLSearchParams(searchParams.toString())
+
     const page = searchParams.get('page') || '1'
     const page_size = searchParams.get('page_size') || '20'
     params.append('page', page)
     params.append('page_size', page_size)
     
-    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
-    const endpoint = baseApi.includes('/api') 
-      ? `${baseApi}/qcm/?${params.toString()}`
-      : `${baseApi}/api/qcm/?${params.toString()}`
+    const endpoint = `${baseApi}/api/qcm/?${params.toString()}`
     
     console.log('🔍 Récupération des QCM:')
     console.log(`  Endpoint: ${endpoint}`)
     
-    // Utiliser le token admin
-    const adminToken = 'cee5456080015db2299344035fecdb5936469663'
-    
-    const response = await fetch(endpoint, {
+    const authHeaders = await getAuthHeaders()
+    const res = await fetch(endpoint, {
       method: 'GET',
       headers: {
-        'Authorization': `Token ${adminToken}`,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      credentials: 'include',
+      cache: 'no-store',
     })
-    
-    const data = await response.json()
-    
-    console.log(`📊 Réponse Django: ${response.status}`)
-    console.log(`📋 Nombre de QCM: ${data.count || data.results?.length || 0}`)
-    
-    if (!response.ok) {
-      console.error('Erreur API Django:', response.status, data)
-      return NextResponse.json(
-        { error: 'Erreur lors de la récupération des QCM' },
-        { status: response.status }
-      )
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: 'Unknown error' }))
+      console.error(`Erreur lors de la récupération des QCM:`, res.status, errorData)
+      return NextResponse.json({ error: errorData.detail || errorData.message || 'Erreur lors de la récupération des QCM' }, { status: res.status })
     }
-    
-    // Créer la réponse avec headers anti-cache
-    const nextResponse = NextResponse.json(data)
-    nextResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
-    nextResponse.headers.set('Pragma', 'no-cache')
-    nextResponse.headers.set('Expires', '0')
-    
-    return nextResponse
+
+    const data = await res.json()
+    return NextResponse.json(data)
   } catch (error) {
-    console.error('Erreur API qcm:', error)
-    return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
-      { status: 500 }
-    )
+    console.error('Erreur API admin QCM GET:', error)
+    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
-    console.log('🔍 Création d\'un nouveau QCM:')
-    console.log(`  Données: ${JSON.stringify(body, null, 2)}`)
-    
-    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
-    const endpoint = baseApi.includes('/api') 
-      ? `${baseApi}/qcm/`
-      : `${baseApi}/api/qcm/`
-    
+    const endpoint = `${baseApi}/api/qcm/`
+
+    console.log('🚀 Création de QCM:')
     console.log(`  Endpoint: ${endpoint}`)
-    
-    // Utiliser le token admin
-    const adminToken = 'cee5456080015db2299344035fecdb5936469663'
-    
-    const response = await fetch(endpoint, {
+    console.log('  Payload:', body)
+
+    const authHeaders = await getAuthHeaders()
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${adminToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...authHeaders,
       },
-      body: JSON.stringify(body)
+      credentials: 'include',
+      body: JSON.stringify(body),
+      cache: 'no-store',
     })
-    
-    const data = await response.json()
-    
-    console.log(`📊 Réponse Django: ${response.status}`)
-    
-    if (!response.ok) {
-      console.error('Erreur API Django:', response.status, data)
-      return NextResponse.json(
-        data || { error: 'Erreur lors de la création du QCM' },
-        { status: response.status }
-      )
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      console.error('Erreur détaillée Django (POST QCM):', errorData)
+      return NextResponse.json({ error: errorData.detail || errorData.message || `Erreur HTTP ${res.status}` }, { status: res.status })
     }
-    
+
+    const data = await res.json()
     return NextResponse.json(data, { status: 201 })
   } catch (error) {
-    console.error('Erreur API qcm POST:', error)
-    return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
-      { status: 500 }
-    )
+    console.error('Erreur API admin QCM POST:', error)
+    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
   }
 }
-
-
-

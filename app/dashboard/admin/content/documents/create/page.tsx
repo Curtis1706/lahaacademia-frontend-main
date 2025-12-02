@@ -74,9 +74,18 @@ export default function CreateDocumentPage() {
     category: "exercise"
   })
 
-  const [currentTag, setCurrentTag] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("general")
+  const [uploadedFile, setUploadedFile] = useState<{
+    url: string
+    name: string
+    size: number
+    type: string
+  } | null>(null)
+  const [uploadedThumbnail, setUploadedThumbnail] = useState<{
+    url: string
+    name: string
+    size: number
+  } | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const addTag = () => {
     if (currentTag.trim() && !documentData.tags.includes(currentTag.trim())) {
@@ -95,9 +104,35 @@ export default function CreateDocumentPage() {
     })
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'content')
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de l\'upload')
+      }
+
+      const result = await response.json()
+      setUploadedFile({
+        url: result.file_url,
+        name: result.file_name,
+        size: result.file_size,
+        type: result.file_type
+      })
+
       const fileType = file.type.includes('pdf') ? 'pdf' :
                      file.type.includes('image') ? 'image' :
                      file.type.includes('spreadsheet') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'spreadsheet' :
@@ -109,18 +144,50 @@ export default function CreateDocumentPage() {
         file: file,
         type: fileType as any,
         size: file.size,
-        pages: fileType === 'pdf' ? Math.floor(Math.random() * 50) + 1 : 1 // Simulation
+        pages: fileType === 'pdf' ? Math.floor(Math.random() * 50) + 1 : 1
       })
+
+    } catch (error) {
+      console.error('Erreur upload:', error)
+      alert('Erreur lors de l\'upload du fichier')
+    } finally {
+      setIsUploading(false)
     }
   }
 
-  const handleThumbnailUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThumbnailUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      setDocumentData({
-        ...documentData,
-        thumbnail: file
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'thumbnail')
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de l\'upload')
+      }
+
+      const result = await response.json()
+      setUploadedThumbnail({
+        url: result.file_url,
+        name: result.file_name,
+        size: result.file_size
+      })
+
+    } catch (error) {
+      console.error('Erreur upload:', error)
+      alert('Erreur lors de l\'upload de l\'aperçu')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -156,9 +223,36 @@ export default function CreateDocumentPage() {
         return
       }
 
-      console.log("Sauvegarde du document:", documentData)
-      // TODO: Appel API pour sauvegarder
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
+      const payload = {
+        title: documentData.title,
+        description: documentData.description,
+        subject: documentData.subject,
+        class_level: documentData.class_level,
+        type: documentData.type,
+        author: documentData.author,
+        language: documentData.language,
+        pages: documentData.pages,
+        size_mb: documentData.size / (1024 * 1024),
+        category: documentData.category,
+        status: 'draft',
+        tags: documentData.tags,
+        allow_downloads: documentData.allowDownloads,
+        allow_preview: documentData.allowPreview,
+        content_file: uploadedFile?.url,
+        thumbnail: uploadedThumbnail?.url,
+
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${res.status}`)
+      }
+
       alert("Document sauvegardé avec succès !")
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error)
@@ -177,14 +271,41 @@ export default function CreateDocumentPage() {
     setIsLoading(true)
     try {
       // Validation complète
-      if (!documentData.title || !documentData.subject || !documentData.class_level || !documentData.file) {
-        alert("Veuillez remplir tous les champs obligatoires et télécharger un fichier")
+      if (!documentData.title || !documentData.subject || !documentData.class_level) {
+        alert("Veuillez remplir tous les champs obligatoires")
         return
       }
 
-      console.log("Publication du document:", documentData)
-      // TODO: Appel API pour publier
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
+      const payload = {
+        title: documentData.title,
+        description: documentData.description,
+        subject: documentData.subject,
+        class_level: documentData.class_level,
+        type: documentData.type,
+        author: documentData.author,
+        language: documentData.language,
+        pages: documentData.pages,
+        size_mb: documentData.size / (1024 * 1024),
+        category: documentData.category,
+        status: 'published',
+        tags: documentData.tags,
+        allow_downloads: documentData.allowDownloads,
+        allow_preview: documentData.allowPreview,
+        content_file: uploadedFile?.url,
+        thumbnail: uploadedThumbnail?.url,
+
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${res.status}`)
+      }
+
       alert("Document publié avec succès !")
     } catch (error) {
       console.error("Erreur lors de la publication:", error)
@@ -197,8 +318,8 @@ export default function CreateDocumentPage() {
   return (
     <AuthGuard requiredRoles={['admin', 'super_admin']}>
       <AdminSidebar>
-        <main className="flex-1 overflow-auto p-6">
-          <div className="container mx-auto max-w-4xl">
+        <main className="flex-1 w-full overflow-auto">
+          <div className="w-full px-6 py-6 max-w-4xl">
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center justify-between">
@@ -453,29 +574,37 @@ export default function CreateDocumentPage() {
                           onChange={handleFileUpload}
                           className="hidden"
                           id="file-upload"
+                          disabled={isUploading}
                         />
-                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black">
+                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black" disabled={isUploading}>
                           <label htmlFor="file-upload" className="cursor-pointer">
-                            <Upload className="h-4 w-4 mr-2" />
-                            Choisir un fichier
+                            {isUploading ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Upload className="h-4 w-4 mr-2" />
+                            )}
+                            {isUploading ? 'Upload en cours...' : 'Choisir un fichier'}
                           </label>
                         </Button>
                       </div>
                     </div>
 
-                    {documentData.file && (
+                    {uploadedFile && (
                       <div className="space-y-4">
                         <div className="flex items-center gap-4 p-4 bg-laha-background rounded-lg border border-laha-border">
                           {getFileIcon(documentData.type)}
                           <div className="flex-1">
-                            <p className="text-laha-text font-medium">{documentData.file.name}</p>
+                            <p className="text-laha-text font-medium">{uploadedFile.name}</p>
                             <p className="text-laha-text-secondary text-sm">
-                              {formatFileSize(documentData.size)}
+                              {formatFileSize(uploadedFile.size)}
                               {documentData.pages > 0 && ` • ${documentData.pages} pages`}
                             </p>
                           </div>
                           <Badge variant="outline" className="border-laha-border text-laha-text">
                             {documentData.type.toUpperCase()}
+                          </Badge>
+                          <Badge variant="outline" className="border-green-500/20 text-green-500">
+                            ✓ Uploadé
                           </Badge>
                         </div>
                       </div>
@@ -502,25 +631,33 @@ export default function CreateDocumentPage() {
                           onChange={handleThumbnailUpload}
                           className="hidden"
                           id="preview-upload"
+                          disabled={isUploading}
                         />
-                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black">
+                        <Button asChild className="bg-laha-gold hover:bg-laha-gold/90 text-laha-black" disabled={isUploading}>
                           <label htmlFor="preview-upload" className="cursor-pointer">
-                            <Image className="h-4 w-4 mr-2" />
-                            Choisir une image
+                            {isUploading ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Image className="h-4 w-4 mr-2" />
+                            )}
+                            {isUploading ? 'Upload en cours...' : 'Choisir une image'}
                           </label>
                         </Button>
                       </div>
                     </div>
 
-                    {documentData.thumbnail && (
+                    {uploadedThumbnail && (
                       <div className="flex items-center gap-4 p-4 bg-laha-background rounded-lg border border-laha-border">
                         <Image className="h-6 w-6 text-laha-gold" />
                         <div className="flex-1">
-                          <p className="text-laha-text font-medium">{documentData.thumbnail.name}</p>
+                          <p className="text-laha-text font-medium">{uploadedThumbnail.name}</p>
                           <p className="text-laha-text-secondary text-sm">
-                            {(documentData.thumbnail.size / 1024).toFixed(2)} KB
+                            {(uploadedThumbnail.size / 1024).toFixed(2)} KB
                           </p>
                         </div>
+                        <Badge variant="outline" className="border-green-500/20 text-green-500">
+                          ✓ Uploadé
+                        </Badge>
                       </div>
                     )}
                   </CardContent>

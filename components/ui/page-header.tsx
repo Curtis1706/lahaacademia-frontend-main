@@ -22,7 +22,7 @@ export function PageHeader({ currentPage }: PageHeaderProps) {
   ]
 
   return (
-    <header className="relative border-b border-laha-gold-dark/20">
+    <header className="relative bg-white/5 dark:bg-black/10 backdrop-blur-xl border-b border-white/10 dark:border-white/5 shadow-lg">
       <nav className="flex items-center justify-between p-4 max-w-7xl mx-auto">
         <Link href="/" className="flex items-center space-x-3">
           <Image
@@ -67,17 +67,17 @@ export function PageHeader({ currentPage }: PageHeaderProps) {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="md:hidden absolute top-full left-0 right-0 bg-laha-black border-b border-laha-gold-dark/20 z-50"
+          className="md:hidden absolute top-full left-0 right-0 bg-white/10 dark:bg-black/20 backdrop-blur-xl border-t border-white/20 dark:border-white/10 shadow-2xl z-50"
         >
           <div className="p-4 space-y-4">
             {navigation.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`block transition-colors ${
+                className={`block py-3 px-4 rounded-xl transition-all duration-300 backdrop-blur-sm ${
                   item.isActive
-                    ? "text-laha-gold font-semibold"
-                    : "text-gray-300 hover:text-laha-gold"
+                    ? "text-laha-gold font-semibold bg-laha-gold/20 dark:bg-laha-gold/30 border border-laha-gold/30 shadow-lg"
+                    : "text-gray-300 hover:text-laha-gold hover:bg-white/20 dark:hover:bg-white/10 hover:shadow-md border border-transparent hover:border-white/20"
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >

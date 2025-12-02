@@ -164,8 +164,8 @@ function AdminContent() {
   }, [])
 
   return (
-          <div className="flex flex-1">
-        <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl bg-gradient-to-br from-laha-background via-laha-surface/50 to-laha-gold-light-new/20 backdrop-blur-md p-4 md:p-8 overflow-y-auto">
+          <div className="flex flex-1 w-full">
+        <div className="flex h-full w-full flex-1 flex-col gap-4 rounded-tl-2xl bg-gradient-to-br from-laha-background via-laha-surface/50 to-laha-gold-light-new/20 backdrop-blur-md px-6 py-6 overflow-y-auto">
         {/* Header modernisé */}
         <motion.div 
           className="mb-8"
