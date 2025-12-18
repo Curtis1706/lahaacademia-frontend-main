@@ -14,7 +14,10 @@ import {
   User,
   School,
   Calendar,
-  Users
+  Users,
+  Loader2,
+  AlertCircle,
+  RefreshCw
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,6 +25,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import logger from "@/lib/logger"
 
 interface Subject {
   id: string
@@ -51,39 +55,55 @@ export default function ContentSettingsPage() {
   const [classLevels, setClassLevels] = useState<ClassLevel[]>([])
   const [authors, setAuthors] = useState<Author[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Données de test
+  // Charger les vraies données depuis les APIs
   useEffect(() => {
-    const mockSubjects: Subject[] = [
-      { id: "1", name: "Mathématiques", code: "MATH", description: "Sciences mathématiques", color: "#3B82F6" },
-      { id: "2", name: "Physique", code: "PHYS", description: "Sciences physiques", color: "#EF4444" },
-      { id: "3", name: "Français", code: "FR", description: "Langue française", color: "#10B981" },
-      { id: "4", name: "SVT", code: "SVT", description: "Sciences de la vie et de la terre", color: "#8B5CF6" },
-      { id: "5", name: "Histoire", code: "HIST", description: "Histoire et géographie", color: "#F59E0B" }
-    ]
-
-    const mockClassLevels: ClassLevel[] = [
-      { id: "1", name: "Quatrième", level: 4, description: "Classe de quatrième" },
-      { id: "2", name: "Troisième", level: 3, description: "Classe de troisième" },
-      { id: "3", name: "Seconde", level: 2, description: "Classe de seconde" },
-      { id: "4", name: "Première", level: 1, description: "Classe de première" },
-      { id: "5", name: "Terminale", level: 0, description: "Classe de terminale" }
-    ]
-
-    const mockAuthors: Author[] = [
-      { id: "1", name: "Jean Dupont", email: "jean.dupont@lahaacademia.com", specialization: "Mathématiques", status: "active" },
-      { id: "2", name: "Marie Martin", email: "marie.martin@lahaacademia.com", specialization: "Physique", status: "active" },
-      { id: "3", name: "Pierre Durand", email: "pierre.durand@lahaacademia.com", specialization: "Français", status: "inactive" },
-      { id: "4", name: "Sophie Leroy", email: "sophie.leroy@lahaacademia.com", specialization: "SVT", status: "active" }
-    ]
-
-    setTimeout(() => {
-      setSubjects(mockSubjects)
-      setClassLevels(mockClassLevels)
-      setAuthors(mockAuthors)
-      setLoading(false)
-    }, 1000)
+    fetchAllData()
   }, [])
+
+  const fetchAllData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const [subjectsRes, classLevelsRes, authorsRes] = await Promise.allSettled([
+        fetch('/api/admin/config/subjects', { credentials: 'include' }),
+        fetch('/api/admin/config/class-levels', { credentials: 'include' }),
+        fetch('/api/admin/config/authors', { credentials: 'include' })
+      ])
+
+      // Subjects
+      if (subjectsRes.status === 'fulfilled' && subjectsRes.value.ok) {
+        const data = await subjectsRes.value.json()
+        setSubjects(data.results || data || [])
+      } else {
+        logger.error('Failed to fetch subjects', new Error('API error'), { context: 'ContentSettingsPage' })
+      }
+
+      // Class Levels
+      if (classLevelsRes.status === 'fulfilled' && classLevelsRes.value.ok) {
+        const data = await classLevelsRes.value.json()
+        setClassLevels(data.results || data || [])
+      } else {
+        logger.error('Failed to fetch class levels', new Error('API error'), { context: 'ContentSettingsPage' })
+      }
+
+      // Authors
+      if (authorsRes.status === 'fulfilled' && authorsRes.value.ok) {
+        const data = await authorsRes.value.json()
+        setAuthors(data.results || data || [])
+      } else {
+        logger.error('Failed to fetch authors', new Error('API error'), { context: 'ContentSettingsPage' })
+      }
+
+      setLoading(false)
+    } catch (error) {
+      logger.error('Error fetching config data', error as Error, { context: 'ContentSettingsPage' })
+      setError(error instanceof Error ? error.message : 'Erreur inconnue')
+      setLoading(false)
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     return status === 'active' 
@@ -97,14 +117,47 @@ export default function ContentSettingsPage() {
         <main className="flex-1 w-full overflow-auto">
           <div className="w-full px-6 py-6 max-w-6xl">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-laha-gold mb-2">
-                Paramètres de Contenu
-              </h1>
-              <p className="text-laha-text-secondary">
-                Configurez matières, classes et auteurs
-              </p>
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-laha-gold mb-2">
+                  Paramètres de Contenu
+                </h1>
+                <p className="text-laha-text-secondary">
+                  Configurez matières, classes et auteurs
+                </p>
+              </div>
+              <Button onClick={fetchAllData} disabled={loading} variant="outline" className="gap-2">
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Actualiser
+              </Button>
             </div>
+
+            {/* Loading */}
+            {loading && (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-laha-gold" />
+                <span className="ml-3 text-laha-text-secondary">Chargement de la configuration...</span>
+              </div>
+            )}
+
+            {/* Error */}
+            {error && !loading && (
+              <Card className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200">
+                <CardContent className="py-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-red-900 mb-1">Erreur de chargement</h3>
+                      <p className="text-sm text-red-700">{error}</p>
+                    </div>
+                    <Button onClick={fetchAllData} variant="outline" size="sm">Réessayer</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {!loading && !error && (
+              <>
 
             <Tabs defaultValue="subjects" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 bg-laha-surface border-laha-border">
@@ -258,30 +311,32 @@ export default function ContentSettingsPage() {
               </TabsContent>
             </Tabs>
 
-            {/* Statistiques globales */}
-            <div className="mt-8">
-              <Card className="bg-laha-surface/50 border-laha-border">
-                <CardHeader>
-                  <CardTitle className="text-laha-text">Statistiques</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-laha-gold mb-2">{subjects.length}</div>
-                      <div className="text-laha-text-secondary">Matières configurées</div>
+              {/* Statistiques globales */}
+              <div className="mt-8">
+                <Card className="bg-laha-surface/50 border-laha-border">
+                  <CardHeader>
+                    <CardTitle className="text-laha-text">Statistiques</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-laha-gold mb-2">{subjects.length}</div>
+                        <div className="text-laha-text-secondary">Matières configurées</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-laha-gold mb-2">{classLevels.length}</div>
+                        <div className="text-laha-text-secondary">Classes disponibles</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-laha-gold mb-2">{authors.filter(a => a.status === 'active').length}</div>
+                        <div className="text-laha-text-secondary">Auteurs actifs</div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-laha-gold mb-2">{classLevels.length}</div>
-                      <div className="text-laha-text-secondary">Classes disponibles</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-laha-gold mb-2">{authors.filter(a => a.status === 'active').length}</div>
-                      <div className="text-laha-text-secondary">Auteurs actifs</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+            )}
           </div>
         </main>
       </AdminSidebar>

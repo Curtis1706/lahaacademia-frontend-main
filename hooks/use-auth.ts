@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react'
 import { useRouter } from 'next/navigation'
+import logger from '@/lib/logger'
 
 export interface User {
   id: string
@@ -42,8 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Solution temporaire : lire directement depuis le cookie
-        console.log('🔍 Vérification de l\'authentification...')
+        logger.debug('Checking authentication', {}, { context: 'useAuth' })
         
         // Essayer de lire le cookie user_session_client directement
         const cookies = document.cookie.split(';')
@@ -53,29 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const sessionValue = userSessionCookie.split('=')[1]
             const userData = JSON.parse(decodeURIComponent(sessionValue))
-            console.log('✅ Session trouvée dans le cookie client:', userData)
+            logger.debug('Session found in client cookie', { userId: userData.id, role: userData.role }, { context: 'useAuth' })
             setUser(userData)
           } catch (parseError) {
-            console.log('❌ Erreur parsing cookie client:', parseError)
+            logger.error('Error parsing client cookie', parseError as Error, { context: 'useAuth' })
             setUser(null)
           }
         } else {
-          console.log('❌ Pas de cookie user_session_client trouvé')
+          logger.debug('No user_session_client cookie found', {}, { context: 'useAuth' })
           setUser(null)
         }
-        
-        // Code original commenté temporairement
-        /*
-        const response = await fetch('/api/auth/me', { cache: 'no-store', credentials: 'include' })
-        if (response.ok) {
-          const userData = await response.json()
-          setUser(userData.user || null)
-        } else {
-          setUser(null)
-        }
-        */
       } catch (error) {
-        console.error('Erreur lors de la vérification de l\'authentification:', error)
+        logger.error('Error checking authentication', error as Error, { context: 'useAuth' })
         setUser(null)
       } finally {
         setLoading(false)
@@ -110,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user)
       return { success: true, user: data.user as User }
     } catch (error) {
-      console.error('Erreur lors de la connexion:', error)
+      logger.error('Error during login', error as Error, { context: 'useAuth/login' })
       return { success: false, error: 'Erreur interne du serveur' }
     }
   }
@@ -134,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user)
       return { success: true, user: data.user as User }
     } catch (error) {
-      console.error('Erreur lors de l\'inscription:', error)
+      logger.error('Error during registration', error as Error, { context: 'useAuth/register' })
       return { success: false, error: 'Erreur interne du serveur' }
     }
   }
@@ -145,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       router.push('/login')
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error)
+      logger.error('Error during logout', error as Error, { context: 'useAuth/logout' })
     }
   }
 

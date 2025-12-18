@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import logger from '@/lib/logger'
 
 interface Child {
   id: string
@@ -59,116 +60,33 @@ export function useParentChildren(): ParentChildrenData {
       setLoading(true)
       setError(null)
 
-      console.log('🔄 Tentative de récupération des données enfants...')
-      
-      // Vérifier si le cookie existe
-      const cookies = document.cookie.split(';')
-      const userSessionCookie = cookies.find(cookie => 
-        cookie.trim().startsWith('user_session_client=')
-      )
+      logger.debug('Fetching parent children data', {}, { context: 'useParentChildren' })
 
-      if (!userSessionCookie) {
-        console.error('❌ Pas de cookie user_session_client trouvé')
-        setError('Non authentifié')
-        setIsLoading(false)
-        return
+      const response = await fetch('/api/parent/children', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur réseau' }))
+        throw new Error(errorData.error || `HTTP ${response.status}`)
       }
 
-      // Parser les données du cookie
-      const sessionValue = userSessionCookie.split('=')[1]
-      const userData = JSON.parse(decodeURIComponent(sessionValue))
-      console.log('✅ Données utilisateur du cookie:', userData)
+      const data = await response.json()
+      logger.debug('Parent children data fetched successfully', { childrenCount: data.children?.length }, { context: 'useParentChildren' })
 
-      // Utiliser les données mockées directement (Option 1)
-      console.log('✅ Utilisation des données mockées pour Serge')
-      setChildren([
-        {
-          id: "1",
-          name: "Spero",
-          age: 15,
-          class_level: "Seconde",
-          subjects: ["Mathématiques", "Français", "Histoire"],
-          avatar: null,
-          email: "spero@example.com",
-          phone: "+22912345678",
-          birth_date: "2009-01-01",
-          school_name: "Lycée de Cotonou",
-          country: "Bénin",
-          city: "Cotonou",
-          school_level: "secondary",
-          average_score: 14.5,
-          courses_completed: 2,
-          study_time_total: 45,
-          last_activity: "2024-01-15T10:30:00Z",
-          is_blocked: false,
-          learning_style: "Visuel",
-          goals: "Améliorer mes notes en mathématiques",
-          streak_days: 7,
-          total_exams_taken: 5,
-          average_exam_score: 13.8,
-        }
-      ])
-      setParent({
-        id: userData.id || "1",
-        name: `${userData.first_name || 'Serge'} ${userData.last_name || 'ALOHOUTADE'}`,
-        email: userData.email || "serge10@gmail.com",
-        phone: "+22987654321",
-        occupation: "Ingénieur",
-        education_level: "Master",
-        total_children: 1,
-        total_payments: 150000,
-        monitoring_enabled: true,
-        weekly_reports: true,
-        exam_notifications: true,
-      })
-      setError(null) // Pas d'erreur, données mockées utilisées
+      setChildren(data.children || [])
+      setParent(data.parent || null)
+      setError(null)
       
     } catch (err) {
-      console.error('❌ Erreur lors de la récupération des enfants:', err)
-      
-      // Fallback avec des données mockées en cas d'erreur
-      console.log('⚠️ Erreur détectée, utilisation des données mockées en fallback')
-      setChildren([
-        {
-          id: "1",
-          name: "Spero",
-          age: 15,
-          class_level: "Seconde",
-          subjects: ["Mathématiques", "Français", "Histoire"],
-          avatar: null,
-          email: "spero@example.com",
-          phone: "+22912345678",
-          birth_date: "2009-01-01",
-          school_name: "Lycée de Cotonou",
-          country: "Bénin",
-          city: "Cotonou",
-          school_level: "secondary",
-          average_score: 14.5,
-          courses_completed: 2,
-          study_time_total: 45,
-          last_activity: "2024-01-15T10:30:00Z",
-          is_blocked: false,
-          learning_style: "Visuel",
-          goals: "Améliorer mes notes en mathématiques",
-          streak_days: 7,
-          total_exams_taken: 5,
-          average_exam_score: 13.8,
-        }
-      ])
-      setParent({
-        id: "1",
-        name: "Serge ALOHOUTADE",
-        email: "serge10@gmail.com",
-        phone: "+22987654321",
-        occupation: "Ingénieur",
-        education_level: "Master",
-        total_children: 1,
-        total_payments: 150000,
-        monitoring_enabled: true,
-        weekly_reports: true,
-        exam_notifications: true,
-      })
-      setError(null) // Pas d'erreur affichée, données mockées utilisées
+      logger.error('Error fetching parent children', err as Error, { context: 'useParentChildren' })
+      setError(err instanceof Error ? err.message : 'Erreur inconnue')
+      setChildren([])
+      setParent(null)
     } finally {
       setLoading(false)
     }

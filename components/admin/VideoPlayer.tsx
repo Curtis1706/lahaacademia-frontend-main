@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import videojs from 'video.js'
 import 'video.js/dist/video-js.css'
+import logger from '@/lib/logger'
 
 interface VideoPlayerProps {
   src: string
@@ -47,21 +48,21 @@ export function VideoPlayer({ src, poster, onReady, onError }: VideoPlayerProps)
 
     // Event listeners
     player.ready(() => {
-      console.log('Video.js player ready')
+      logger.debug('Video.js player ready', null, { context: 'VideoPlayer' })
       onReady?.()
     })
 
     player.on('error', (error: any) => {
-      console.error('Video.js error:', error)
+      logger.error('Video.js playback error', error, { context: 'VideoPlayer' })
       onError?.(error)
     })
 
     player.on('loadstart', () => {
-      console.log('Video.js loadstart:', src)
+      logger.debug('Video.js loadstart', { src }, { context: 'VideoPlayer' })
     })
 
     player.on('canplay', () => {
-      console.log('Video.js canplay')
+      logger.debug('Video.js canplay', null, { context: 'VideoPlayer' })
     })
 
     // Cleanup

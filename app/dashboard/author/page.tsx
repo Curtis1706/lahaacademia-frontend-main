@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
+import logger from "@/lib/logger"
 import {
   IconArrowLeft,
   IconBrandTabler,
@@ -22,6 +23,32 @@ import Image from "next/image"
 import { BookOpen, Edit, Eye, DollarSign, TrendingUp, MessageSquare, Star, Users } from "lucide-react"
 
 export default function AuthorDashboard() {
+  const [recentMessages, setRecentMessages] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/authors/messages-recent', { 
+          cache: 'no-store', 
+          credentials: 'include' 
+        })
+        
+        if (res.ok) {
+          const data = await res.json()
+          setRecentMessages(data.messages || data || [])
+        }
+      } catch (error) {
+        logger.error('Error fetching author messages', error as Error, { context: 'author/dashboard' })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMessages()
+  }, [])
+
   const links = [
     {
       label: "Tableau de bord",
@@ -293,48 +320,45 @@ const AuthorDashboardContent = () => {
                 Messages & Questions
               </h2>
               <div className="space-y-3">
-                {[
-                  {
-                    student: "Koffi Asante",
-                    message: "Comment résoudre les équations du second degré ?",
-                    type: "question",
-                    time: "Il y a 1h",
-                  },
-                  {
-                    student: "Aïcha Traoré",
-                    message: "Merci pour votre livre de physique",
-                    type: "message",
-                    time: "Il y a 3h",
-                  },
-                  {
-                    student: "Mamadou Diop",
-                    message: "Différence entre atome et molécule",
-                    type: "question",
-                    time: "Il y a 5h",
-                  },
-                ].map((item, index) => (
-                  <div key={index} className="bg-laha-black-light/10 rounded-lg p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <p className="text-laha-gold-light font-medium text-sm">{item.student}</p>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            item.type === "question"
-                              ? "bg-laha-gold-warm/20 text-laha-gold-warm"
-                              : "bg-laha-gold/20 text-laha-gold"
-                          }`}
-                        >
-                          {item.type === "question" ? "Question" : "Message"}
+                {loading ? (
+                  <div className="text-center text-laha-text-secondary text-sm py-4">
+                    Chargement...
+                  </div>
+                ) : recentMessages.length === 0 ? (
+                  <div className="text-center text-laha-text-secondary text-sm py-4">
+                    Aucun message pour l'instant
+                  </div>
+                ) : (
+                  recentMessages.slice(0, 3).map((item, index) => (
+                    <div key={item.id || index} className="bg-laha-black-light/10 rounded-lg p-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <p className="text-laha-gold-light font-medium text-sm">
+                            {item.student_name || item.student || item.sender_name || 'Élève'}
+                          </p>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              item.type === "question"
+                                ? "bg-laha-gold-warm/20 text-laha-gold-warm"
+                                : "bg-laha-gold/20 text-laha-gold"
+                            }`}
+                          >
+                            {item.type === "question" ? "Question" : "Message"}
+                          </span>
+                        </div>
+                        <span className="text-laha-gold-light/50 text-xs">
+                          {item.time || item.created_at || ''}
                         </span>
                       </div>
-                      <span className="text-laha-gold-light/50 text-xs">{item.time}</span>
+                      <p className="text-laha-gold-light/60 text-xs mb-2">
+                        {item.message || item.content || item.body || ''}
+                      </p>
+                      <button className="bg-laha-gold/20 hover:bg-laha-gold/30 text-laha-gold px-2 py-1 rounded text-xs transition-colors">
+                        Répondre
+                      </button>
                     </div>
-                    <p className="text-laha-gold-light/60 text-xs mb-2">{item.message}</p>
-                    <button className="bg-laha-gold/20 hover:bg-laha-gold/30 text-laha-gold px-2 py-1 rounded text-xs transition-colors">
-                      Répondre
-                    </button>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
               <button className="w-full mt-3 bg-laha-gold-soft/20 hover:bg-laha-gold-soft/30 text-laha-gold-soft p-2 rounded-lg text-sm transition-colors">
                 Voir tous les messages

@@ -1,37 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
+import logger from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 API Route: Récupération des données enseignants')
-    
-    // Récupérer le cookie user_session_client
-    const userSessionClient = request.cookies.get('user_session_client')?.value
+    const userSessionClient = request.cookies.get('user_session_client')?.value || request.cookies.get('user_session')?.value
     
     if (!userSessionClient) {
-      console.error('❌ Pas de cookie user_session_client')
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
       )
     }
 
-    // Parser les données du cookie
-    const userData = JSON.parse(userSessionClient)
-    console.log('✅ Données utilisateur du cookie:', userData)
+    let token: string | null = null
+    try {
+      const userData = JSON.parse(userSessionClient)
+      token = userData?.token || null
+    } catch (e) {
+      logger.error('Erreur parsing session', e as Error, { context: 'teachers/list' })
+      return NextResponse.json({ error: 'Session invalide' }, { status: 401 })
+    }
 
-    // Appeler Django pour récupérer les enseignants
-    const djangoResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/teachers/`, {
+    if (!token) {
+      return NextResponse.json({ error: 'Token manquant' }, { status: 401 })
+    }
+
+    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
+    const endpoint = baseApi.includes('/api') ? `${baseApi}/teachers/` : `${baseApi}/api/teachers/`
+
+    const djangoResponse = await fetch(endpoint, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': request.headers.get('cookie') || '', // Transmettre tous les cookies
+        'Authorization': `Token ${token}`
       },
+      cache: 'no-store',
     })
 
-    console.log('📡 Réponse Django:', djangoResponse.status, djangoResponse.statusText)
-
     if (djangoResponse.status === 401) {
-      console.error('❌ Django: Non authentifié')
       return NextResponse.json(
         { error: 'Session Django expirée' },
         { status: 401 }
@@ -39,11 +45,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (!djangoResponse.ok) {
-      throw new Error(`Django error: ${djangoResponse.status}`)
+      const errorData = await djangoResponse.json().catch(() => ({}))
+      logger.error('Django teachers error', new Error('fetch error'), { context: 'teachers/list', data: { status: djangoResponse.status, errorData } })
+      return NextResponse.json({ error: 'Erreur côté serveur' }, { status: djangoResponse.status })
     }
 
     const teachersData = await djangoResponse.json()
-    console.log('✅ Données enseignants reçues de Django:', teachersData)
 
     // Transformer les données Django en format frontend
     const transformedTeachers = teachersData.map((teacher: any) => ({
@@ -53,18 +60,16 @@ export async function GET(request: NextRequest) {
       location: teacher.city || 'Non spécifié',
       country: teacher.country || 'Non spécifié',
       languages: teacher.languages || ['Français'],
-      rating: teacher.average_rating || 4.0,
+      rating: teacher.average_rating || 0,
       students_count: teacher.students_count || 0,
-      hourly_rate: teacher.hourly_rate || 5000,
+      hourly_rate: teacher.hourly_rate || 0,
       subjects: teacher.subjects || [],
       class_levels: teacher.class_levels || [],
-      bio: teacher.bio || 'Enseignant expérimenté',
+      bio: teacher.bio || '',
       experience: teacher.experience_years || 0,
-      education: teacher.education || 'Formation pédagogique',
+      education: teacher.education || '',
       certifications: teacher.certifications || []
     }))
-
-    console.log('✅ Enseignants transformés:', transformedTeachers)
 
     return NextResponse.json({
       teachers: transformedTeachers,
@@ -72,9 +77,9 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Erreur API Route enseignants:', error)
+    logger.error('Erreur API Route enseignants', error as Error, { context: 'teachers/list' })
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Erreur serveur' },
+      { error: 'Erreur serveur' },
       { status: 500 }
     )
   }

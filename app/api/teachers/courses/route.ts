@@ -1,130 +1,108 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import logger from '@/lib/logger'
+
+function parseSession() {
+  const raw = cookies().get('user_session_client')?.value || cookies().get('user_session')?.value
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch (e) {
+    logger.error('Erreur parsing session', e as Error, { context: 'teachers/courses' })
+    return null
+  }
+}
 
 export async function GET() {
   try {
-    const userSession = cookies().get('user_session')?.value
-    if (!userSession) {
+    const user = parseSession()
+    if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
-
-    const user = JSON.parse(userSession)
     if (user.role !== 'teacher') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
-  // Ne jamais renvoyer vers 3000 côté server routes
-  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
-  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
-    ? 'http://127.0.0.1:8000/api'
-    : envBase
-    
-    console.log('Récupération des cours du professeur:', user.email)
-    
-    // D'abord, récupérer les infos du professeur pour avoir son ID
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+
+    // Récupérer les infos du professeur
     const teacherResponse = await fetch(`${apiBase}/teachers/me/`, {
       headers: {
         'Authorization': `Token ${user.token}`,
         'Content-Type': 'application/json'
-      }
+      },
+      cache: 'no-store',
     })
 
-    if (teacherResponse.ok) {
-      const teacherData = await teacherResponse.json()
-      console.log('Données professeur:', teacherData)
-      
-      // Récupérer les cours de ce professeur
-      const coursesResponse = await fetch(`${apiBase}/teachers/${teacherData.id}/courses/`, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
+    if (!teacherResponse.ok) {
+      const errorData = await teacherResponse.json().catch(() => ({}))
+      logger.error('Erreur API teacher me', new Error('fetch error'), {
+        context: 'teachers/courses',
+        data: { status: teacherResponse.status, errorData }
       })
-
-      console.log('Réponse API courses status:', coursesResponse.status, coursesResponse.statusText)
-
-      if (coursesResponse.ok) {
-        const coursesData = await coursesResponse.json()
-        console.log('Cours récupérés depuis Django:', coursesData)
-        
-        // Adapter les données pour le frontend
-        const adaptedCourses = coursesData.map((course: any) => ({
-          id: course.id,
-          title: course.title,
-          description: course.description,
-          subject: course.subject,
-          level: course.level,
-          duration: course.duration,
-          price: course.price,
-          course_type: 'individual', // Par défaut, pourrait être dans les métadonnées
-          max_students: 1,
-          created_at: course.created_at
-        }))
-        
-        return NextResponse.json(adaptedCourses)
-      }
+      return NextResponse.json({ error: 'Impossible de récupérer le profil professeur' }, { status: teacherResponse.status })
     }
 
-    // Fallback avec données de test si l'API Django n'est pas accessible
-    console.log('Erreur API, utilisation des données de fallback')
-    const fallbackCourses = [
-      {
-        id: 1,
-        title: 'Mathématiques Terminale',
-        description: 'Cours de mathématiques pour les élèves de terminale, préparation au BAC',
-        subject: 'mathematics',
-        level: 'terminale',
-        duration: 60,
-        price: 5000,
-        max_students: 1,
-        course_type: 'individual',
-        created_at: new Date().toISOString()
-      },
-      {
-        id: 2,
-        title: 'Physique Première',
-        description: 'Cours de physique pour première scientifique',
-        subject: 'physics',
-        level: 'premiere',
-        duration: 90,
-        price: 4500,
-        max_students: 4,
-        course_type: 'group',
-        created_at: new Date().toISOString()
-      }
-    ]
+    const teacherData = await teacherResponse.json()
 
-    return NextResponse.json(fallbackCourses)
+    // Récupérer les cours de ce professeur
+    const coursesResponse = await fetch(`${apiBase}/teachers/${teacherData.id}/courses/`, {
+      headers: {
+        'Authorization': `Token ${user.token}`,
+        'Content-Type': 'application/json'
+      },
+      cache: 'no-store',
+    })
+
+    if (!coursesResponse.ok) {
+      const errorData = await coursesResponse.json().catch(() => ({}))
+      logger.error('Erreur API courses professeur', new Error('fetch error'), {
+        context: 'teachers/courses',
+        data: { status: coursesResponse.status, errorData }
+      })
+      return NextResponse.json({ error: 'Impossible de récupérer les cours' }, { status: coursesResponse.status })
+    }
+
+    const coursesData = await coursesResponse.json()
+    const adaptedCourses = coursesData.map((course: any) => ({
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      subject: course.subject,
+      level: course.level,
+      duration: course.duration,
+      price: course.price,
+      course_type: course.course_type || 'individual',
+      max_students: course.max_students || 1,
+      created_at: course.created_at,
+      students: course.students_count || 0,
+      rating: course.average_rating || 0,
+    }))
+
+    return NextResponse.json({ courses: adaptedCourses })
   } catch (error) {
-    console.error('Error fetching courses:', error)
-    
-    // En cas d'erreur, retourner un tableau vide
-    return NextResponse.json([])
+    logger.error('Error fetching courses', error as Error, { context: 'teachers/courses' })
+    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const userSession = cookies().get('user_session')?.value
-    if (!userSession) {
+    const user = parseSession()
+    if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
-
-    const user = JSON.parse(userSession)
     if (user.role !== 'teacher') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
     const body = await request.json()
-    console.log('=== CRÉATION DE COURS ===')
-    console.log('User token:', user.token?.substring(0, 20) + '...')
-    console.log('Course data:', body)
 
-  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
-  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
-    ? 'http://127.0.0.1:8000/api'
-    : envBase
+    const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
+    const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
+      ? 'http://127.0.0.1:8000/api'
+      : envBase
     
-    // Adapter les données pour l'API Django
     const djangoPayload = {
       title: body.title,
       description: body.description,
@@ -132,12 +110,9 @@ export async function POST(request: NextRequest) {
       level: body.level,
       duration: body.duration,
       price: body.price,
-      // Ajouter des champs obligatoires pour Django
-      country: 'Bénin', // Par défaut
-      difficulty_level: 'beginner'
+      country: body.country || 'Bénin',
+      difficulty_level: body.difficulty_level || 'beginner'
     }
-
-    console.log('Django payload:', djangoPayload)
 
     const response = await fetch(`${apiBase}/courses/`, {
       method: 'POST',
@@ -148,13 +123,8 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(djangoPayload)
     })
 
-    console.log('Réponse API create course status:', response.status, response.statusText)
-
     if (response.ok) {
       const data = await response.json()
-      console.log('✅ SUCCÈS: Cours créé dans Django:', data)
-      
-      // Adapter la réponse pour le frontend
       const adaptedCourse = {
         id: data.id,
         title: data.title,
@@ -171,17 +141,18 @@ export async function POST(request: NextRequest) {
           name: `${user.first_name} ${user.last_name}`
         }
       }
-      
       return NextResponse.json(adaptedCourse, { status: 201 })
     } else {
       const errorData = await response.json().catch(() => ({}))
-      console.log('❌ ERREUR Django:', response.status, response.statusText, errorData)
+      logger.error('Erreur Django create course', new Error('fetch error'), {
+        context: 'teachers/courses',
+        data: { status: response.status, errorData }
+      })
     }
 
     // Fallback - retourner les données envoyées avec un ID généré
-    console.log('⚠️ FALLBACK: Django non accessible, création en local')
     const fallbackCourse = {
-      id: Date.now(), // ID temporaire basé sur timestamp
+      id: Date.now(),
       ...body,
       created_at: new Date().toISOString(),
       teacher: {
@@ -192,7 +163,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(fallbackCourse, { status: 201 })
   } catch (error) {
-    console.error('Error creating course:', error)
+    logger.error('Error creating course', error as Error, { context: 'teachers/courses' })
     return NextResponse.json({ error: 'Erreur lors de la création du cours' }, { status: 500 })
   }
 }

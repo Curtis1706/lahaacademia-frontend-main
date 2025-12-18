@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
 import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/hooks/use-auth"
@@ -23,28 +23,64 @@ import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { BookOpen, Users, DollarSign, Star, Calendar, Video, MessageSquare } from "lucide-react"
 import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
+import logger from "@/lib/logger"
 
 export default function TeacherDashboard() {
   const { user } = useAuth()
-  const [teacherData, setTeacherData] = useState(null)
+  const [teacherData, setTeacherData] = useState<any>(null)
+  const [courses, setCourses] = useState<any[]>([])
+  const [recentMessages, setRecentMessages] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
-        const res = await fetch('/api/teachers/me')
-        if (res.ok) {
-          const data = await res.json()
-          setTeacherData(data)
+        const res = await fetch('/api/teachers/me', { cache: 'no-store' })
+        if (!res.ok) {
+          throw new Error('Impossible de charger le profil professeur')
         }
+        const data = await res.json()
+        setTeacherData(data)
       } catch (error) {
-        console.error('Erreur lors du chargement des données professeur:', error)
+        logger.error('Erreur lors du chargement des données professeur', error as Error, { context: 'teacher/dashboard' })
+        setError('Impossible de charger le profil professeur.')
       } finally {
         setLoading(false)
       }
     }
 
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch('/api/teachers/courses', { cache: 'no-store' })
+        if (!res.ok) {
+          throw new Error('Impossible de charger les cours')
+        }
+        const data = await res.json()
+        setCourses(data.courses || [])
+      } catch (error) {
+        logger.error('Erreur lors du chargement des cours', error as Error, { context: 'teacher/dashboard' })
+        setError('Impossible de charger les cours.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch('/api/teachers/messages-recent', { cache: 'no-store', credentials: 'include' })
+        if (res.ok) {
+          const data = await res.json()
+          setRecentMessages(data.messages || data || [])
+        }
+      } catch (error) {
+        logger.error('Error fetching teacher messages', error as Error, { context: 'teacher/dashboard' })
+      }
+    }
+
     fetchTeacherData()
+    fetchCourses()
+    fetchMessages()
   }, [])
 
   const links = [
@@ -57,6 +93,21 @@ export default function TeacherDashboard() {
       label: "Mes Cours",
       href: "/dashboard/teacher/courses",
       icon: <IconBook className="h-5 w-5 shrink-0 text-white" />,
+    },
+    {
+      label: "Réservations",
+      href: "/dashboard/bookings",
+      icon: <IconCalendar className="h-5 w-5 shrink-0 text-white" />,
+    },
+    {
+      label: "Messagerie",
+      href: "/dashboard/messages",
+      icon: <IconBell className="h-5 w-5 shrink-0 text-white" />,
+    },
+    {
+      label: "Forums",
+      href: "/dashboard/forums",
+      icon: <IconUsers className="h-5 w-5 shrink-0 text-white" />,
     },
     {
       label: "Mes apprenants",
@@ -182,21 +233,32 @@ const LogoIcon = () => {
 }
 
 const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: any, user: any, loading: boolean }) => {
+  const { courses = [], error } = useMemo(() => {
+    // This hook is only used in parent; we pass down via closure using latest state
+    return { courses: (teacherData as any)?.courses || [], error: null }
+  }, [teacherData])
+
   // Si le professeur n'est pas validé, afficher la page d'attente
   if (!loading && teacherData && !teacherData.is_validated) {
     return <TeacherWaitingPage teacherData={teacherData} user={user} />
   }
-  const myCourses = [
-    { title: "Mathématiques Terminale", students: 45, rating: 4.8, earnings: "2,500 FCFA" },
-    { title: "Algèbre Première", students: 32, rating: 4.9, earnings: "1,800 FCFA" },
-    { title: "Géométrie Seconde", students: 28, rating: 4.7, earnings: "1,400 FCFA" },
-  ]
+  const myCourses = courses
+  const upcomingClasses = courses.slice(0, 3).map((course) => ({
+    title: course.title,
+    time: 'À planifier',
+    students: course.students || course.students_count || 0,
+    type: course.course_type || 'individual',
+  }))
 
-  const upcomingClasses = [
-    { title: "Mathématiques Terminale", time: "14:00", students: 45, type: "live" },
-    { title: "Algèbre Première", time: "16:00", students: 32, type: "recorded" },
-    { title: "Géométrie Seconde", time: "09:00", students: 28, type: "live" },
-  ]
+  const stats = useMemo(() => {
+    const totalCourses = myCourses.length
+    const totalStudents = myCourses.reduce((sum, c) => sum + (c.students || c.students_count || 0), 0)
+    const avgRating = totalCourses
+      ? (myCourses.reduce((sum, c) => sum + (c.rating || c.average_rating || 0), 0) / totalCourses).toFixed(1)
+      : '—'
+    const totalEarnings = myCourses.reduce((sum, c) => sum + (c.earnings_value || 0), 0)
+    return { totalCourses, totalStudents, avgRating, totalEarnings }
+  }, [myCourses])
 
   return (
     <div className="flex flex-1">
@@ -216,6 +278,11 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
               </>
             )}
           </p>
+          {error && (
+            <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 px-3 py-2 rounded-lg">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -227,7 +294,7 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
               </div>
               <div>
                 <p className="text-laha-text-secondary text-sm">Cours actifs</p>
-                <p className="text-laha-text text-xl font-bold">8</p>
+                <p className="text-laha-text text-xl font-bold">{loading ? '…' : stats.totalCourses}</p>
               </div>
             </div>
           </div>
@@ -239,7 +306,7 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
               </div>
               <div>
                 <p className="text-laha-text-secondary text-sm">Total apprenants</p>
-                <p className="text-laha-text text-xl font-bold">156</p>
+                <p className="text-laha-text text-xl font-bold">{loading ? '…' : stats.totalStudents}</p>
               </div>
             </div>
           </div>
@@ -251,7 +318,7 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
               </div>
               <div>
                 <p className="text-laha-text-secondary text-sm">Revenus ce mois</p>
-                <p className="text-laha-text text-xl font-bold">45,000 FCFA</p>
+                <p className="text-laha-text text-xl font-bold">{loading ? '…' : `${stats.totalEarnings || 0} FCFA`}</p>
               </div>
             </div>
           </div>
@@ -263,7 +330,7 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
               </div>
               <div>
                 <p className="text-laha-text-secondary text-sm">Note moyenne</p>
-                <p className="text-laha-text text-xl font-bold">4.8/5</p>
+                <p className="text-laha-text text-xl font-bold">{loading ? '…' : stats.avgRating}</p>
               </div>
             </div>
           </div>
@@ -279,19 +346,21 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
             </h2>
             <div className="space-y-4">
               {myCourses.map((course, index) => (
-                <div key={index} className="bg-gradient-to-br from-laha-surface/20 to-laha-surface/10 rounded-lg p-4">
+                <div key={course.id || index} className="bg-gradient-to-br from-laha-surface/20 to-laha-surface/10 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-laha-text font-medium">{course.title}</h3>
-                    <span className="text-laha-gold text-sm font-medium">{course.earnings}</span>
+                    <span className="text-laha-gold text-sm font-medium">
+                      {course.price ? `${course.price} FCFA` : '—'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-laha-text-secondary">
                     <span className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      {course.students} apprenants
+                      {course.students || course.students_count || 0} apprenants
                     </span>
                     <span className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-laha-gold" />
-                      {course.rating}
+                      {course.rating || course.average_rating || '—'}
                     </span>
                   </div>
                   <div className="flex gap-2 mt-3">
@@ -339,22 +408,34 @@ const TeacherDashboardContent = ({ teacherData, user, loading }: { teacherData: 
               Messages récents
             </h2>
             <div className="space-y-3">
-              {[
-                { student: "Koffi Asante", message: "Question sur les dérivées", time: "Il y a 2h", unread: true },
-                { student: "Aïcha Traoré", message: "Demande de cours particulier", time: "Il y a 4h", unread: true },
-                { student: "Mamadou Diop", message: "Merci pour le cours d'hier", time: "Il y a 1j", unread: false },
-              ].map((message, index) => (
-                <div key={index} className="bg-laha-black-light/10 rounded-lg p-3">
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-laha-gold-light font-medium text-sm">{message.student}</p>
-                      {message.unread && <div className="w-2 h-2 bg-laha-gold rounded-full" />}
-                    </div>
-                    <span className="text-laha-gold-light/50 text-xs">{message.time}</span>
-                  </div>
-                  <p className="text-laha-gold-light/70 text-xs">{message.message}</p>
+              {loading ? (
+                <div className="text-center text-laha-text-secondary text-sm py-4">
+                  Chargement...
                 </div>
-              ))}
+              ) : recentMessages.length === 0 ? (
+                <div className="text-center text-laha-text-secondary text-sm py-4">
+                  Aucun message pour l'instant
+                </div>
+              ) : (
+                recentMessages.slice(0, 3).map((message, index) => (
+                  <div key={message.id || index} className="bg-laha-black-light/10 rounded-lg p-3">
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-laha-gold-light font-medium text-sm">
+                          {message.student_name || message.student || message.sender_name || 'Élève'}
+                        </p>
+                        {message.unread && <div className="w-2 h-2 bg-laha-gold rounded-full" />}
+                      </div>
+                      <span className="text-laha-gold-light/50 text-xs">
+                        {message.time || message.created_at || ''}
+                      </span>
+                    </div>
+                    <p className="text-laha-gold-light/70 text-xs">
+                      {message.message || message.content || message.body || ''}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
             <button className="w-full mt-3 bg-laha-gold-soft/20 hover:bg-laha-gold-soft/30 text-laha-gold-soft p-2 rounded-lg text-sm transition-colors">
               Voir tous les messages

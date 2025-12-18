@@ -26,7 +26,12 @@ import {
   Library,
   Trophy,
   FolderOpen,
-  Users
+  Users,
+  CheckSquare,
+  MessageSquare,
+  MessageCircle,
+  DollarSign,
+  CreditCard
 } from "lucide-react"
 import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
 import Image from "next/image"
@@ -76,6 +81,36 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
       label: "Validation Enseignants",
       href: "/dashboard/admin/teachers/validation",
       icon: <Shield className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Modération Contenus",
+      href: "/dashboard/admin/moderation",
+      icon: <CheckSquare className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Finances",
+      href: "/dashboard/admin/finances",
+      icon: <DollarSign className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Abonnements",
+      href: "/dashboard/admin/subscriptions",
+      icon: <CreditCard className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Statistiques",
+      href: "/dashboard/admin/analytics",
+      icon: <BarChart3 className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Messagerie",
+      href: "/dashboard/messages",
+      icon: <MessageCircle className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Forums",
+      href: "/dashboard/forums",
+      icon: <MessageSquare className="h-5 w-5 shrink-0" />
     },
     {
       label: "Cours",

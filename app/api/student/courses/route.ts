@@ -1,21 +1,36 @@
 import { NextRequest, NextResponse } from "next/server"
+import logger from "@/lib/logger"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+
+function getToken(request: NextRequest) {
+  const raw =
+    request.cookies.get("user_session_client")?.value ||
+    request.cookies.get("user_session")?.value
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed?.token || null
+  } catch (e) {
+    logger.error("Failed to parse user session", e, { context: "student/courses" })
+    return null
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "")
-    
+    const token = getToken(request)
     if (!token) {
-      return NextResponse.json({ error: "Token d'authentification requis" }, { status: 401 })
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 })
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/courses/`, {
+    const response = await fetch(`${API_BASE_URL}/courses/`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Token ${token}`,
         "Content-Type": "application/json",
       },
+      cache: "no-store",
     })
 
     if (!response.ok) {
@@ -55,7 +70,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Erreur lors de la récupération des cours:", error)
+    logger.error("Erreur lors de la récupération des cours", error as Error, { context: "student/courses" })
     return NextResponse.json(
       { 
         error: "Erreur lors de la récupération des cours",
@@ -68,10 +83,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "")
-    
+    const token = getToken(request)
     if (!token) {
-      return NextResponse.json({ error: "Token d'authentification requis" }, { status: 401 })
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 })
     }
 
     const body = await request.json()
@@ -103,7 +117,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method,
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Token ${token}`,
         "Content-Type": "application/json",
       },
     })
@@ -120,7 +134,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Erreur lors de l'action sur le cours:", error)
+    logger.error("Erreur lors de l'action sur le cours", error as Error, { context: "student/courses", data: { action } })
     return NextResponse.json(
       { 
         error: "Erreur lors de l'action sur le cours",

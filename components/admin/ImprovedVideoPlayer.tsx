@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { Play, Pause, Volume2, VolumeX, Maximize, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import logger from '@/lib/logger'
 
 interface ImprovedVideoPlayerProps {
   videoUrl: string
@@ -51,22 +52,22 @@ export const ImprovedVideoPlayer: React.FC<ImprovedVideoPlayerProps> = ({
 
   const optimizedUrl = getOptimizedUrl(videoUrl)
 
-  console.log('🎬 ImprovedVideoPlayer:', {
+  logger.debug('ImprovedVideoPlayer initialized', {
     originalUrl: videoUrl,
     optimizedUrl,
     title
-  })
+  }, { context: 'ImprovedVideoPlayer' })
 
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
 
     const handleLoadedMetadata = () => {
-      console.log('✅ Métadonnées chargées:', {
+      logger.debug('Video metadata loaded', {
         duration: video.duration,
         videoWidth: video.videoWidth,
         videoHeight: video.videoHeight
-      })
+      }, { context: 'ImprovedVideoPlayer' })
       setDuration(video.duration)
       setIsLoading(false)
     }
@@ -80,30 +81,30 @@ export const ImprovedVideoPlayer: React.FC<ImprovedVideoPlayerProps> = ({
         const bufferedEnd = video.buffered.end(video.buffered.length - 1)
         const percentage = (bufferedEnd / video.duration) * 100
         setBuffered(percentage)
-        console.log('📊 Buffer:', percentage.toFixed(1) + '%')
+        logger.debug(`Video buffer: ${percentage.toFixed(1)}%`, null, { context: 'ImprovedVideoPlayer' })
       }
     }
 
     const handleCanPlay = () => {
-      console.log('▶️ Vidéo prête à être lue')
+      logger.debug('Video ready to play', null, { context: 'ImprovedVideoPlayer' })
       setIsLoading(false)
     }
 
     const handleWaiting = () => {
-      console.log('⏳ En attente de données...')
+      logger.debug('Video waiting for data', null, { context: 'ImprovedVideoPlayer' })
       setIsLoading(true)
     }
 
     const handlePlaying = () => {
-      console.log('🎬 Lecture en cours')
+      logger.debug('Video playing', null, { context: 'ImprovedVideoPlayer' })
       setIsLoading(false)
     }
 
     const handleError = (e: Event) => {
       const videoError = (e.target as HTMLVideoElement).error
-      console.error('❌ Erreur vidéo:', {
-        code: videoError?.code,
-        message: videoError?.message
+      logger.error('Video playback error', new Error(videoError?.message || 'Unknown video error'), {
+        context: 'ImprovedVideoPlayer',
+        data: { code: videoError?.code, message: videoError?.message }
       })
       setError(`Erreur de lecture: ${videoError?.message || 'Inconnue'}`)
       setIsLoading(false)
@@ -134,7 +135,7 @@ export const ImprovedVideoPlayer: React.FC<ImprovedVideoPlayerProps> = ({
         videoRef.current.pause()
       } else {
         videoRef.current.play().catch(err => {
-          console.error('Erreur de lecture:', err)
+          logger.error('Failed to play video', err as Error, { context: 'ImprovedVideoPlayer/togglePlay' })
           setError('Impossible de lire la vidéo')
         })
       }

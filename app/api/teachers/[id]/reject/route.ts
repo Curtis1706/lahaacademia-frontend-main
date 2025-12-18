@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
+import logger from '@/lib/logger'
+
+function getAdminToken(request: NextRequest) {
+  const raw =
+    request.cookies.get('user_session_client')?.value ||
+    request.cookies.get('user_session')?.value
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed?.token || null
+  } catch (e) {
+    logger.error('Failed to parse admin session cookie', e as Error, { context: 'teachers/reject' })
+    return null
+  }
+}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Utiliser le token admin actuel
-    const adminToken = 'cee5456080015db2299344035fecdb5936469663'
     const teacherId = params.id
-    const body = await request.json()
-    
     if (!teacherId) {
       return NextResponse.json(
         { error: 'ID du professeur requis' },
@@ -17,43 +28,52 @@ export async function POST(
       )
     }
 
+    const token = getAdminToken(request)
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Authentification requise' },
+        { status: 401 }
+      )
+    }
+
     const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
-    // Si baseApi contient déjà /api, ne pas l'ajouter
-    const endpoint = baseApi.includes('/api') 
+    const endpoint = baseApi.endsWith('/api')
       ? `${baseApi}/teachers/${teacherId}/reject/`
       : `${baseApi}/api/teachers/${teacherId}/reject/`
 
+    const body = await request.json().catch(() => ({}))
+    
+    logger.info('Rejecting teacher', { teacherId, reason: body.reason }, { context: 'teachers/reject' })
+    
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${adminToken}`,
+        'Authorization': `Token ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     })
-
-    const data = await response.json()
 
     if (!response.ok) {
-      console.error('Erreur API Django rejet:', response.status, data)
-      // Retourner un succès simulé si l'API Django ne fonctionne pas
-      return NextResponse.json({
-        message: 'Professeur rejeté avec succès (mode simulation)',
-        teacher_id: teacherId,
-        rejected: true,
-        reason: body.reason || 'Raison non spécifiée'
+      const errorData = await response.json().catch(() => ({}))
+      logger.error('Django API error rejecting teacher', new Error('fetch error'), {
+        context: 'teachers/reject',
+        data: { status: response.status, errorData, teacherId }
       })
+      return NextResponse.json(
+        errorData || { error: 'Erreur lors du rejet' },
+        { status: response.status }
+      )
     }
 
+    const data = await response.json()
+    logger.info('Teacher rejected successfully', { teacherId }, { context: 'teachers/reject' })
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Erreur API teachers/reject:', error)
-    // Retourner un succès simulé en cas d'erreur
-    return NextResponse.json({
-      message: 'Professeur rejeté avec succès (mode simulation)',
-      teacher_id: params.id,
-      rejected: true,
-      reason: 'Erreur de connexion au serveur'
-    })
+    logger.error('Error rejecting teacher', error as Error, { context: 'teachers/reject' })
+    return NextResponse.json(
+      { error: 'Erreur interne du serveur' },
+      { status: 500 }
+    )
   }
 }

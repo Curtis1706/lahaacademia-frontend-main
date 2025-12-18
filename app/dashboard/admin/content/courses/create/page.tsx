@@ -167,21 +167,40 @@ export default function CreateCoursePage() {
         return
       }
 
-      console.log("Sauvegarde du cours:", courseData)
-      // TODO: Appel API pour sauvegarder
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
-      alert("Cours sauvegardé avec succès !")
+      const response = await fetch('/api/admin/courses', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...courseData,
+          status: 'draft' // Sauvegarder en brouillon
+        })
+      })
+
+      if (response.ok) {
+        alert("Cours sauvegardé avec succès !")
+        // Optionnel : Rediriger vers la liste des cours
+        // router.push('/dashboard/admin/content/courses')
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de la sauvegarde')
+      }
     } catch (error) {
-      console.error("Erreur lors de la sauvegarde:", error)
-      alert("Erreur lors de la sauvegarde")
+      alert(error instanceof Error ? error.message : "Erreur lors de la sauvegarde")
     } finally {
       setIsLoading(false)
     }
   }
 
   const handlePreview = () => {
-    console.log("Prévisualisation du cours:", courseData)
-    // TODO: Ouvrir modal de prévisualisation
+    // NOTE: La prévisualisation peut être implémentée via un modal ou une page dédiée
+    // Pour l'instant, afficher les données dans la console
+    alert('Prévisualisation : ' + courseData.title + '\n' + 
+          'Matière: ' + courseData.subject + '\n' + 
+          'Niveau: ' + courseData.class_level + '\n' + 
+          'Leçons: ' + courseData.lessons.length)
   }
 
   const handlePublish = async () => {
@@ -193,13 +212,28 @@ export default function CreateCoursePage() {
         return
       }
 
-      console.log("Publication du cours:", courseData)
-      // TODO: Appel API pour publier
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
-      alert("Cours publié avec succès !")
+      const response = await fetch('/api/admin/courses', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...courseData,
+          status: 'published' // Publier directement
+        })
+      })
+
+      if (response.ok) {
+        alert("Cours publié avec succès !")
+        // Optionnel : Rediriger vers la liste des cours
+        // router.push('/dashboard/admin/content/courses')
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de la publication')
+      }
     } catch (error) {
-      console.error("Erreur lors de la publication:", error)
-      alert("Erreur lors de la publication")
+      alert(error instanceof Error ? error.message : "Erreur lors de la publication")
     } finally {
       setIsLoading(false)
     }

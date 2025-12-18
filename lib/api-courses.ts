@@ -1,4 +1,5 @@
 import { http } from './api'
+import logger from './logger'
 
 export interface Teacher {
   id: string
@@ -121,7 +122,7 @@ export const getCoursesWithTeachers = async (filters: CourseFilters = {}): Promi
       filters_applied: response.data.filters_applied || {}
     }
   } catch (error) {
-    console.error('Erreur lors de la récupération des cours:', error)
+    logger.error('Error fetching courses with teachers', error as Error, { context: 'getCoursesWithTeachers', filters })
     throw error
   }
 }
@@ -149,7 +150,7 @@ export const getAvailableTeachers = async (filters: TeacherFilters = {}): Promis
       filters_applied: response.data.filters_applied || {}
     }
   } catch (error) {
-    console.error('Erreur lors de la récupération des professeurs:', error)
+    logger.error('Error fetching available teachers', error as Error, { context: 'getAvailableTeachers', filters })
     throw error
   }
 }
@@ -160,7 +161,7 @@ export const getCourseDetails = async (courseId: string): Promise<Course> => {
     const response = await http.get(`courses/${courseId}/`)
     return response.data
   } catch (error) {
-    console.error('Erreur lors de la récupération des détails du cours:', error)
+    logger.error('Error fetching course details', error as Error, { context: 'getCourseDetails', courseId })
     throw error
   }
 }
@@ -171,7 +172,7 @@ export const getTeacherDetails = async (teacherId: string): Promise<Teacher> => 
     const response = await http.get(`teachers/${teacherId}/`)
     return normalizeTeacherData(response.data)
   } catch (error) {
-    console.error('Erreur lors de la récupération des détails du professeur:', error)
+    logger.error('Error fetching teacher details', error as Error, { context: 'getTeacherDetails', teacherId })
     throw error
   }
 }
@@ -223,7 +224,7 @@ export const reserveSession = async (bookingData: BookingData): Promise<BookingR
     const response = await http.post(`/bookings/reserve/`, bookingData)
     return response.data
   } catch (error) {
-    console.error('Erreur lors de la réservation:', error)
+    logger.error('Error reserving session', error as Error, { context: 'reserveSession', bookingData })
     throw error
   }
 }

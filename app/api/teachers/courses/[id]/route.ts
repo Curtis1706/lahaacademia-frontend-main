@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import logger from '@/lib/logger'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const userSession = cookies().get('user_session')?.value
+    const userSession = cookies().get('user_session_client')?.value || cookies().get('user_session')?.value
     if (!userSession) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
@@ -18,10 +19,7 @@ export async function PUT(
 
     const body = await request.json()
     const courseId = params.id
-  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
-  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
-    ? 'http://127.0.0.1:8000/api'
-    : envBase
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 
     const djangoPayload = {
       title: body.title,
@@ -34,8 +32,6 @@ export async function PUT(
       difficulty_level: body.difficulty_level || 'beginner'
     }
 
-    console.log(`🔄 Modification du cours ${courseId}:`, djangoPayload)
-
     const response = await fetch(`${apiBase}/courses/${courseId}/`, {
       method: 'PUT',
       headers: {
@@ -45,11 +41,8 @@ export async function PUT(
       body: JSON.stringify(djangoPayload)
     })
 
-    console.log(`📊 Response status:`, response.status, response.statusText)
-
     if (response.ok) {
       const data = await response.json()
-      console.log(`✅ Cours modifié:`, data)
       
       // Adapter la réponse pour le frontend
       const adaptedCourse = {
@@ -67,13 +60,16 @@ export async function PUT(
       return NextResponse.json(adaptedCourse)
     } else {
       const errorData = await response.json().catch(() => ({}))
-      console.log('❌ ERREUR Django:', response.status, response.statusText, errorData)
+      logger.error('Erreur Django update course', new Error('fetch error'), {
+        context: 'teachers/courses/[id]',
+        data: { status: response.status, errorData }
+      })
       return NextResponse.json({ 
         error: errorData?.detail || 'Erreur lors de la modification du cours' 
       }, { status: response.status })
     }
   } catch (error) {
-    console.error('Error updating course:', error)
+    logger.error('Error updating course', error as Error, { context: 'teachers/courses/[id]' })
     return NextResponse.json({ error: 'Erreur serveur interne' }, { status: 500 })
   }
 }
@@ -83,7 +79,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const userSession = cookies().get('user_session')?.value
+    const userSession = cookies().get('user_session_client')?.value || cookies().get('user_session')?.value
     if (!userSession) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
@@ -94,12 +90,7 @@ export async function DELETE(
     }
 
     const courseId = params.id
-  const envBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
-  const apiBase = (envBase.includes('localhost:3000') || envBase.includes('127.0.0.1:3000'))
-    ? 'http://127.0.0.1:8000/api'
-    : envBase
-
-    console.log(`🗑️ Suppression du cours ${courseId}`)
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 
     const response = await fetch(`${apiBase}/courses/${courseId}/`, {
       method: 'DELETE',
@@ -109,20 +100,20 @@ export async function DELETE(
       }
     })
 
-    console.log(`📊 Response status:`, response.status, response.statusText)
-
     if (response.ok || response.status === 204) {
-      console.log(`✅ Cours supprimé avec succès`)
       return NextResponse.json({ message: 'Cours supprimé avec succès' })
     } else {
       const errorData = await response.json().catch(() => ({}))
-      console.log('❌ ERREUR Django:', response.status, response.statusText, errorData)
+      logger.error('Erreur Django suppression course', new Error('fetch error'), {
+        context: 'teachers/courses/[id]',
+        data: { status: response.status, errorData }
+      })
       return NextResponse.json({ 
         error: errorData?.detail || 'Erreur lors de la suppression du cours' 
       }, { status: response.status })
     }
   } catch (error) {
-    console.error('Error deleting course:', error)
+    logger.error('Error deleting course', error as Error, { context: 'teachers/courses/[id]' })
     return NextResponse.json({ error: 'Erreur serveur interne' }, { status: 500 })
   }
 }

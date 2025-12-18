@@ -19,6 +19,7 @@ import {
   IconRobot,
   IconHeart,
   IconBell,
+  IconMessage,
 } from "@tabler/icons-react"
 import { motion } from "framer-motion"
 import Image from "next/image"
@@ -61,8 +62,18 @@ export function StudentSidebar({ children }: StudentSidebarProps) {
     },
     {
       label: "Réservation de cours",
-      href: "/dashboard/student/course-booking",
+      href: "/dashboard/bookings",
       icon: <IconCalendarEvent className="h-5 w-5 shrink-0 text-white" />,
+    },
+    {
+      label: "Messagerie",
+      href: "/dashboard/messages",
+      icon: <IconMessage className="h-5 w-5 shrink-0 text-white" />,
+    },
+    {
+      label: "Forums",
+      href: "/dashboard/forums",
+      icon: <IconUsers className="h-5 w-5 shrink-0 text-white" />,
     },
     {
       label: "Mon Enseignant IA",
@@ -73,6 +84,16 @@ export function StudentSidebar({ children }: StudentSidebarProps) {
       label: "Mes Favoris",
       href: "/dashboard/student/mes-favoris",
       icon: <IconHeart className="h-5 w-5 shrink-0 text-white" />,
+    },
+    {
+      label: "Parrainage",
+      href: "/dashboard/referrals",
+      icon: <IconUsers className="h-5 w-5 shrink-0 text-white" />,
+    },
+    {
+      label: "Abonnement",
+      href: "/dashboard/subscriptions",
+      icon: <IconTrophy className="h-5 w-5 shrink-0 text-white" />,
     },
     {
       label: "Mes Alertes",

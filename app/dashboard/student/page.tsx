@@ -1,7 +1,10 @@
 "use client"
 
-import { BookOpen, Clock, Star, TrendingUp, Award, Play, Calendar, MessageSquare } from "lucide-react"
+import { useState, useEffect } from "react"
+import { BookOpen, Clock, Star, TrendingUp, Award, Play, Calendar, MessageSquare, RefreshCcw } from "lucide-react"
 import { StudentSidebar } from "@/components/student/student-sidebar"
+import { useStudentData } from "@/hooks/use-student-data"
+import logger from "@/lib/logger"
 
 export default function StudentDashboard() {
   return (
@@ -12,24 +15,71 @@ export default function StudentDashboard() {
 }
 
 const StudentDashboardContent = () => {
-  const recentCourses = [
-    { title: "Mathématiques - Terminale", progress: 75, nextLesson: "Dérivées" },
-    { title: "Physique - Terminale", progress: 60, nextLesson: "Électricité" },
-    { title: "Français - Terminale", progress: 85, nextLesson: "Dissertation" },
-    { title: "Histoire - Terminale", progress: 45, nextLesson: "Colonisation" },
-  ]
+  const { courses, videos, books, exercises, loading, error, refreshData } = useStudentData()
+  const [recentMessages, setRecentMessages] = useState<any[]>([])
+  const [messagesLoading, setMessagesLoading] = useState(true)
 
-  const upcomingClasses = [
-    { subject: "Mathématiques", time: "14:00", teacher: "Dr. Aminata Diallo" },
-    { subject: "Physique", time: "16:00", teacher: "Prof. Jean-Baptiste" },
-    { subject: "Français", time: "09:00", teacher: "Dr. Fatou Ndiaye" },
-  ]
+  // Charger les messages récents
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        setMessagesLoading(true)
+        const response = await fetch('/api/student/messages-recent', {
+          credentials: 'include'
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setRecentMessages(data.messages || data || [])
+        } else {
+          logger.error('Failed to fetch messages', new Error('API error'), { context: 'StudentDashboard' })
+          setRecentMessages([])
+        }
+      } catch (error) {
+        logger.error('Error fetching messages', error as Error, { context: 'StudentDashboard' })
+        setRecentMessages([])
+      } finally {
+        setMessagesLoading(false)
+      }
+    }
+
+    fetchMessages()
+  }, [])
+
+  const recentCourses = courses.slice(0, 4)
+  const upcomingClasses = courses
+    .filter((c) => c.is_enrolled)
+    .slice(0, 3)
+    .map((c) => ({
+      subject: c.title,
+      time: "À planifier",
+      teacher: c.teacher?.name || "Enseignant",
+    }))
 
   const achievements = [
-    { title: "Premier de classe", description: "Mathématiques - Novembre", icon: "🏆" },
-    { title: "Participation active", description: "Forums de discussion", icon: "💬" },
-    { title: "Assidu", description: "100% de présence ce mois", icon: "⭐" },
+    { title: "Cours suivis", description: `${courses.length} cours`, icon: "📚" },
+    { title: "Vidéos vues", description: `${videos.length} vidéos`, icon: "🎬" },
+    { title: "Entraînements", description: `${exercises.length} sessions`, icon: "🏋️" },
   ]
+
+  const stats = {
+    coursesCount: courses.length,
+    studyHours: Math.max(
+      ...courses.map((c) => c.duration || 0),
+      ...exercises.map((e) => e.duration || 0),
+      0
+    ),
+    averageRating: courses.length
+      ? (
+          courses.reduce((sum, c) => sum + (c.rating || 0), 0) / Math.max(courses.length, 1)
+        ).toFixed(1)
+      : "—",
+    progression: courses.length
+      ? `${Math.round(
+          courses.reduce((sum, c) => sum + (c.progress || 0), 0) / Math.max(courses.length, 1)
+        )}%`
+      : "—",
+  }
 
   return (
     <div className="flex flex-1">
@@ -38,8 +88,13 @@ const StudentDashboardContent = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-laha-gold font-heading mb-2">Tableau de bord Élève</h1>
           <p className="text-laha-text-secondary">
-            Bienvenue, Spéro ASHANTE ! Continuez votre parcours d'excellence.
+            Bienvenue ! Continuez votre parcours d'excellence.
           </p>
+          {error && (
+            <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 px-3 py-2 rounded-lg">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -51,7 +106,7 @@ const StudentDashboardContent = () => {
               </div>
               <div>
                 <p className="text-laha-text-secondary text-sm">Cours suivis</p>
-                <p className="text-laha-text text-xl font-bold">12</p>
+                <p className="text-laha-text text-xl font-bold">{loading ? "…" : stats.coursesCount}</p>
               </div>
             </div>
           </div>
@@ -63,7 +118,7 @@ const StudentDashboardContent = () => {
               </div>
               <div>
                 <p className="text-laha-text-secondary text-sm">Heures d'étude</p>
-                <p className="text-laha-text text-xl font-bold">45h</p>
+                <p className="text-laha-text text-xl font-bold">{loading ? "…" : `${stats.studyHours} min`}</p>
               </div>
             </div>
           </div>
@@ -75,7 +130,7 @@ const StudentDashboardContent = () => {
               </div>
               <div>
                 <p className="text-laha-text-secondary text-sm">Moyenne générale</p>
-                <p className="text-laha-text text-xl font-bold">16.5/20</p>
+                <p className="text-laha-text text-xl font-bold">{loading ? "…" : stats.averageRating}</p>
               </div>
             </div>
           </div>
@@ -87,10 +142,21 @@ const StudentDashboardContent = () => {
               </div>
               <div>
                 <p className="text-laha-text-secondary text-sm">Progression</p>
-                <p className="text-laha-text text-xl font-bold">+12%</p>
+                <p className="text-laha-text text-xl font-bold">{loading ? "…" : stats.progression}</p>
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3 mb-2">
+          {loading && <span className="text-sm text-laha-text-secondary">Chargement des données…</span>}
+          <button
+            onClick={refreshData}
+            className="flex items-center gap-2 text-sm text-laha-gold hover:text-laha-gold-light transition-colors"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Rafraîchir
+          </button>
         </div>
 
         {/* Main Content Grid */}
@@ -103,24 +169,27 @@ const StudentDashboardContent = () => {
             </h2>
             <div className="space-y-4">
               {recentCourses.map((course, index) => (
-                <div key={index} className="bg-laha-black-light/10 rounded-lg p-4">
+                <div key={course.id || index} className="bg-laha-black-light/10 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-laha-gold-light font-medium">{course.title}</h3>
-                    <span className="text-laha-gold text-sm">{course.progress}%</span>
+                    <span className="text-laha-gold text-sm">{Math.round(course.progress || 0)}%</span>
                   </div>
                   <div className="w-full bg-laha-black-light/20 rounded-full h-2 mb-2">
                     <div
                       className="bg-gradient-to-r from-laha-gold to-laha-gold-warm h-2 rounded-full"
-                      style={{ width: `${course.progress}%` }}
+                      style={{ width: `${Math.round(course.progress || 0)}%` }}
                     />
                   </div>
-                  <p className="text-laha-gold-light/70 text-sm">Prochaine leçon: {course.nextLesson}</p>
+                  <p className="text-laha-gold-light/70 text-sm">Progression en cours</p>
                   <button className="mt-2 bg-laha-gold/20 hover:bg-laha-gold/30 text-laha-gold px-3 py-1 rounded-lg text-sm transition-colors flex items-center gap-1">
                     <Play className="h-3 w-3" />
                     Continuer
                   </button>
                 </div>
               ))}
+              {!loading && recentCourses.length === 0 && (
+                <p className="text-sm text-laha-text-secondary">Aucun cours pour l'instant.</p>
+              )}
             </div>
           </div>
 
@@ -144,6 +213,9 @@ const StudentDashboardContent = () => {
                     </div>
                   </div>
                 ))}
+                {!loading && upcomingClasses.length === 0 && (
+                  <p className="text-sm text-laha-text-secondary">Pas de cours planifiés.</p>
+                )}
               </div>
             </div>
 
@@ -175,19 +247,31 @@ const StudentDashboardContent = () => {
                 Messages récents
               </h2>
               <div className="space-y-3">
-                {[
-                  { sender: "Dr. Aminata Diallo", message: "Excellent travail sur les dérivées !", time: "Il y a 1h" },
-                  { sender: "Prof. Jean-Baptiste", message: "N'oubliez pas le devoir de physique", time: "Il y a 3h" },
-                  { sender: "Support LAHA", message: "Votre certificat est prêt", time: "Il y a 1j" },
-                ].map((msg, index) => (
-                  <div key={index} className="bg-laha-black-light/10 rounded-lg p-3">
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="text-laha-gold-light font-medium text-sm">{msg.sender}</p>
-                      <span className="text-laha-gold-light/50 text-xs">{msg.time}</span>
-                    </div>
-                    <p className="text-laha-gold-light/70 text-xs">{msg.message}</p>
+                {messagesLoading ? (
+                  <div className="text-center text-laha-text-secondary text-sm py-4">
+                    Chargement...
                   </div>
-                ))}
+                ) : recentMessages.length === 0 ? (
+                  <div className="text-center text-laha-text-secondary text-sm py-4">
+                    Aucun message pour l'instant
+                  </div>
+                ) : (
+                  recentMessages.slice(0, 3).map((msg, index) => (
+                    <div key={msg.id || index} className="bg-laha-black-light/10 rounded-lg p-3">
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="text-laha-gold-light font-medium text-sm">
+                          {msg.sender_name || msg.sender || 'Expéditeur inconnu'}
+                        </p>
+                        <span className="text-laha-gold-light/50 text-xs">
+                          {msg.time || msg.created_at || ''}
+                        </span>
+                      </div>
+                      <p className="text-laha-gold-light/70 text-xs">
+                        {msg.message || msg.content || msg.body || ''}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
               <button className="w-full mt-3 bg-laha-gold-soft/20 hover:bg-laha-gold-soft/30 text-laha-gold-soft p-2 rounded-lg text-sm transition-colors">
                 Voir tous les messages

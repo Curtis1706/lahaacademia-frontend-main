@@ -98,8 +98,18 @@ export function ParentSidebar({ children }: ParentSidebarProps) {
     },
     {
       label: "Messages",
-      href: "/dashboard/parent/messages",
+      href: "/dashboard/messages",
       icon: <Mail className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Forums",
+      href: "/dashboard/forums",
+      icon: <Users className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Parrainage",
+      href: "/dashboard/referrals",
+      icon: <Plus className="h-5 w-5 shrink-0" />
     },
     {
       label: "Statistiques",

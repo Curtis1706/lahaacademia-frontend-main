@@ -1,7 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import logger from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
+    // Récupérer le token depuis les cookies
+    const cookieTokenRaw =
+      request.cookies.get('user_session_client')?.value ||
+      request.cookies.get('user_session')?.value
+
+    let token: string | null = null
+
+    if (cookieTokenRaw) {
+      try {
+        const sessionData = JSON.parse(decodeURIComponent(cookieTokenRaw))
+        token = sessionData?.token || null
+      } catch (e) {
+        logger.error('Failed to parse session cookie', e as Error, { context: 'admin/educational-content' })
+      }
+    }
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Token d\'authentification requis' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     
     // Construire les paramètres de requête
@@ -33,27 +57,25 @@ export async function GET(request: NextRequest) {
       ? `${baseApi}/educational-content/?${params.toString()}`
       : `${baseApi}/api/educational-content/?${params.toString()}`
     
-    console.log('🔍 Récupération des contenus pédagogiques:')
-    console.log(`  Endpoint: ${endpoint}`)
-    
-    // Utiliser le token admin
-    const adminToken = 'cee5456080015db2299344035fecdb5936469663'
+    logger.debug('Fetching educational content', { endpoint, filters: Object.fromEntries(params) }, { context: 'admin/educational-content' })
     
     const response = await fetch(endpoint, {
       method: 'GET',
       headers: {
-        'Authorization': `Token ${adminToken}`,
+        'Authorization': `Token ${token}`,
         'Content-Type': 'application/json'
       }
     })
     
     const data = await response.json()
     
-    console.log(`📊 Réponse Django: ${response.status}`)
-    console.log(`📋 Nombre de contenus: ${data.count || data.results?.length || 0}`)
+    logger.debug('Django response received', { status: response.status, count: data.count || data.results?.length || 0 }, { context: 'admin/educational-content' })
     
     if (!response.ok) {
-      console.error('Erreur API Django:', response.status, data)
+      logger.error('Django API error', new Error('fetch error'), {
+        context: 'admin/educational-content',
+        data: { status: response.status, error: data }
+      })
       return NextResponse.json(
         { error: 'Erreur lors de la récupération des contenus' },
         { status: response.status }
@@ -68,7 +90,7 @@ export async function GET(request: NextRequest) {
     
     return nextResponse
   } catch (error) {
-    console.error('Erreur API educational-content:', error)
+    logger.error('Error fetching educational content', error as Error, { context: 'admin/educational-content' })
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -78,24 +100,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Récupérer le token depuis les cookies
+    const cookieTokenRaw =
+      request.cookies.get('user_session_client')?.value ||
+      request.cookies.get('user_session')?.value
+
+    let token: string | null = null
+
+    if (cookieTokenRaw) {
+      try {
+        const sessionData = JSON.parse(decodeURIComponent(cookieTokenRaw))
+        token = sessionData?.token || null
+      } catch (e) {
+        logger.error('Failed to parse session cookie', e as Error, { context: 'admin/educational-content/POST' })
+      }
+    }
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Token d\'authentification requis' },
+        { status: 401 }
+      )
+    }
+
     // Récupérer les données du formulaire (FormData)
     const formData = await request.formData()
     
     // Créer un nouveau FormData pour Django
     const djangoFormData = new FormData()
     
-    // Debug: Afficher les données reçues
-    console.log('🔍 Création d\'un nouveau contenu pédagogique:')
-    console.log('📝 Données reçues:')
+    logger.info('Creating new educational content', null, { context: 'admin/educational-content/POST' })
     
     // Traiter chaque champ
     for (const [key, value] of formData.entries()) {
       if (value instanceof File) {
-        console.log(`  ${key}: [FILE] ${value.name} (${value.size} bytes)`)
+        logger.debug(`File upload: ${key}`, { name: value.name, size: value.size }, { context: 'admin/educational-content/POST' })
         djangoFormData.append(key, value)
       } else {
-        console.log(`  ${key}: ${value}`)
-        
         // Traitement spécial pour les champs JSON
         if (key === 'tags' && value) {
           // Convertir les tags séparés par virgules en tableau JSON
@@ -112,15 +153,10 @@ export async function POST(request: NextRequest) {
       ? `${baseApi}/educational-content/`
       : `${baseApi}/api/educational-content/`
     
-    console.log(`  Endpoint: ${endpoint}`)
-    
-    // Utiliser le token admin
-    const adminToken = 'cee5456080015db2299344035fecdb5936469663'
-    
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${adminToken}`,
+        'Authorization': `Token ${token}`,
         // Ne pas définir Content-Type pour FormData, le navigateur le fera automatiquement
       },
       body: djangoFormData // Envoyer FormData traité
@@ -128,19 +164,21 @@ export async function POST(request: NextRequest) {
     
     const data = await response.json()
     
-    console.log(`📊 Réponse Django: ${response.status}`)
-    
     if (!response.ok) {
-      console.error('Erreur API Django:', response.status, data)
+      logger.error('Failed to create educational content', new Error('Django API error'), {
+        context: 'admin/educational-content/POST',
+        data: { status: response.status, error: data }
+      })
       return NextResponse.json(
         data || { error: 'Erreur lors de la création du contenu' },
         { status: response.status }
       )
     }
     
+    logger.info('Educational content created successfully', { id: data.id }, { context: 'admin/educational-content/POST' })
     return NextResponse.json(data, { status: 201 })
   } catch (error) {
-    console.error('Erreur API educational-content POST:', error)
+    logger.error('Error creating educational content', error as Error, { context: 'admin/educational-content/POST' })
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

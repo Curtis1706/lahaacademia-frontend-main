@@ -19,7 +19,8 @@ import {
   Bookmark,
   Share2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -29,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Sidebar, SidebarBody, SidebarLink, SidebarProvider } from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/use-auth"
+import { useStudentData } from "@/hooks/use-student-data"
 import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
 import Image from "next/image"
 import Link from "next/link"
@@ -58,8 +60,7 @@ interface Course {
 
 export default function StudentCoursesPage() {
   const { user } = useAuth()
-  const [courses, setCourses] = useState<Course[]>([])
-  const [loading, setLoading] = useState(true)
+  const { courses, loading, error, refreshData } = useStudentData()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedSubject, setSelectedSubject] = useState("")
   const [selectedClass, setSelectedClass] = useState("")
@@ -67,119 +68,25 @@ export default function StudentCoursesPage() {
   const [activeTab, setActiveTab] = useState("all")
   const [showFilters, setShowFilters] = useState(false)
 
-  // Données de test
-  useEffect(() => {
-    const mockCourses: Course[] = [
-      {
-        id: "1",
-        title: "Mathématiques Terminale S - Algèbre",
-        description: "Cours complet d'algèbre pour la terminale scientifique avec exercices pratiques",
-        subject: "Mathématiques",
-        class_level: "Terminale",
-        duration: 120,
-        difficulty: "intermediate",
-        price: 15000,
-        rating: 4.8,
-        students_count: 245,
-        teacher: {
-          name: "Dr. Aminata Diallo",
-          avatar: "/placeholder-teacher.jpg"
-        },
-        cover_image: "/placeholder-course.jpg",
-        progress: 75,
-        is_enrolled: true,
-        is_favorite: true,
-        created_at: "2025-01-15",
-        lessons_count: 12
-      },
-      {
-        id: "2",
-        title: "Physique Quantique - Introduction",
-        description: "Introduction aux concepts fondamentaux de la physique quantique",
-        subject: "Physique",
-        class_level: "Terminale",
-        duration: 90,
-        difficulty: "advanced",
-        price: 20000,
-        rating: 4.9,
-        students_count: 156,
-        teacher: {
-          name: "Prof. Jean-Baptiste",
-          avatar: "/placeholder-teacher.jpg"
-        },
-        cover_image: "/placeholder-course.jpg",
-        progress: 0,
-        is_enrolled: false,
-        is_favorite: false,
-        created_at: "2025-01-20",
-        lessons_count: 8
-      },
-      {
-        id: "3",
-        title: "Français - Dissertation",
-        description: "Techniques et méthodes pour réussir la dissertation en français",
-        subject: "Français",
-        class_level: "Première",
-        duration: 60,
-        difficulty: "intermediate",
-        price: 12000,
-        rating: 4.6,
-        students_count: 189,
-        teacher: {
-          name: "Dr. Fatou Ndiaye",
-          avatar: "/placeholder-teacher.jpg"
-        },
-        cover_image: "/placeholder-course.jpg",
-        progress: 45,
-        is_enrolled: true,
-        is_favorite: false,
-        created_at: "2025-01-18",
-        lessons_count: 6
-      },
-      {
-        id: "4",
-        title: "SVT - Biologie Cellulaire",
-        description: "Étude approfondie de la structure et du fonctionnement des cellules",
-        subject: "SVT",
-        class_level: "Seconde",
-        duration: 75,
-        difficulty: "beginner",
-        price: 10000,
-        rating: 4.7,
-        students_count: 203,
-        teacher: {
-          name: "Dr. Sophie Leroy",
-          avatar: "/placeholder-teacher.jpg"
-        },
-        cover_image: "/placeholder-course.jpg",
-        progress: 0,
-        is_enrolled: false,
-        is_favorite: true,
-        created_at: "2025-01-22",
-        lessons_count: 10
-      }
-    ]
-    
-    setTimeout(() => {
-      setCourses(mockCourses)
-      setLoading(false)
-    }, 1000)
-  }, [])
-
-  const enrolledCourses = courses.filter(course => course.is_enrolled)
-  const favoriteCourses = courses.filter(course => course.is_favorite)
-  const availableCourses = courses.filter(course => !course.is_enrolled)
-
+  // Filtrer les cours selon les critères sélectionnés
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.teacher.name.toLowerCase().includes(searchTerm.toLowerCase())
+                         course.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesSubject = !selectedSubject || course.subject === selectedSubject
     const matchesClass = !selectedClass || course.class_level === selectedClass
     const matchesDifficulty = !selectedDifficulty || course.difficulty === selectedDifficulty
-
-    return matchesSearch && matchesSubject && matchesClass && matchesDifficulty
+    const matchesTab = activeTab === "all" || 
+                      (activeTab === "enrolled" && course.is_enrolled) ||
+                      (activeTab === "favorites" && course.is_favorite) ||
+                      (activeTab === "completed" && course.progress === 100)
+    
+    return matchesSearch && matchesSubject && matchesClass && matchesDifficulty && matchesTab
   })
+
+  // Calculer les statistiques
+  const enrolledCourses = courses.filter(course => course.is_enrolled)
+  const favoriteCourses = courses.filter(course => course.is_favorite)
+  const availableCourses = courses.filter(course => !course.is_enrolled)
 
   const getDifficultyBadge = (difficulty: string) => {
     const variants = {
@@ -209,20 +116,58 @@ export default function StudentCoursesPage() {
     return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA'
   }
 
-  const handleEnroll = (courseId: string) => {
-    setCourses(courses.map(course => 
-      course.id === courseId 
-        ? { ...course, is_enrolled: true, progress: 0 }
-        : course
-    ))
+  const handleEnroll = async (courseId: string) => {
+    try {
+      const response = await fetch(`/api/courses/${courseId}/enroll`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        logger.info('Enrolled in course successfully', { courseId }, { context: 'mes-cours' })
+        // Rafraîchir les données
+        refreshData()
+      } else {
+        const error = await response.json()
+        logger.error('Failed to enroll', new Error(error.error || 'Unknown error'), { context: 'mes-cours', data: { courseId } })
+        alert(error.error || "Erreur lors de l'inscription")
+      }
+    } catch (error) {
+      logger.error('Error enrolling in course', error as Error, { context: 'mes-cours', data: { courseId } })
+      alert('Erreur de connexion')
+    }
   }
 
-  const handleToggleFavorite = (courseId: string) => {
-    setCourses(courses.map(course => 
-      course.id === courseId 
-        ? { ...course, is_favorite: !course.is_favorite }
-        : course
-    ))
+  const handleToggleFavorite = async (courseId: string) => {
+    try {
+      // Vérifier si le cours est déjà favori
+      const course = courses.find(c => c.id === courseId)
+      const isFavorite = course?.is_favorite
+
+      const response = await fetch(`/api/courses/${courseId}/favorite`, {
+        method: isFavorite ? 'DELETE' : 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok || response.status === 204) {
+        logger.info('Toggled favorite successfully', { courseId, isFavorite: !isFavorite }, { context: 'mes-cours' })
+        // Rafraîchir les données
+        refreshData()
+      } else {
+        const error = await response.json()
+        logger.error('Failed to toggle favorite', new Error(error.error || 'Unknown error'), { context: 'mes-cours', data: { courseId } })
+        alert(error.error || 'Erreur lors de la mise à jour des favoris')
+      }
+    } catch (error) {
+      logger.error('Error toggling favorite', error as Error, { context: 'mes-cours', data: { courseId } })
+      alert('Erreur de connexion')
+    }
   }
 
   const links = [
@@ -305,14 +250,57 @@ export default function StudentCoursesPage() {
           <main className="flex-1 overflow-auto p-6">
             <div className="container mx-auto">
               {/* Header */}
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-laha-gold mb-2">
-                  Mes Cours
-                </h1>
-                <p className="text-laha-text-secondary">
-                  Découvrez et suivez vos cours préférés
-                </p>
+              <div className="mb-8 flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-laha-gold mb-2">
+                    Mes Cours
+                  </h1>
+                  <p className="text-laha-text-secondary">
+                    Découvrez et suivez vos cours préférés
+                  </p>
+                </div>
+                <Button
+                  onClick={refreshData}
+                  disabled={loading}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  Actualiser
+                </Button>
               </div>
+
+              {/* État de chargement */}
+              {loading && (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-laha-gold" />
+                  <span className="ml-3 text-laha-text-secondary">Chargement des cours...</span>
+                </div>
+              )}
+
+              {/* Gestion d'erreur */}
+              {error && !loading && (
+                <Card className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                  <CardContent className="py-6">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-red-900 dark:text-red-100 mb-1">
+                          Erreur de chargement
+                        </h3>
+                        <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                      </div>
+                      <Button onClick={refreshData} variant="outline" size="sm">
+                        Réessayer
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Contenu uniquement si pas de chargement */}
+              {!loading && !error && (
+                <>
 
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -488,6 +476,8 @@ export default function StudentCoursesPage() {
                   )} onEnroll={handleEnroll} onToggleFavorite={handleToggleFavorite} />
                 </TabsContent>
               </Tabs>
+              </>
+              )}
             </div>
           </main>
         </div>

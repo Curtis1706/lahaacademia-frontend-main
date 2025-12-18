@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import logger from '@/lib/logger'
 
 interface Course {
   id: string
@@ -131,38 +132,24 @@ export function useStudentData() {
       try {
         setData(prev => ({ ...prev, loading: true, error: null }))
 
-        // Récupérer le token depuis le localStorage
-        const token = localStorage.getItem('token')
+        // Récupérer le token depuis le cookie user_session_client
+        const cookie = document.cookie.split(';').find(c => c.trim().startsWith('user_session_client='))
+        if (!cookie) {
+          throw new Error('Session utilisateur manquante')
+        }
+        const sessionValue = decodeURIComponent(cookie.split('=')[1] || '')
+        const session = JSON.parse(sessionValue)
+        const token = session?.token
         if (!token) {
           throw new Error('Token d\'authentification manquant')
         }
 
         // Récupérer toutes les données en parallèle
         const [coursesResponse, videosResponse, booksResponse, exercisesResponse] = await Promise.allSettled([
-          fetch('/api/student/courses', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }),
-          fetch('/api/student/videos', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }),
-          fetch('/api/student/books', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }),
-          fetch('/api/student/exercises', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          })
+          fetch('/api/student/courses'),
+          fetch('/api/student/videos'),
+          fetch('/api/student/books'),
+          fetch('/api/student/exercises')
         ])
 
         const courses = coursesResponse.status === 'fulfilled' 
@@ -191,7 +178,7 @@ export function useStudentData() {
         })
 
       } catch (error) {
-        console.error('Erreur lors de la récupération des données étudiantes:', error)
+        logger.error('Erreur lors de la récupération des données étudiantes', error as Error, { context: 'useStudentData' })
         setData(prev => ({
           ...prev,
           loading: false,
@@ -241,8 +228,58 @@ export function useStudentData() {
 
   const refreshData = () => {
     setData(prev => ({ ...prev, loading: true, error: null }))
-    // Re-trigger useEffect
-    window.location.reload()
+    // Relancer la récupération sans recharger la page
+    // en recréant la promesse de fetch
+    ;(async () => {
+      try {
+        const cookie = document.cookie.split(';').find(c => c.trim().startsWith('user_session_client='))
+        if (!cookie) {
+          throw new Error('Session utilisateur manquante')
+        }
+        const sessionValue = decodeURIComponent(cookie.split('=')[1] || '')
+        const session = JSON.parse(sessionValue)
+        const token = session?.token
+        if (!token) {
+          throw new Error('Token d\'authentification manquant')
+        }
+
+        const [coursesResponse, videosResponse, booksResponse, exercisesResponse] = await Promise.allSettled([
+          fetch('/api/student/courses'),
+          fetch('/api/student/videos'),
+          fetch('/api/student/books'),
+          fetch('/api/student/exercises')
+        ])
+
+        const courses = coursesResponse.status === 'fulfilled' 
+          ? await coursesResponse.value.json()
+          : { data: [] }
+        const videos = videosResponse.status === 'fulfilled' 
+          ? await videosResponse.value.json()
+          : { data: [] }
+        const books = booksResponse.status === 'fulfilled' 
+          ? await booksResponse.value.json()
+          : { data: [] }
+        const exercises = exercisesResponse.status === 'fulfilled' 
+          ? await exercisesResponse.value.json()
+          : { data: [] }
+
+        setData({
+          courses: courses.data || [],
+          videos: videos.data || [],
+          books: books.data || [],
+          exercises: exercises.data || [],
+          loading: false,
+          error: null
+        })
+      } catch (error) {
+        logger.error('Erreur lors du rafraîchissement des données étudiantes', error as Error, { context: 'useStudentData' })
+        setData(prev => ({
+          ...prev,
+          loading: false,
+          error: error instanceof Error ? error.message : 'Erreur inconnue'
+        }))
+      }
+    })()
   }
 
   return {

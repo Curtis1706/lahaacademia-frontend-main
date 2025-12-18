@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import logger from "@/lib/logger"
 import { AuthGuard } from "@/components/auth-guard"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { 
@@ -76,13 +77,15 @@ export default function TeacherValidationPage() {
     }));
   };
 
+  const logContext = 'admin/teachers/validation'
+
   // Charger les enseignants en attente
   useEffect(() => {
     loadPendingTeachers()
     
     // Rafraîchissement automatique toutes les 30 secondes
     const interval = setInterval(() => {
-      console.log('🔄 Rafraîchissement automatique des données...')
+      logger.debug('Rafraîchissement automatique des données', { context: logContext })
       loadPendingTeachers()
     }, 30000) // 30 secondes
     
@@ -112,8 +115,8 @@ export default function TeacherValidationPage() {
       const normalizedTeachers = normalizeTeacherData(data.teachers || [])
       setPendingTeachers(normalizedTeachers)
     } catch (err) {
-      console.error('Erreur:', err)
-      setError(err instanceof Error ? err.message : 'Erreur inconnue')
+      logger.error('Erreur lors du chargement des enseignants en attente', err as Error, { context: logContext })
+      setError('Impossible de charger les enseignants en attente. Réessayez ou vérifiez votre connexion.')
     } finally {
       setIsLoading(false)
     }
@@ -121,11 +124,10 @@ export default function TeacherValidationPage() {
 
   const validateTeacher = async (teacherId: string) => {
     try {
-      const token = localStorage.getItem('auth_token')
       const response = await fetch(`/api/teachers/${teacherId}/validate`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -141,18 +143,17 @@ export default function TeacherValidationPage() {
       setSelectedTeacher(null)
       
     } catch (err) {
-      console.error('Erreur:', err)
-      setError(err instanceof Error ? err.message : 'Erreur lors de la validation')
+      logger.error('Erreur lors de la validation', err as Error, { context: logContext, data: { teacherId } })
+      setError('Validation impossible. Vérifiez vos droits ou réessayez.')
     }
   }
 
   const rejectTeacher = async (teacherId: string) => {
     try {
-      const token = localStorage.getItem('auth_token')
       const response = await fetch(`/api/teachers/${teacherId}/reject`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -172,8 +173,8 @@ export default function TeacherValidationPage() {
       setRejectReason("")
       
     } catch (err) {
-      console.error('Erreur:', err)
-      setError(err instanceof Error ? err.message : 'Erreur lors du rejet')
+      logger.error('Erreur lors du rejet', err as Error, { context: logContext, data: { teacherId } })
+      setError('Rejet impossible. Vérifiez vos droits ou réessayez.')
     }
   }
 
@@ -209,11 +210,12 @@ export default function TeacherValidationPage() {
     try {
       const url = getFileUrl(filePath)
       if (!url) {
-        console.error('❌ URL de fichier invalide')
+        logger.warn('URL de fichier invalide', { context: logContext, data: { filePath } })
+        setError('Document introuvable')
         return
       }
 
-      console.log('📥 Téléchargement du document:', url)
+      logger.debug('Téléchargement du document', { context: logContext, data: { url } })
       
       // Créer un lien de téléchargement
       const link = document.createElement('a')
@@ -225,7 +227,7 @@ export default function TeacherValidationPage() {
       document.body.removeChild(link)
       
     } catch (error) {
-      console.error('❌ Erreur lors du téléchargement:', error)
+      logger.error('Erreur lors du téléchargement', error as Error, { context: logContext, data: { filePath } })
       setError('Erreur lors du téléchargement du document')
     }
   }
@@ -234,15 +236,16 @@ export default function TeacherValidationPage() {
     try {
       const url = getFileUrl(filePath)
       if (!url) {
-        console.error('❌ URL de fichier invalide')
+        logger.warn('URL de fichier invalide', { context: logContext, data: { filePath } })
+        setError('Document introuvable')
         return
       }
 
-      console.log('👁️ Ouverture du document:', url)
+      logger.debug('Ouverture du document', { context: logContext, data: { url } })
       window.open(url, '_blank')
       
     } catch (error) {
-      console.error('❌ Erreur lors de l\'ouverture du document:', error)
+      logger.error('Erreur lors de l\'ouverture du document', error as Error, { context: logContext, data: { filePath } })
       setError('Erreur lors de l\'ouverture du document')
     }
   }

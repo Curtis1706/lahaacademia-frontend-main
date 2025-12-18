@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { AuthGuard } from "@/components/auth-guard"
 import { ParentSidebar } from "@/components/parent/parent-sidebar"
 import { useParentChildren } from "@/hooks/use-parent-children"
+import { useParentData } from "@/hooks/use-parent-data"
 import { 
   Users,
   Plus,
@@ -54,8 +55,8 @@ interface CourseEnrollment {
 
 export default function ParentChildrenPage() {
   const { children, parent, loading, error, refetch } = useParentChildren()
+  const { courseProgress } = useParentData()
   const [selectedChild, setSelectedChild] = useState<string>("")
-  const [courseEnrollments, setCourseEnrollments] = useState<CourseEnrollment[]>([])
   const [activeTab, setActiveTab] = useState("overview")
   const [showAddChildModal, setShowAddChildModal] = useState(false)
   const router = useRouter()
@@ -67,34 +68,18 @@ export default function ParentChildrenPage() {
     }
   }, [children, selectedChild])
 
-  // Données de test pour les cours (en attendant l'API des cours)
-  useEffect(() => {
-    const mockEnrollments: CourseEnrollment[] = [
-      {
-        id: "1",
-        course_title: "Mathématiques",
-        subject: "Mathématiques",
-        teacher: "Prof. Ndiaye",
-        start_date: "2023-09-15",
-        end_date: "2024-06-15",
-        status: "active",
-        progress: 65,
-        grade: 16
-      },
-      {
-        id: "2",
-        course_title: "Physique-Chimie",
-        subject: "Physique",
-        teacher: "Prof. Diouf",
-        start_date: "2023-09-15",
-        end_date: "2024-06-15",
-        status: "active",
-        progress: 45,
-        grade: 14
-      }
-    ]
-    setCourseEnrollments(mockEnrollments)
-  }, [])
+  // Transformer courseProgress en CourseEnrollments pour l'enfant sélectionné
+  const courseEnrollments: CourseEnrollment[] = courseProgress.map(course => ({
+    id: course.id,
+    course_title: course.title,
+    subject: course.subject,
+    teacher: course.teacher.name,
+    start_date: course.last_session || new Date().toISOString().split('T')[0],
+    end_date: course.next_session || new Date().toISOString().split('T')[0],
+    status: course.status,
+    progress: course.progress,
+    grade: course.grade
+  }))
 
   const selectedChildData = children.find(child => child.id === selectedChild)
 

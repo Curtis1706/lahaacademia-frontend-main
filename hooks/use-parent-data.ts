@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import logger from '@/lib/logger'
 
 interface Child {
   id: string
@@ -181,6 +182,30 @@ interface PaymentSummary {
   average_monthly_cost: number
 }
 
+interface Notification {
+  id: string
+  type: "success" | "warning" | "info" | "error"
+  title: string
+  message: string
+  child_name?: string
+  timestamp: string
+  is_read: boolean
+  action_url?: string
+}
+
+interface Event {
+  id: string
+  type: "meeting" | "exam" | "class" | "stage"
+  title: string
+  description?: string
+  date: string
+  time: string
+  child_name: string
+  location?: string
+  teacher_name?: string
+  status: "upcoming" | "ongoing" | "completed" | "cancelled"
+}
+
 interface ParentData {
   children: Child[]
   courses: Course[]
@@ -191,6 +216,8 @@ interface ParentData {
   transactions: Transaction[]
   invoices: Invoice[]
   paymentSummary: PaymentSummary | null
+  notifications: Notification[]
+  events: Event[]
   loading: boolean
   error: string | null
 }
@@ -206,6 +233,8 @@ export function useParentData() {
     transactions: [],
     invoices: [],
     paymentSummary: null,
+    notifications: [],
+    events: [],
     loading: true,
     error: null
   })
@@ -215,55 +244,51 @@ export function useParentData() {
       try {
         setData(prev => ({ ...prev, loading: true, error: null }))
 
-        // Récupérer le token depuis le localStorage
-        const token = localStorage.getItem('token')
-        if (!token) {
-          throw new Error('Token d\'authentification manquant')
-        }
-
-        // Récupérer toutes les données en parallèle
-        const [childrenResponse, coursesResponse, progressResponse, paymentsResponse] = await Promise.allSettled([
+        // Récupérer toutes les données en parallèle (les tokens sont gérés côté serveur via cookies)
+        const [childrenResponse, coursesResponse, progressResponse, paymentsResponse, notificationsResponse, eventsResponse] = await Promise.allSettled([
           fetch('/api/parent/children', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+            credentials: 'include'
           }),
           fetch('/api/parent/courses', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+            credentials: 'include'
           }),
           fetch('/api/parent/progress', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+            credentials: 'include'
           }),
           fetch('/api/parent/payments', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+            credentials: 'include'
+          }),
+          fetch('/api/parent/notifications', {
+            credentials: 'include'
+          }),
+          fetch('/api/parent/events', {
+            credentials: 'include'
           })
         ])
 
-        const children = childrenResponse.status === 'fulfilled' 
+        const children = childrenResponse.status === 'fulfilled' && childrenResponse.value.ok
           ? await childrenResponse.value.json()
           : { data: [] }
         
-        const courses = coursesResponse.status === 'fulfilled' 
+        const courses = coursesResponse.status === 'fulfilled' && coursesResponse.value.ok
           ? await coursesResponse.value.json()
           : { data: [] }
         
-        const progress = progressResponse.status === 'fulfilled' 
+        const progress = progressResponse.status === 'fulfilled' && progressResponse.value.ok
           ? await progressResponse.value.json()
           : { data: {} }
         
-        const payments = paymentsResponse.status === 'fulfilled' 
+        const payments = paymentsResponse.status === 'fulfilled' && paymentsResponse.value.ok
           ? await paymentsResponse.value.json()
           : { data: {} }
+
+        const notifications = notificationsResponse.status === 'fulfilled' && notificationsResponse.value.ok
+          ? await notificationsResponse.value.json()
+          : { results: [] }
+
+        const events = eventsResponse.status === 'fulfilled' && eventsResponse.value.ok
+          ? await eventsResponse.value.json()
+          : { results: [] }
 
         setData({
           children: children.data || [],
@@ -275,12 +300,14 @@ export function useParentData() {
           transactions: payments.data?.transactions || [],
           invoices: payments.data?.invoices || [],
           paymentSummary: payments.data?.paymentSummary || null,
+          notifications: notifications.results || [],
+          events: events.results || [],
           loading: false,
           error: null
         })
 
       } catch (error) {
-        console.error('Erreur lors de la récupération des données parentales:', error)
+        logger.error('Erreur lors de la récupération des données parentales', error as Error, { context: 'useParentData' })
         setData(prev => ({
           ...prev,
           loading: false,
@@ -363,10 +390,66 @@ export function useParentData() {
     }))
   }
 
-  const refreshData = () => {
-    setData(prev => ({ ...prev, loading: true, error: null }))
-    // Re-trigger useEffect
-    window.location.reload()
+  const refreshData = async () => {
+    try {
+      setData(prev => ({ ...prev, loading: true, error: null }))
+
+      const [childrenResponse, coursesResponse, progressResponse, paymentsResponse, notificationsResponse, eventsResponse] = await Promise.allSettled([
+        fetch('/api/parent/children', { credentials: 'include' }),
+        fetch('/api/parent/courses', { credentials: 'include' }),
+        fetch('/api/parent/progress', { credentials: 'include' }),
+        fetch('/api/parent/payments', { credentials: 'include' }),
+        fetch('/api/parent/notifications', { credentials: 'include' }),
+        fetch('/api/parent/events', { credentials: 'include' })
+      ])
+
+      const children = childrenResponse.status === 'fulfilled' && childrenResponse.value.ok
+        ? await childrenResponse.value.json()
+        : { data: [] }
+      
+      const courses = coursesResponse.status === 'fulfilled' && coursesResponse.value.ok
+        ? await coursesResponse.value.json()
+        : { data: [] }
+      
+      const progress = progressResponse.status === 'fulfilled' && progressResponse.value.ok
+        ? await progressResponse.value.json()
+        : { data: {} }
+      
+      const payments = paymentsResponse.status === 'fulfilled' && paymentsResponse.value.ok
+        ? await paymentsResponse.value.json()
+        : { data: {} }
+
+      const notifications = notificationsResponse.status === 'fulfilled' && notificationsResponse.value.ok
+        ? await notificationsResponse.value.json()
+        : { results: [] }
+
+      const events = eventsResponse.status === 'fulfilled' && eventsResponse.value.ok
+        ? await eventsResponse.value.json()
+        : { results: [] }
+
+      setData({
+        children: children.data || [],
+        courses: courses.data || [],
+        courseProgress: progress.data?.courseProgress || [],
+        performanceMetrics: progress.data?.performanceMetrics || [],
+        attendanceRecords: progress.data?.attendanceRecords || [],
+        paymentMethods: payments.data?.paymentMethods || [],
+        transactions: payments.data?.transactions || [],
+        invoices: payments.data?.invoices || [],
+        paymentSummary: payments.data?.paymentSummary || null,
+        notifications: notifications.results || [],
+        events: events.results || [],
+        loading: false,
+        error: null
+      })
+    } catch (error) {
+      logger.error('Erreur lors du rafraîchissement des données parentales', error as Error, { context: 'useParentData/refresh' })
+      setData(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Erreur inconnue'
+      }))
+    }
   }
 
   return {

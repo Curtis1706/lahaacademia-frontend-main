@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import logger from "@/lib/logger"
 
 interface ContentStats {
   courses: number
@@ -103,7 +104,7 @@ export function useContentStats() {
         setStats(newStats)
 
       } catch (error) {
-        console.error('Erreur lors de la récupération des statistiques:', error)
+        logger.error('Error fetching content stats', error as Error, { context: 'useContentStats' })
         setStats(prev => ({
           ...prev,
           loading: false,

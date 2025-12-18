@@ -34,6 +34,7 @@ import { ActivityChart } from '@/components/charts/activity-chart'
 import { RevenueTrendChart } from '@/components/charts/revenue-trend-chart'
 import { PerformanceRadarChart } from '@/components/charts/performance-radar-chart'
 import { getAvailableTeachers, getCoursesWithTeachers, Teacher, Course } from '@/lib/api-courses'
+import logger from '@/lib/logger'
 
 // Fonction utilitaire pour afficher les subjects
 const displaySubjects = (subjects: any): string => {
@@ -152,7 +153,7 @@ function AdminContent() {
       setTeachers(normalizedTeachers)
       setCourses(coursesResponse.data)
     } catch (err) {
-      console.error('Erreur lors du chargement des données:', err)
+      logger.error('Erreur lors du chargement des données admin dashboard', err as Error, { context: 'AdminContent/loadData' })
       setError('Erreur lors du chargement des données')
     } finally {
       setIsLoading(false)

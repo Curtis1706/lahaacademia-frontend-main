@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import logger from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
     // Récupérer la session utilisateur depuis les cookies
     const userSession = request.cookies.get('user_session_client')?.value || request.cookies.get('user_session')?.value
     
-    console.log('🔍 Debug API auth/me:')
-    console.log('  - user_session_client exists:', !!request.cookies.get('user_session_client')?.value)
-    console.log('  - user_session exists:', !!request.cookies.get('user_session')?.value)
-    console.log('  - All cookies:', request.cookies.getAll().map(c => `${c.name}=${c.value.substring(0, 20)}...`))
-    
     if (!userSession) {
-      console.log('❌ Pas de session utilisateur dans auth/me')
+      logger.debug('Pas de session utilisateur dans auth/me', { context: 'auth/me' })
       return NextResponse.json(
         { authenticated: false, error: 'Session utilisateur requise' },
         { status: 401 }
@@ -57,7 +53,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Erreur lors de la vérification de la session:', error)
+    logger.error('Erreur lors de la vérification de la session', error, { context: 'auth/me' })
     return NextResponse.json(
       { authenticated: false, error: 'Erreur interne du serveur' },
       { status: 500 }

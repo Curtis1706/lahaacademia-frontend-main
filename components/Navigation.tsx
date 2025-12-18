@@ -15,8 +15,6 @@ export default function Navigation({ currentPage }: NavigationProps) {
   const { theme } = useTheme();
 
   const navigationItems = [
-    { href: "/courses", label: "Cours" },
-    { href: "/profile", label: "Mon Profil" },
     { href: "/qui-sommes-nous", label: "Qui-sommes nous ?" },
     { href: "/devenir-enseignant", label: "Devenir Enseignant" },
     { href: "/nos-ouvrages", label: "Nos ouvrages" },

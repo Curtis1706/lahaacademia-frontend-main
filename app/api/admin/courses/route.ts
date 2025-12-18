@@ -29,8 +29,7 @@ export async function GET(request: NextRequest) {
       ? `${baseApi}/courses/?${params.toString()}`
       : `${baseApi}/api/courses/?${params.toString()}`
     
-    console.log('🔍 Récupération des cours:')
-    console.log(`  Endpoint: ${endpoint}`)
+    logger.debug('Fetching courses', { endpoint }, { context: 'admin/courses/GET' })
     
     // Extraire un token éventuel depuis le cookie côté client
     let authHeader: Record<string, string> = {}
@@ -56,8 +55,10 @@ export async function GET(request: NextRequest) {
     
     const data = await response.json()
     
-    console.log(`📊 Réponse Django: ${response.status}`)
-    console.log(`📋 Nombre de cours: ${data.count || data.results?.length || 0}`)
+    logger.debug('Django response received', { 
+      status: response.status, 
+      count: data.count || data.results?.length || 0 
+    }, { context: 'admin/courses/GET' })
     
     if (!response.ok) {
       console.error('Erreur API Django:', response.status, data)
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
     
     return nextResponse
   } catch (error) {
-    console.error('Erreur API courses:', error)
+    logger.error('Error in courses API', error as Error, { context: 'admin/courses/GET' })
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

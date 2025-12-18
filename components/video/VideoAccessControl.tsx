@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import logger from '@/lib/logger'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -98,7 +99,7 @@ export function VideoAccessControl({
       }
       
     } catch (err) {
-      console.error('Erreur lors de la vérification d\'accès:', err)
+      logger.error('Erreur lors de la vérification d\'accès', err, { context: 'VideoAccessControl' })
       setError('Erreur de connexion')
     } finally {
       setLoading(false)
@@ -107,7 +108,8 @@ export function VideoAccessControl({
 
   const handleUpgrade = (subscriptionId: string) => {
     // TODO: Implémenter la logique d'upgrade
-    console.log('Upgrade vers:', subscriptionId)
+    // Redirection vers la page d'abonnement ou modal d'upgrade
+    window.location.href = `/dashboard/subscription?upgrade=${subscriptionId}`
   }
 
   const handleWatchPrerequisite = (videoId: string) => {

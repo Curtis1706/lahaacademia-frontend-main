@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import logger from '@/lib/logger'
 
 const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
 
@@ -16,7 +17,7 @@ async function getAuthHeaders() {
       }
     }
   } catch (e) {
-    console.error("Failed to parse user_session_client cookie:", e)
+    logger.error("Failed to parse user_session_client cookie", e, { context: 'user/profile' })
   }
   return authHeader
 }
@@ -24,9 +25,6 @@ async function getAuthHeaders() {
 export async function GET(request: NextRequest) {
   try {
     const endpoint = `${baseApi}/api/auth/me/`
-    
-    console.log('🔍 Récupération du profil utilisateur:')
-    console.log(`  Endpoint: ${endpoint}`)
     
     const authHeaders = await getAuthHeaders()
     const res = await fetch(endpoint, {
@@ -41,7 +39,10 @@ export async function GET(request: NextRequest) {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({ message: 'Unknown error' }))
-      console.error(`Erreur lors de la récupération du profil:`, res.status, errorData)
+      logger.error('Erreur lors de la récupération du profil', new Error(errorData.message || 'Unknown error'), { 
+        context: 'user/profile',
+        data: { status: res.status, errorData }
+      })
       return NextResponse.json({ error: errorData.detail || errorData.message || 'Erreur lors de la récupération du profil' }, { status: res.status })
     }
 
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error('Erreur API profil utilisateur GET:', error)
+    logger.error('Erreur API profil utilisateur GET', error, { context: 'user/profile' })
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
   }
 }
@@ -107,9 +108,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const endpoint = `${baseApi}/api/auth/me/`
 
-    console.log('📝 Mise à jour du profil utilisateur:')
-    console.log(`  Endpoint: ${endpoint}`)
-    console.log('  Payload:', body)
+    logger.debug('Mise à jour du profil utilisateur', { context: 'user/profile', data: { endpoint, body } })
 
     const authHeaders = await getAuthHeaders()
     const res = await fetch(endpoint, {
@@ -125,14 +124,17 @@ export async function PUT(request: NextRequest) {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
-      console.error('Erreur détaillée Django (PUT profil):', errorData)
+      logger.error('Erreur détaillée Django (PUT profil)', new Error(errorData.message || 'Unknown error'), { 
+        context: 'user/profile',
+        data: { status: res.status, errorData }
+      })
       return NextResponse.json({ error: errorData.detail || errorData.message || `Erreur HTTP ${res.status}` }, { status: res.status })
     }
 
     const data = await res.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Erreur API profil utilisateur PUT:', error)
+    logger.error('Erreur API profil utilisateur PUT', error, { context: 'user/profile' })
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
   }
 }

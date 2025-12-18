@@ -1,10 +1,30 @@
 import { NextRequest, NextResponse } from "next/server"
+import logger from "@/lib/logger"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "")
+    // Récupérer le token depuis les cookies (prioritaire) ou headers
+    const cookieTokenRaw =
+      request.cookies.get('user_session_client')?.value ||
+      request.cookies.get('user_session')?.value
+    const authHeader = request.headers.get('Authorization')
+
+    let token: string | null = null
+
+    if (cookieTokenRaw) {
+      try {
+        const sessionData = JSON.parse(decodeURIComponent(cookieTokenRaw))
+        token = sessionData?.token || null
+      } catch (e) {
+        logger.error('Failed to parse session cookie', e as Error, { context: 'parent/payments' })
+      }
+    }
+
+    if (!token && authHeader?.startsWith('Bearer ') || authHeader?.startsWith('Token ')) {
+      token = authHeader.replace('Bearer ', '').replace('Token ', '')
+    }
     
     if (!token) {
       return NextResponse.json({ error: "Token d'authentification requis" }, { status: 401 })
@@ -13,12 +33,17 @@ export async function GET(request: NextRequest) {
     const response = await fetch(`${API_BASE_URL}/api/parent/payments/`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${token}`,
+        "Authorization": `Token ${token}`,
         "Content-Type": "application/json",
       },
     })
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      logger.error('Erreur API Django payments', new Error('fetch error'), {
+        context: 'parent/payments',
+        data: { status: response.status, errorData }
+      })
       throw new Error(`Erreur API: ${response.status}`)
     }
 
@@ -86,7 +111,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Erreur lors de la récupération des paiements:", error)
+    logger.error("Erreur lors de la récupération des paiements", error as Error, { context: 'parent/payments' })
     return NextResponse.json(
       { 
         error: "Erreur lors de la récupération des paiements",
@@ -99,7 +124,26 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "")
+    // Récupérer le token depuis les cookies (prioritaire) ou headers
+    const cookieTokenRaw =
+      request.cookies.get('user_session_client')?.value ||
+      request.cookies.get('user_session')?.value
+    const authHeader = request.headers.get('Authorization')
+
+    let token: string | null = null
+
+    if (cookieTokenRaw) {
+      try {
+        const sessionData = JSON.parse(decodeURIComponent(cookieTokenRaw))
+        token = sessionData?.token || null
+      } catch (e) {
+        logger.error('Failed to parse session cookie', e as Error, { context: 'parent/payments/POST' })
+      }
+    }
+
+    if (!token && authHeader?.startsWith('Bearer ') || authHeader?.startsWith('Token ')) {
+      token = authHeader.replace('Bearer ', '').replace('Token ', '')
+    }
     
     if (!token) {
       return NextResponse.json({ error: "Token d'authentification requis" }, { status: 401 })
@@ -154,13 +198,18 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method,
       headers: {
-        "Authorization": `Bearer ${token}`,
+        "Authorization": `Token ${token}`,
         "Content-Type": "application/json",
       },
       body: requestBody ? JSON.stringify(requestBody) : undefined,
     })
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      logger.error('Erreur API Django action payments', new Error('fetch error'), {
+        context: 'parent/payments/POST',
+        data: { status: response.status, errorData }
+      })
       throw new Error(`Erreur API: ${response.status}`)
     }
 
@@ -172,7 +221,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Erreur lors de l'action sur les paiements:", error)
+    logger.error("Erreur lors de l'action sur les paiements", error as Error, { context: 'parent/payments/POST' })
     return NextResponse.json(
       { 
         error: "Erreur lors de l'action sur les paiements",

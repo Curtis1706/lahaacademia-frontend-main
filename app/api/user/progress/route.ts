@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import logger from '@/lib/logger'
 
 const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
 
@@ -16,7 +17,7 @@ async function getAuthHeaders() {
       }
     }
   } catch (e) {
-    console.error("Failed to parse user_session_client cookie:", e)
+    logger.error("Failed to parse user_session_client cookie", e, { context: 'user/progress' })
   }
   return authHeader
 }
@@ -24,9 +25,6 @@ async function getAuthHeaders() {
 export async function GET(request: NextRequest) {
   try {
     const endpoint = `${baseApi}/api/user/progress/`
-    
-    console.log('🔍 Récupération de la progression utilisateur:')
-    console.log(`  Endpoint: ${endpoint}`)
     
     const authHeaders = await getAuthHeaders()
     const res = await fetch(endpoint, {
@@ -41,14 +39,17 @@ export async function GET(request: NextRequest) {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({ message: 'Unknown error' }))
-      console.error(`Erreur lors de la récupération de la progression:`, res.status, errorData)
+      logger.error('Erreur lors de la récupération de la progression', new Error(errorData.message || 'Unknown error'), { 
+        context: 'user/progress',
+        data: { status: res.status, errorData }
+      })
       return NextResponse.json({ error: errorData.detail || errorData.message || 'Erreur lors de la récupération de la progression' }, { status: res.status })
     }
 
     const data = await res.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Erreur API progression utilisateur GET:', error)
+    logger.error('Erreur API progression utilisateur GET', error, { context: 'user/progress' })
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
   }
 }
@@ -58,9 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const endpoint = `${baseApi}/api/user/progress/`
 
-    console.log('🚀 Mise à jour de la progression utilisateur:')
-    console.log(`  Endpoint: ${endpoint}`)
-    console.log('  Payload:', body)
+    logger.debug('Mise à jour de la progression utilisateur', { context: 'user/progress', data: { endpoint, body } })
 
     const authHeaders = await getAuthHeaders()
     const res = await fetch(endpoint, {
@@ -76,14 +75,17 @@ export async function POST(request: NextRequest) {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
-      console.error('Erreur détaillée Django (POST progression):', errorData)
+      logger.error('Erreur détaillée Django (POST progression)', new Error(errorData.message || 'Unknown error'), { 
+        context: 'user/progress',
+        data: { status: res.status, errorData }
+      })
       return NextResponse.json({ error: errorData.detail || errorData.message || `Erreur HTTP ${res.status}` }, { status: res.status })
     }
 
     const data = await res.json()
     return NextResponse.json(data, { status: 201 })
   } catch (error) {
-    console.error('Erreur API progression utilisateur POST:', error)
+    logger.error('Erreur API progression utilisateur POST', error, { context: 'user/progress' })
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
   }
 }

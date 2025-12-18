@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import logger from '@/lib/logger'
 
 interface UserProfile {
   avatar: string | null
@@ -47,7 +48,7 @@ export function useAdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      console.log('🔄 Chargement des données utilisateurs...')
+      logger.debug('Chargement des données utilisateurs', { context: 'useAdminUsers' })
       
       // Vérifier si le cookie existe
       const cookies = document.cookie.split(';')
@@ -56,7 +57,7 @@ export function useAdminUsers() {
       )
 
       if (!userSessionCookie) {
-        console.error('❌ Pas de cookie user_session_client trouvé')
+        logger.warn('Pas de cookie user_session_client trouvé', { context: 'useAdminUsers' })
         setError('Non authentifié')
         setIsLoading(false)
         return
@@ -65,11 +66,10 @@ export function useAdminUsers() {
       // Parser les données du cookie
       const sessionValue = userSessionCookie.split('=')[1]
       const userData = JSON.parse(decodeURIComponent(sessionValue))
-      console.log('✅ Données utilisateur du cookie:', userData)
 
       // Vérifier que l'utilisateur est admin
       if (userData.role !== 'admin') {
-        console.error('❌ Accès refusé - rôle non admin')
+        logger.warn('Accès refusé - rôle non admin', { context: 'useAdminUsers', data: { role: userData.role } })
         setError('Accès refusé - rôle admin requis')
         setIsLoading(false)
         return
@@ -81,17 +81,15 @@ export function useAdminUsers() {
         credentials: 'include',
       })
 
-      console.log('📡 Réponse API utilisateurs:', response.status, response.statusText)
-
       if (response.status === 401) {
-        console.error('❌ Session expirée')
+        logger.warn('Session expirée', { context: 'useAdminUsers' })
         setError('Session expirée - veuillez vous reconnecter')
         setIsLoading(false)
         return
       }
 
       if (response.status === 403) {
-        console.error('❌ Accès refusé')
+        logger.warn('Accès refusé', { context: 'useAdminUsers' })
         setError('Accès refusé - rôle admin requis')
         setIsLoading(false)
         return
@@ -102,12 +100,6 @@ export function useAdminUsers() {
       }
 
       const apiData = await response.json()
-      console.log('✅ Données utilisateurs reçues:', apiData)
-      console.log('🔍 Type de apiData:', typeof apiData)
-      console.log('🔍 apiData.users:', apiData.users)
-      console.log('🔍 apiData.total:', apiData.total)
-      console.log('🔍 apiData.users est un tableau?', Array.isArray(apiData.users))
-      console.log('🔍 Longueur de apiData.users:', apiData.users?.length)
 
       setData({
         users: apiData.users || [],
@@ -116,7 +108,7 @@ export function useAdminUsers() {
       setError(null)
       
     } catch (err) {
-      console.error('❌ Erreur lors de la récupération des utilisateurs:', err)
+      logger.error('Erreur lors de la récupération des utilisateurs', err, { context: 'useAdminUsers' })
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
       
       // Pas de fallback avec données mockées - afficher l'erreur
