@@ -291,7 +291,7 @@ function SubscriptionsContent() {
               <div>
                 <h3 className="font-semibold text-laha-text mb-1">Support prioritaire</h3>
                 <p className="text-sm text-laha-text-secondary">
-                  Réponses rapides de nos professeurs et support technique
+                  Réponses rapides de nos enseignants et support technique
                 </p>
               </div>
             </div>
@@ -352,5 +352,7 @@ function SubscriptionsContent() {
     </div>
   )
 }
+
+
 
 

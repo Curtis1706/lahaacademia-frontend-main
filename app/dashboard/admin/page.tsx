@@ -47,7 +47,7 @@ const displaySubjects = (subjects: any): string => {
   return 'Non spécifié'
 }
 
-// Fonction utilitaire pour normaliser les données des professeurs
+// Fonction utilitaire pour normaliser les données des enseignants
 const normalizeTeacherData = (teachers: any[]): Teacher[] => {
   return teachers.map(teacher => ({
     ...teacher,
@@ -62,7 +62,7 @@ const normalizeTeacherData = (teachers: any[]): Teacher[] => {
             }
           })()
         : [],
-    name: teacher.name || `${teacher.user?.first_name || ''} ${teacher.user?.last_name || ''}`.trim() || 'Professeur inconnu',
+    name: teacher.name || `${teacher.user?.first_name || ''} ${teacher.user?.last_name || ''}`.trim() || 'Enseignant inconnu',
     avatar: teacher.avatar || teacher.profile_photo || '/placeholder-user.jpg',
     rating: teacher.rating || teacher.average_rating || 0,
     experience: teacher.experience || `${teacher.experience_years || 0} ans d'expérience`,
@@ -148,7 +148,7 @@ function AdminContent() {
         getCoursesWithTeachers()
       ])
       
-      // Normaliser les données des professeurs
+      // Normaliser les données des enseignants
       const normalizedTeachers = normalizeTeacherData(teachersResponse.data || [])
       setTeachers(normalizedTeachers)
       setCourses(coursesResponse.data)
@@ -204,7 +204,7 @@ function AdminContent() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-laha-text-secondary mb-1">Professeurs Inscrits</p>
+                <p className="text-sm font-medium text-laha-text-secondary mb-1">Enseignants Inscrits</p>
                 <p className="text-2xl font-bold text-laha-gold">{isLoading ? '...' : teachers.length}</p>
                 <p className="text-xs text-green-400 mt-1">Total des professeurs</p>
               </div>

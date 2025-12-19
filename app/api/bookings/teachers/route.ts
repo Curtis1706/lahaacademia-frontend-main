@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import logger from '@/lib/logger'
 
 /**
- * API pour gérer les réservations de professeurs
- * GET /api/bookings/teachers - Liste les professeurs disponibles avec leurs créneaux
- * POST /api/bookings/teachers - Réserver un créneau avec un professeur
+ * API pour gérer les réservations d'enseignants
+ * GET /api/bookings/teachers - Liste les enseignants disponibles avec leurs créneaux
+ * POST /api/bookings/teachers - Réserver un créneau avec un enseignant
  */
 export async function GET(request: NextRequest) {
   try {
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         data: { status: response.status, error: data }
       })
       return NextResponse.json(
-        data || { error: 'Erreur lors de la récupération des professeurs disponibles' },
+        data || { error: 'Erreur lors de la récupération des enseignants disponibles' },
         { status: response.status }
       )
     }
@@ -169,5 +169,7 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+
 
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import logger from '@/lib/logger'
 
 /**
- * API pour gérer les disponibilités d'un professeur
+ * API pour gérer les disponibilités d'un enseignant
  * GET /api/teachers/availability - Récupérer les disponibilités
  * POST /api/teachers/availability - Définir/Mettre à jour les disponibilités
  */
@@ -151,5 +151,7 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+
 
 
