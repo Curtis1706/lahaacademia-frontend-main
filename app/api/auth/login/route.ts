@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     
     // Rediriger vers le backend Django
     const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
-    const endpoint = `${baseApi}/api/auth/login/`
+    const endpoint = baseApi.includes('/api') ? `${baseApi}/auth/login/` : `${baseApi}/api/auth/login/`
     
     console.log('🔍 Connexion admin:')
     console.log(`  Endpoint: ${endpoint}`)

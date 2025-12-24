@@ -4,12 +4,12 @@ import { useState, useEffect } from "react"
 import logger from "@/lib/logger"
 import { AuthGuard } from "@/components/auth-guard"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
-import { 
+import {
   User,
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  FileText, 
+  CheckCircle,
+  XCircle,
+  Clock,
+  FileText,
   Eye,
   Calendar,
   Mail,
@@ -19,7 +19,9 @@ import {
   File,
   FileImage,
   GraduationCap,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Shield,
+  Home
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

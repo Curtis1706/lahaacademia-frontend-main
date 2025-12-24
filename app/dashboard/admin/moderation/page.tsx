@@ -48,7 +48,7 @@ interface EducationalContent {
   content_type: "course" | "video" | "document" | "book" | "qcm"
   subject: string
   class_level: string
-  status: "pending" | "approved" | "rejected"
+  status: "review" | "published" | "draft"
   teacher: {
     id: number
     first_name: string
@@ -75,15 +75,15 @@ const contentTypeLabels = {
 }
 
 const statusLabels = {
-  pending: "En attente",
-  approved: "Approuvé",
-  rejected: "Rejeté",
+  review: "En attente",
+  published: "Approuvé",
+  draft: "Rejeté",
 }
 
 const statusColors = {
-  pending: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
-  approved: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
-  rejected: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
+  review: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
+  published: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+  draft: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
 }
 
 export default function ModerationPage() {
@@ -101,7 +101,7 @@ function ModerationContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>("all")
-  const [filterStatus, setFilterStatus] = useState<string>("pending")
+  const [filterStatus, setFilterStatus] = useState<string>("review")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedContent, setSelectedContent] = useState<EducationalContent | null>(null)
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null)

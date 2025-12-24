@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token manquant' }, { status: 401 })
     }
 
-    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '')
+    const baseApi = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
     const endpoint = baseApi.includes('/api') ? `${baseApi}/teachers/` : `${baseApi}/api/teachers/`
 
     const djangoResponse = await fetch(endpoint, {

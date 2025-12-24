@@ -387,7 +387,7 @@ function AdminContent() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
-                          src={teacher.avatar || "/placeholder.svg?height=40&width=40&text=T"}
+                          src={teacher.profile?.avatar || teacher.avatar || "/placeholder.svg?height=40&width=40&text=T"}
                           alt={teacher.name}
                           className="h-10 w-10 rounded-full object-cover"
                         />

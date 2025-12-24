@@ -155,7 +155,10 @@ class TeacherViewSet(viewsets.ModelViewSet):
             teacher_data = {
                 'id': teacher.id,
                 'name': f"{teacher.user.first_name} {teacher.user.last_name}",
-                'avatar': teacher.profile_photo.url if teacher.profile_photo else None,
+                'avatar': request.build_absolute_uri(teacher.profile_photo.url) if teacher.profile_photo else None,
+                'profile': {
+                    'avatar': request.build_absolute_uri(teacher.profile_photo.url) if teacher.profile_photo else None,
+                },
                 'subjects': teacher.subjects,
                 'rating': teacher.average_rating,
                 'experience': f"{teacher.experience_years} ans",
@@ -306,6 +309,24 @@ class TeacherViewSet(viewsets.ModelViewSet):
         
         return Response({'status': 'rejected'})
     
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def messages_recent(self, request):
+        """Obtenir les messages récents pour l'enseignant connecté"""
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+            # Récupérer les notifications récentes pour cet enseignant
+            recent_notifications = Notification.objects.filter(
+                user=teacher.user
+            ).order_by('-created_at')[:10]  # 10 messages récents
+
+            from .serializers import NotificationSerializer
+            return Response({
+                'messages': NotificationSerializer(recent_notifications, many=True).data,
+                'count': recent_notifications.count()
+            })
+        except Teacher.DoesNotExist:
+            return Response({'error': 'Enseignant non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
     @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
     def pending(self, request):
         """Liste des professeurs en attente de validation"""
@@ -660,7 +681,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                 teacher_data = {
                     'id': teacher.id,
                     'name': f"{teacher.user.first_name} {teacher.user.last_name}",
-                    'avatar': teacher.profile_photo.url if teacher.profile_photo else None,
+                    'avatar': request.build_absolute_uri(teacher.profile_photo.url) if teacher.profile_photo else None,
                     'rating': teacher.average_rating,
                     'experience': f"{teacher.experience_years} ans",
                     'hourly_rate': float(teacher.hourly_rate),
@@ -682,7 +703,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                 main_teacher_data = {
                     'id': main_teacher.id,
                     'name': f"{main_teacher.user.first_name} {main_teacher.user.last_name}",
-                    'avatar': main_teacher.profile_photo.url if main_teacher.profile_photo else None,
+                    'avatar': request.build_absolute_uri(main_teacher.profile_photo.url) if main_teacher.profile_photo else None,
                     'rating': main_teacher.average_rating,
                     'experience': f"{main_teacher.experience_years} ans",
                     'hourly_rate': float(main_teacher.hourly_rate),

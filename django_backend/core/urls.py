@@ -26,8 +26,8 @@ router.register(r'payment-configurations', PaymentConfigurationViewSet)
 router.register(r'teacher-payouts', TeacherPayoutViewSet)
 router.register(r'security-alerts', SecurityAlertViewSet)
 router.register(r'teacher-ratings', TeacherRatingViewSet)
-router.register(r'adult-students', AdultStudentViewSet)
-router.register(r'enhanced-teachers', EnhancedTeacherViewSet)
+router.register(r'adult-students', AdultStudentViewSet, basename='adult-student')
+router.register(r'enhanced-teachers', EnhancedTeacherViewSet, basename='enhanced-teacher')
 
 # URLs pour la gestion des contenus pédagogiques
 router.register(r'educational-content', EducationalContentViewSet)
