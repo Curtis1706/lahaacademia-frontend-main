@@ -31,7 +31,8 @@ import {
   MessageSquare,
   MessageCircle,
   DollarSign,
-  CreditCard
+  CreditCard,
+  AlertTriangle
 } from "lucide-react"
 import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
 import Image from "next/image"
@@ -83,9 +84,24 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
       icon: <Shield className="h-5 w-5 shrink-0" />
     },
     {
+      label: "Surveillance Enseignants",
+      href: "/dashboard/admin/teachers/monitoring",
+      icon: <Shield className="h-5 w-5 shrink-0 text-orange-500" />
+    },
+    {
       label: "Modération Contenus",
       href: "/dashboard/admin/moderation",
       icon: <CheckSquare className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Signalements",
+      href: "/dashboard/admin/reports",
+      icon: <AlertTriangle className="h-5 w-5 shrink-0" />
+    },
+    {
+      label: "Sécurité",
+      href: "/dashboard/admin/security",
+      icon: <Shield className="h-5 w-5 shrink-0" />
     },
     {
       label: "Finances",

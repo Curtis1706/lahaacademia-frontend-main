@@ -174,7 +174,7 @@ function BookingsContent() {
       setSelectedSlot(null)
       setBookingNotes("")
       
-      // Recharger les professeurs pour mettre à jour les créneaux
+      // Recharger les enseignants pour mettre à jour les créneaux
       fetchTeachers()
     } catch (error) {
       logger.error("Error creating booking", error as Error, { context: "BookingsPage" })
@@ -216,7 +216,7 @@ function BookingsContent() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-laha-gold mb-2">Réservation de Cours</h1>
           <p className="text-laha-text-secondary">
-            Réservez des cours individuels avec nos professeurs certifiés
+            Réservez des cours individuels avec nos enseignants certifiés
           </p>
         </div>
 
@@ -248,7 +248,7 @@ function BookingsContent() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Filter className="h-5 w-5" />
-                  Rechercher un professeur
+                  Rechercher un enseignant
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -266,7 +266,7 @@ function BookingsContent() {
               </CardContent>
             </Card>
 
-            {/* Liste des professeurs */}
+            {/* Liste des enseignants */}
             {loading ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-laha-gold" />
@@ -275,7 +275,7 @@ function BookingsContent() {
               <Card>
                 <CardContent className="py-12 text-center text-laha-text-secondary">
                   <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucun professeur disponible pour le moment</p>
+                  <p>Aucun enseignant disponible pour le moment</p>
                 </CardContent>
               </Card>
             ) : (
@@ -533,5 +533,7 @@ function BookingsContent() {
     </div>
   )
 }
+
+
 
 
